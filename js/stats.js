@@ -12,7 +12,7 @@
   // ===== Data Layer =====
 
   function fetchAndParse() {
-    return fetch('docs/history.xlsx')
+    return fetch('docs/stats.xlsx')
       .then(function (res) {
         if (!res.ok) throw new Error('HTTP ' + res.status);
         return res.arrayBuffer();
