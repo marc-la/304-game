@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>304 — Leaderboard</title>
+  <meta name="description" content="Match statistics and player rankings for our 304 card game group.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="site-nav">
+  <div class="site-nav-inner">
+    <a href="index.html" class="site-nav-brand">304</a>
+    <nav class="site-nav-links">
+      <a href="index.html">Rules</a>
+      <a href="stats.html" class="active">Leaderboard</a>
+    </nav>
+  </div>
+</header>
+
+<div class="stats-content">
+
+  <!-- Loading state -->
+  <div id="stats-loading" class="stats-loading">
+    <p>Loading statistics<span class="dots">...</span></p>
+  </div>
+
+  <!-- Error state -->
+  <div id="stats-error" class="stats-error" hidden>
+    <p>Could not load match data. Ensure you are serving this page over HTTP.</p>
+  </div>
+
+  <!-- Main content (hidden until data loads) -->
+  <div id="stats-main" hidden>
+
+    <h1>Leaderboard</h1>
+    <p class="subtitle">Revolution and match statistics for the 304 group.</p>
+    <p class="last-updated" id="last-updated"></p>
+
+    <section id="overall-rankings">
+      <h2>Overall Rankings</h2>
+      <div class="leaderboard-hero" id="leaderboard-hero"></div>
+    </section>
+
+    <section id="player-stats">
+      <h2>Player Statistics</h2>
+      <div class="player-grid" id="player-grid"></div>
+    </section>
+
+    <section id="partnerships">
+      <h2>Partnership Win Rates</h2>
+      <div class="partnership-grid" id="partnership-grid"></div>
+    </section>
+
+    <section id="revolution-history">
+      <h2>Revolution History</h2>
+      <div class="table-wrapper" id="revolution-table"></div>
+    </section>
+
+    <section id="match-history">
+      <h2>Match History</h2>
+      <div class="filter-bar" id="match-filters"></div>
+      <div class="table-wrapper" id="match-table"></div>
+    </section>
+
+  </div>
+</div>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="js/stats.js"></script>
+</body>
+</html>
