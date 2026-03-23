@@ -1,0 +1,913 @@
+/* ===== Play Page Styles ===== */
+/* Extends the site's design system from styles.css */
+
+/* ===== Layout ===== */
+.play-view {
+  min-height: calc(100vh - var(--nav-height));
+}
+
+/* ===== Lobby ===== */
+.lobby-container {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+  text-align: center;
+}
+
+.lobby-title {
+  font-family: var(--font-heading);
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: var(--clr-text);
+  margin-bottom: 8px;
+}
+
+.lobby-subtitle {
+  color: var(--clr-text-muted);
+  font-size: 1.1rem;
+  margin-bottom: 40px;
+}
+
+.lobby-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.lobby-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  color: var(--clr-text-muted);
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.lobby-divider::before,
+.lobby-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--clr-border);
+}
+
+.join-form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* ===== Buttons ===== */
+.btn {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 10px 24px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-primary {
+  background: var(--clr-accent);
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #a03a24;
+}
+
+.btn-secondary {
+  background: var(--clr-border);
+  color: var(--clr-text);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #d0cdc8;
+}
+
+.btn-lg {
+  font-size: 1.1rem;
+  padding: 14px 36px;
+}
+
+.btn-sm {
+  font-size: 0.85rem;
+  padding: 6px 14px;
+}
+
+/* ===== Inputs ===== */
+.input-code {
+  font-family: var(--font-heading);
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  width: 120px;
+  padding: 10px;
+  border: 2px solid var(--clr-border);
+  border-radius: 6px;
+  background: var(--clr-surface);
+  color: var(--clr-text);
+}
+
+.input-code:focus {
+  outline: none;
+  border-color: var(--clr-accent);
+}
+
+.input-name {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid var(--clr-border);
+  border-radius: 6px;
+  background: var(--clr-surface);
+  color: var(--clr-text);
+}
+
+.input-name:focus {
+  outline: none;
+  border-color: var(--clr-accent);
+}
+
+/* ===== Player Setup ===== */
+.player-setup {
+  max-width: 400px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.player-setup h2 {
+  font-family: var(--font-heading);
+  font-size: 1.4rem;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.setup-field {
+  margin-bottom: 20px;
+}
+
+.setup-field label {
+  display: block;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--clr-text-muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ===== Avatars ===== */
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.avatar-btn {
+  width: 56px;
+  height: 56px;
+  font-size: 1.6rem;
+  border: 2px solid var(--clr-border);
+  border-radius: 50%;
+  background: var(--clr-surface);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-btn:hover {
+  border-color: var(--clr-accent);
+}
+
+.avatar-btn.selected {
+  border-color: var(--clr-accent);
+  background: var(--clr-accent-light);
+}
+
+/* ===== Team Select ===== */
+.team-select {
+  display: flex;
+  gap: 10px;
+}
+
+.team-btn {
+  flex: 1;
+  padding: 10px;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: 2px solid var(--clr-border);
+  border-radius: 6px;
+  background: var(--clr-surface);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.team-btn:hover {
+  border-color: var(--clr-accent);
+}
+
+.team-btn.selected {
+  border-color: var(--clr-accent);
+  background: var(--clr-accent-light);
+  color: var(--clr-accent);
+}
+
+.player-setup .btn-primary {
+  display: block;
+  width: 100%;
+  margin-top: 24px;
+}
+
+/* ===== Waiting Room ===== */
+.waiting-room {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.game-code-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.game-code-label {
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--clr-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.game-code {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: var(--clr-accent);
+  background: var(--clr-accent-light);
+  padding: 8px 20px;
+  border-radius: 8px;
+}
+
+.btn-copy {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+.btn-copy:hover {
+  opacity: 1;
+}
+
+.teams-display {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.team-column {
+  flex: 1;
+}
+
+.team-heading {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 12px;
+  color: var(--clr-text);
+}
+
+.team-vs {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--clr-text-muted);
+  padding-top: 48px;
+}
+
+.team-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.player-slot {
+  padding: 12px 16px;
+  border: 2px solid var(--clr-border);
+  border-radius: 8px;
+  background: var(--clr-surface);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+}
+
+.player-slot.empty {
+  border-style: dashed;
+}
+
+.slot-placeholder {
+  color: var(--clr-text-muted);
+  font-style: italic;
+}
+
+.slot-avatar {
+  font-size: 1.3rem;
+}
+
+.slot-name {
+  font-family: var(--font-heading);
+  font-weight: 600;
+}
+
+.slot-host-badge {
+  font-size: 0.7rem;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  color: var(--clr-accent);
+  background: var(--clr-accent-light);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: auto;
+}
+
+.host-controls {
+  text-align: center;
+}
+
+.host-hint {
+  font-size: 0.9rem;
+  color: var(--clr-text-muted);
+  margin-top: 8px;
+}
+
+.guest-waiting {
+  text-align: center;
+  color: var(--clr-text-muted);
+}
+
+.loading-dots::after {
+  content: '';
+  animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+  0% { content: ''; }
+  25% { content: '.'; }
+  50% { content: '..'; }
+  75% { content: '...'; }
+}
+
+/* ===== Game Table ===== */
+.game-table {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - var(--nav-height));
+  background: var(--clr-bg);
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "stone  partner stone2"
+    "left   center  right"
+    "status self    caps";
+}
+
+/* ===== Stone Display ===== */
+.stone-display {
+  grid-area: stone / stone / stone / stone2;
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  padding: 12px 16px 8px;
+}
+
+.stone-team {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-heading);
+}
+
+.stone-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--clr-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.stone-count {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--clr-accent);
+  background: var(--clr-accent-light);
+  padding: 2px 12px;
+  border-radius: 6px;
+}
+
+/* ===== Player Positions ===== */
+.player-position {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+}
+
+.pos-top {
+  grid-area: partner;
+  justify-self: center;
+}
+
+.pos-left {
+  grid-area: left;
+  align-self: center;
+}
+
+.pos-right {
+  grid-area: right;
+  align-self: center;
+}
+
+.pos-bottom {
+  grid-area: self;
+  justify-self: center;
+  padding-bottom: 16px;
+}
+
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.player-avatar {
+  font-size: 1.2rem;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--clr-border);
+  border-radius: 50%;
+  background: var(--clr-surface);
+}
+
+.player-info .player-name {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.player-position.active-turn .player-info {
+  outline: 2px solid var(--clr-accent);
+  outline-offset: 4px;
+  border-radius: 20px;
+  padding: 2px 8px;
+}
+
+/* ===== Card Backs (other players) ===== */
+.player-cards-back {
+  display: flex;
+  gap: 2px;
+}
+
+.card-back {
+  width: 28px;
+  height: 40px;
+  background: var(--clr-accent);
+  border-radius: 4px;
+  border: 1px solid #8a3320;
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 3px,
+    rgba(255,255,255,0.1) 3px,
+    rgba(255,255,255,0.1) 4px
+  );
+}
+
+/* ===== Play Area (Centre) ===== */
+.play-area {
+  grid-area: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.trick-area {
+  position: relative;
+  width: 200px;
+  height: 200px;
+}
+
+.trick-card {
+  position: absolute;
+  width: 60px;
+  height: 84px;
+}
+
+.trick-top { top: 0; left: 50%; transform: translateX(-50%); }
+.trick-left { top: 50%; left: 0; transform: translateY(-50%); }
+.trick-right { top: 50%; right: 0; transform: translateY(-50%); }
+.trick-bottom { bottom: 0; left: 50%; transform: translateX(-50%); }
+
+/* ===== Card Rendering ===== */
+.card {
+  width: 60px;
+  height: 84px;
+  background: var(--clr-surface);
+  border: 2px solid var(--clr-border);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body);
+  cursor: default;
+  position: relative;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.card .card-rank {
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.card .card-suit {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.card.suit-h, .card.suit-d { color: #c0392b; }
+.card.suit-s, .card.suit-c { color: #1a1a1a; }
+
+.card.face-down {
+  background: var(--clr-accent);
+  border-color: #8a3320;
+  color: transparent;
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 3px,
+    rgba(255,255,255,0.1) 3px,
+    rgba(255,255,255,0.1) 4px
+  );
+}
+
+/* ===== Hand (your cards) ===== */
+.hand-container {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.hand-container .card {
+  cursor: pointer;
+}
+
+.hand-container .card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.hand-container .card.selected {
+  transform: translateY(-12px);
+  border-color: var(--clr-accent);
+  box-shadow: 0 4px 16px rgba(181, 67, 42, 0.3);
+}
+
+.hand-container .card.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.hand-container .card.disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* ===== Trump Indicator ===== */
+.trump-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.trump-label {
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--clr-text-muted);
+}
+
+.trump-card {
+  width: 44px;
+  height: 62px;
+  border-radius: 4px;
+}
+
+/* ===== Round Info ===== */
+.round-info {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  color: var(--clr-text-muted);
+  margin-top: 12px;
+}
+
+/* ===== Overlays ===== */
+.bidding-overlay,
+.trump-overlay,
+.preplay-overlay,
+.cutting-overlay,
+.result-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(250, 249, 246, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.bidding-panel,
+.trump-panel,
+.preplay-panel,
+.cutting-panel,
+.result-panel {
+  background: var(--clr-surface);
+  border: 2px solid var(--clr-border);
+  border-radius: 12px;
+  padding: 28px 32px;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+}
+
+.bidding-panel h3,
+.trump-panel h3,
+.preplay-panel h3,
+.cutting-panel h3 {
+  font-family: var(--font-heading);
+  font-size: 1.2rem;
+  margin-bottom: 16px;
+}
+
+.bid-info {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 12px;
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  color: var(--clr-text-muted);
+}
+
+.bid-status {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--clr-accent);
+}
+
+.bid-value-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.bid-value {
+  font-family: var(--font-heading);
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--clr-text);
+  min-width: 80px;
+}
+
+.bid-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.preplay-actions,
+.cutting-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+/* ===== Trump Card Options ===== */
+.trump-card-options {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.trump-card-options .card {
+  cursor: pointer;
+}
+
+.trump-card-options .card:hover {
+  transform: translateY(-4px);
+  border-color: var(--clr-accent);
+}
+
+/* ===== Caps ===== */
+.caps-container {
+  grid-area: caps;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 16px;
+}
+
+.btn-caps {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 10px 20px;
+  background: var(--clr-house);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-caps:hover {
+  background: #245530;
+}
+
+/* ===== Result Panel ===== */
+.result-panel h2 {
+  font-family: var(--font-heading);
+  font-size: 1.6rem;
+  margin-bottom: 12px;
+}
+
+.result-panel p {
+  margin-bottom: 16px;
+  color: var(--clr-text-muted);
+}
+
+.result-stone {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 20px;
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+}
+
+/* ===== Status Bar ===== */
+.status-bar {
+  grid-area: status;
+  padding: 8px 16px;
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  color: var(--clr-text-muted);
+  display: flex;
+  align-items: flex-end;
+}
+
+/* ===== Error View ===== */
+.error-container {
+  max-width: 400px;
+  margin: 80px auto;
+  padding: 32px;
+  text-align: center;
+}
+
+.error-container h2 {
+  font-family: var(--font-heading);
+  font-size: 1.4rem;
+  margin-bottom: 12px;
+  color: var(--clr-accent);
+}
+
+.error-container p {
+  margin-bottom: 20px;
+  color: var(--clr-text-muted);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 700px) {
+  .game-table {
+    grid-template-rows: auto auto 1fr auto auto;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "stone  stone"
+      "left   right"
+      "center center"
+      "self   self"
+      "status caps";
+  }
+
+  .pos-top {
+    display: none; /* partner info shown in simplified mode */
+  }
+
+  .card {
+    width: 48px;
+    height: 68px;
+  }
+
+  .card .card-rank { font-size: 0.9rem; }
+  .card .card-suit { font-size: 1.1rem; }
+
+  .trick-area {
+    width: 160px;
+    height: 160px;
+  }
+
+  .trick-card {
+    width: 48px;
+    height: 68px;
+  }
+
+  .lobby-container {
+    padding: 32px 16px 60px;
+  }
+
+  .avatar-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .avatar-btn {
+    width: 48px;
+    height: 48px;
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .card {
+    width: 40px;
+    height: 58px;
+  }
+
+  .card .card-rank { font-size: 0.8rem; }
+  .card .card-suit { font-size: 0.95rem; }
+
+  .hand-container {
+    gap: 2px;
+  }
+}

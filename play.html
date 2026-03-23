@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>304 — Play</title>
+  <meta name="description" content="Play 304 online with friends. Real-time multiplayer trick-taking card game.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/play.css">
+</head>
+<body>
+
+<header class="site-nav">
+  <div class="site-nav-inner">
+    <a href="./" class="site-nav-brand">304</a>
+    <nav class="site-nav-links">
+      <a href="./">Rules</a>
+      <a href="stats">Leaderboard</a>
+      <a href="play" class="active">Play</a>
+    </nav>
+  </div>
+</header>
+
+<div id="app">
+
+  <!-- ===== View: Lobby ===== -->
+  <div id="view-lobby" class="play-view">
+    <div class="lobby-container">
+      <h1 class="lobby-title">Play 304</h1>
+      <p class="lobby-subtitle">Host a game or join with a code</p>
+
+      <!-- Step 1: Host or Join -->
+      <div id="lobby-actions" class="lobby-actions">
+        <button id="btn-host" class="btn btn-primary btn-lg">Host Game</button>
+        <div class="lobby-divider"><span>or</span></div>
+        <div class="join-form">
+          <input type="text" id="join-code" class="input-code" maxlength="4" placeholder="ABCD" autocomplete="off" spellcheck="false">
+          <button id="btn-join" class="btn btn-secondary">Join</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Player Setup -->
+      <div id="player-setup" class="player-setup" hidden>
+        <h2>Choose your identity</h2>
+        <div class="setup-field">
+          <label for="player-name">Name</label>
+          <input type="text" id="player-name" class="input-name" maxlength="12" placeholder="Your name" autocomplete="off">
+        </div>
+        <div class="setup-field">
+          <label>Avatar</label>
+          <div class="avatar-grid" id="avatar-grid">
+            <button class="avatar-btn selected" data-avatar="spade" title="Spade">♠</button>
+            <button class="avatar-btn" data-avatar="heart" title="Heart">♥</button>
+            <button class="avatar-btn" data-avatar="diamond" title="Diamond">♦</button>
+            <button class="avatar-btn" data-avatar="club" title="Club">♣</button>
+            <button class="avatar-btn" data-avatar="crown" title="Crown">♚</button>
+            <button class="avatar-btn" data-avatar="knight" title="Knight">♞</button>
+            <button class="avatar-btn" data-avatar="tower" title="Tower">♜</button>
+            <button class="avatar-btn" data-avatar="star" title="Star">★</button>
+          </div>
+        </div>
+        <div class="setup-field">
+          <label>Team</label>
+          <div class="team-select">
+            <button class="team-btn selected" data-team="teamA">Team A</button>
+            <button class="team-btn" data-team="teamB">Team B</button>
+          </div>
+        </div>
+        <button id="btn-ready" class="btn btn-primary">Ready</button>
+      </div>
+
+      <!-- Step 3: Waiting Room -->
+      <div id="waiting-room" class="waiting-room" hidden>
+        <div class="game-code-display">
+          <span class="game-code-label">Game Code</span>
+          <span class="game-code" id="display-code">ABCD</span>
+          <button class="btn-copy" id="btn-copy-code" title="Copy code">📋</button>
+        </div>
+
+        <div class="teams-display">
+          <div class="team-column" data-team="teamA">
+            <h3 class="team-heading">Team A</h3>
+            <div class="team-slots" id="team-a-slots">
+              <div class="player-slot empty"><span class="slot-placeholder">Waiting...</span></div>
+              <div class="player-slot empty"><span class="slot-placeholder">Waiting...</span></div>
+            </div>
+          </div>
+          <div class="team-vs">vs</div>
+          <div class="team-column" data-team="teamB">
+            <h3 class="team-heading">Team B</h3>
+            <div class="team-slots" id="team-b-slots">
+              <div class="player-slot empty"><span class="slot-placeholder">Waiting...</span></div>
+              <div class="player-slot empty"><span class="slot-placeholder">Waiting...</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="host-controls" class="host-controls" hidden>
+          <button id="btn-start" class="btn btn-primary btn-lg" disabled>Start Game</button>
+          <p class="host-hint">Waiting for 4 players (2 per team)</p>
+        </div>
+        <div id="guest-waiting" class="guest-waiting" hidden>
+          <p>Waiting for host to start the game<span class="loading-dots"></span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== View: Game ===== -->
+  <div id="view-game" class="play-view" hidden>
+    <div class="game-table">
+
+      <!-- Stone display -->
+      <div class="stone-display">
+        <div class="stone-team" id="stone-team-a">
+          <span class="stone-label">Team A</span>
+          <span class="stone-count" id="stone-a">10</span>
+        </div>
+        <div class="stone-team" id="stone-team-b">
+          <span class="stone-label">Team B</span>
+          <span class="stone-count" id="stone-b">10</span>
+        </div>
+      </div>
+
+      <!-- Partner (top) -->
+      <div class="player-position pos-top" id="pos-partner">
+        <div class="player-info">
+          <span class="player-avatar" id="partner-avatar">♠</span>
+          <span class="player-name" id="partner-name">Partner</span>
+        </div>
+        <div class="player-cards-back" id="partner-cards"></div>
+      </div>
+
+      <!-- Left opponent -->
+      <div class="player-position pos-left" id="pos-left">
+        <div class="player-info">
+          <span class="player-avatar" id="left-avatar">♥</span>
+          <span class="player-name" id="left-name">Left</span>
+        </div>
+        <div class="player-cards-back" id="left-cards"></div>
+      </div>
+
+      <!-- Right opponent -->
+      <div class="player-position pos-right" id="pos-right">
+        <div class="player-info">
+          <span class="player-avatar" id="right-avatar">♦</span>
+          <span class="player-name" id="right-name">Right</span>
+        </div>
+        <div class="player-cards-back" id="right-cards"></div>
+      </div>
+
+      <!-- Centre play area -->
+      <div class="play-area" id="play-area">
+        <!-- Trump card indicator -->
+        <div class="trump-indicator" id="trump-indicator" hidden>
+          <div class="trump-card face-down" id="trump-card-display"></div>
+          <span class="trump-label" id="trump-label">Trump</span>
+        </div>
+
+        <!-- Current trick cards -->
+        <div class="trick-area" id="trick-area">
+          <div class="trick-card trick-top" id="trick-partner"></div>
+          <div class="trick-card trick-left" id="trick-left"></div>
+          <div class="trick-card trick-right" id="trick-right"></div>
+          <div class="trick-card trick-bottom" id="trick-self"></div>
+        </div>
+
+        <!-- Round info -->
+        <div class="round-info" id="round-info" hidden>
+          <span id="round-number">Round 1</span>
+          <span id="bid-display"></span>
+        </div>
+      </div>
+
+      <!-- Your hand (bottom) -->
+      <div class="player-position pos-bottom" id="pos-self">
+        <div class="player-info">
+          <span class="player-avatar" id="self-avatar">♠</span>
+          <span class="player-name" id="self-name">You</span>
+        </div>
+        <div class="hand-container" id="hand-container"></div>
+      </div>
+
+      <!-- Bidding overlay -->
+      <div class="bidding-overlay" id="bidding-overlay" hidden>
+        <div class="bidding-panel">
+          <h3 id="bidding-title">4-Card Betting</h3>
+          <div class="bid-info">
+            <span>Current bid: <strong id="current-bid">None</strong></span>
+            <span>By: <strong id="current-bidder">—</strong></span>
+          </div>
+          <div class="bid-status" id="bid-status">Your turn to bid</div>
+          <div class="bid-controls" id="bid-controls" hidden>
+            <div class="bid-value-control">
+              <button class="btn btn-sm" id="bid-minus">−</button>
+              <span class="bid-value" id="bid-value">160</span>
+              <button class="btn btn-sm" id="bid-plus">+</button>
+            </div>
+            <div class="bid-actions">
+              <button class="btn btn-primary" id="btn-bet">Bet</button>
+              <button class="btn btn-secondary" id="btn-pass">Pass</button>
+              <button class="btn btn-secondary" id="btn-partner">Partner</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trump selection overlay -->
+      <div class="trump-overlay" id="trump-overlay" hidden>
+        <div class="trump-panel">
+          <h3>Select Trump Card</h3>
+          <p>Choose a card to place face down as trump</p>
+          <div class="trump-card-options" id="trump-card-options"></div>
+        </div>
+      </div>
+
+      <!-- Pre-play overlay (Open/Closed Trump choice) -->
+      <div class="preplay-overlay" id="preplay-overlay" hidden>
+        <div class="preplay-panel">
+          <h3>Declare Trump Type</h3>
+          <div class="preplay-actions">
+            <button class="btn btn-primary" id="btn-open-trump">Open Trump</button>
+            <button class="btn btn-secondary" id="btn-closed-trump">Closed Trump</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cutting overlay -->
+      <div class="cutting-overlay" id="cutting-overlay" hidden>
+        <div class="cutting-panel">
+          <h3>Cut the deck?</h3>
+          <p>You may cut or decline</p>
+          <div class="cutting-actions">
+            <button class="btn btn-primary" id="btn-cut">Cut</button>
+            <button class="btn btn-secondary" id="btn-decline-cut">Decline</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Caps button -->
+      <div class="caps-container" id="caps-container" hidden>
+        <button class="btn btn-caps" id="btn-caps">Call Caps</button>
+      </div>
+
+      <!-- Game result overlay -->
+      <div class="result-overlay" id="result-overlay" hidden>
+        <div class="result-panel">
+          <h2 id="result-title">Game Over</h2>
+          <p id="result-description"></p>
+          <div class="result-stone" id="result-stone"></div>
+          <button class="btn btn-primary" id="btn-next-game">Next Game</button>
+          <div id="match-complete" hidden>
+            <h2 id="match-winner"></h2>
+            <button class="btn btn-secondary" id="btn-new-match">New Match</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status bar -->
+      <div class="status-bar" id="status-bar">
+        <span id="status-message">Connecting...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== View: Error ===== -->
+  <div id="view-error" class="play-view" hidden>
+    <div class="error-container">
+      <h2>Connection Error</h2>
+      <p id="error-message">Something went wrong.</p>
+      <button class="btn btn-primary" id="btn-retry">Try Again</button>
+    </div>
+  </div>
+
+</div>
+
+<script type="module" src="js/play/app.js"></script>
+</body>
+</html>
