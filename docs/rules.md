@@ -233,7 +233,9 @@ At the end of each round, if any cards were played face down, the Trumper inspec
 
 ### Exhausted Trumps
 
-If the Trumper has priority, leads with a Trump card, and no other player can respond with the Trump suit (meaning the Trumper holds all remaining Trump), the Trumper must continue leading all remaining Trump from their hand before leading any other suit. This applies even if the Trump card is still face down. In that case, the Trumper plays all Trump from their hand first; the face-down Trump card remains subject to its normal rules — it may still be played face down to cut a later round if the Trumper cannot follow the led suit, or it is played in the 8th round as the Trumper's last card.
+If the Trumper has priority, leads with a Trump card, and no other player can respond with the Trump suit (meaning the Trumper holds all remaining Trump), the Trumper must continue leading all remaining Trump from their hand before leading any other suit.
+
+**[House Rule]** This rule only applies once the Trump suit has been revealed (i.e. in Open Trump games, or after the Trump card has been flipped in a Closed Trump game). If the Trump card is still face down, Exhausted Trumps does not apply — the Trumper is free to lead any suit. In standard rules, Exhausted Trumps applies even when the Trump card is still face down.
 
 ### Spoilt Trumps
 
@@ -384,6 +386,7 @@ The following are punishable by precedent in our home games. This list is non-ex
 Some behaviours are so egregious that the offending team **automatically loses the game** — regardless of the points collected — and receives 1 additional stone on top of the normal loss for their bid:
 
 - Playing a non-led suit when you hold a card of the led suit (i.e. reneging/revoking).
+- Claiming balance (asserting that the remaining points are sufficient to meet the threshold) when your team could theoretically still lose another round.
 
 This list is non-exhaustive.
 
@@ -453,7 +456,7 @@ Terms are ordered to minimise forward references. Terms in **bold** within defin
 
 **Absolute Hand:** **[House Rule]** A hand so strong that a player is guaranteed to win all 8 rounds before play begins. Triggers a redeal with no stone exchanged.
 
-**Exhausted Trumps:** A situation where the Trumper holds all remaining cards of the Trump Suit. If the Trumper has **priority** and leads Trump, they must lead all remaining Trump from their hand before playing any other suit.
+**Exhausted Trumps:** A situation where the Trumper holds all remaining cards of the Trump Suit. If the Trumper has **priority** and leads Trump, they must lead all remaining Trump from their hand before playing any other suit. **[House Rule]** Only applies once the Trump suit has been revealed; does not apply while the Trump card is still face down.
 
 **Spoilt Trumps:** When the opposition holds zero Trump cards between them. Triggers a void game with no stone exchanged, provided it is declared before the last card is played.
 
