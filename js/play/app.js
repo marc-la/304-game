@@ -23,12 +23,12 @@ import * as firebaseActions from "./firebase-actions.js";
 // IMPORTANT: Replace these values with your actual Firebase project config.
 // You can find these in Firebase Console > Project Settings > General > Your apps.
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID",
+  apiKey: "AIzaSyCNV83CkF79_N9k7xpMX656XBNnNAvsqHY",
+  authDomain: "game-6e76c.firebaseapp.com",
+  projectId: "game-6e76c",
+  storageBucket: "game-6e76c.firebasestorage.app",
+  messagingSenderId: "855694500663",
+  appId: "1:855694500663:web:9ee2a44926e5b5a88730b2"
 };
 // ============================================================
 
