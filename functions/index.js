@@ -17,90 +17,92 @@ const play = require("./src/play");
 const caps = require("./src/caps");
 const scoring = require("./src/scoring");
 
+const OPTS = { region: "australia-southeast1", cors: true };
+
 // --- Lobby Functions ---
 
-exports.createGame = onCall(async (request) => {
+exports.createGame = onCall(OPTS, async (request) => {
   return lobby.createGame(request.data, { auth: request.auth });
 });
 
-exports.joinGame = onCall(async (request) => {
+exports.joinGame = onCall(OPTS, async (request) => {
   return lobby.joinGame(request.data, { auth: request.auth });
 });
 
-exports.leaveGame = onCall(async (request) => {
+exports.leaveGame = onCall(OPTS, async (request) => {
   return lobby.leaveGame(request.data, { auth: request.auth });
 });
 
-exports.updateTeam = onCall(async (request) => {
+exports.updateTeam = onCall(OPTS, async (request) => {
   return lobby.updateTeam(request.data, { auth: request.auth });
 });
 
-exports.startGame = onCall(async (request) => {
+exports.startGame = onCall(OPTS, async (request) => {
   return lobby.startGame(request.data, { auth: request.auth });
 });
 
-exports.handleCut = onCall(async (request) => {
+exports.handleCut = onCall(OPTS, async (request) => {
   return lobby.handleCut(request.data, { auth: request.auth });
 });
 
-exports.heartbeat = onCall(async (request) => {
+exports.heartbeat = onCall(OPTS, async (request) => {
   return lobby.heartbeat(request.data, { auth: request.auth });
 });
 
-exports.reconnect = onCall(async (request) => {
+exports.reconnect = onCall(OPTS, async (request) => {
   return lobby.reconnect(request.data, { auth: request.auth });
 });
 
 // --- Bidding Functions ---
 
-exports.placeBid = onCall(async (request) => {
+exports.placeBid = onCall(OPTS, async (request) => {
   return bidding.placeBid(request.data, { auth: request.auth });
 });
 
-exports.callReshuffle = onCall(async (request) => {
+exports.callReshuffle = onCall(OPTS, async (request) => {
   return bidding.callReshuffle(request.data, { auth: request.auth });
 });
 
-exports.callRedeal8 = onCall(async (request) => {
+exports.callRedeal8 = onCall(OPTS, async (request) => {
   return bidding.callRedeal8(request.data, { auth: request.auth });
 });
 
 // --- Trump Functions ---
 
-exports.selectTrump = onCall(async (request) => {
+exports.selectTrump = onCall(OPTS, async (request) => {
   return trump.selectTrump(request.data, { auth: request.auth });
 });
 
-exports.declareOpenTrump = onCall(async (request) => {
+exports.declareOpenTrump = onCall(OPTS, async (request) => {
   return trump.declareOpenTrump(request.data, { auth: request.auth });
 });
 
-exports.proceedClosedTrump = onCall(async (request) => {
+exports.proceedClosedTrump = onCall(OPTS, async (request) => {
   return trump.proceedClosedTrump(request.data, { auth: request.auth });
 });
 
 // --- Play Functions ---
 
-exports.playCard = onCall(async (request) => {
+exports.playCard = onCall(OPTS, async (request) => {
   return play.playCard(request.data, { auth: request.auth });
 });
 
-exports.callSpoiltTrumps = onCall(async (request) => {
+exports.callSpoiltTrumps = onCall(OPTS, async (request) => {
   return play.callSpoiltTrumps(request.data, { auth: request.auth });
 });
 
-exports.callAbsoluteHand = onCall(async (request) => {
+exports.callAbsoluteHand = onCall(OPTS, async (request) => {
   return play.callAbsoluteHand(request.data, { auth: request.auth });
 });
 
 // --- Caps Functions ---
 
-exports.callCaps = onCall(async (request) => {
+exports.callCaps = onCall(OPTS, async (request) => {
   return caps.callCaps(request.data, { auth: request.auth });
 });
 
 // --- Scoring Functions ---
 
-exports.nextGame = onCall(async (request) => {
+exports.nextGame = onCall(OPTS, async (request) => {
   return scoring.nextGame(request.data, { auth: request.auth });
 });
