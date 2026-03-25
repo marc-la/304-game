@@ -7,21 +7,19 @@
  * Firebase SDK loaded via CDN ES modules.
  */
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-functions.js";
 
 import { setState, getState } from "./state.js";
-import { initLobby } from "./lobby.js";
+import { initLobby, tryReconnect } from "./lobby.js";
 import { startGameListener } from "./game.js";
 import * as firebaseActions from "./firebase-actions.js";
 
 // ============================================================
 // Firebase Configuration
 // ============================================================
-// IMPORTANT: Replace these values with your actual Firebase project config.
-// You can find these in Firebase Console > Project Settings > General > Your apps.
 const firebaseConfig = {
   apiKey: "AIzaSyCNV83CkF79_N9k7xpMX656XBNnNAvsqHY",
   authDomain: "game-6e76c.firebaseapp.com",
@@ -41,6 +39,9 @@ const functions = getFunctions(app, "australia-southeast1");
 // Initialise action wrappers
 firebaseActions.init(functions, httpsCallable);
 
+// Lobby heartbeat interval
+let lobbyHeartbeatInterval = null;
+
 // Anonymous auth
 signInAnonymously(auth).catch((err) => {
   console.error("Auth failed:", err);
@@ -57,32 +58,51 @@ onAuthStateChanged(auth, (user) => {
 /**
  * Initialise the app after auth.
  */
-function init() {
+async function init() {
   // Initialise lobby UI
   initLobby(db, doc, onSnapshot);
 
+  // Attempt reconnection from sessionStorage
+  await tryReconnect(db, doc, onSnapshot);
+
   // Listen for game start event from lobby
   window.addEventListener("game-started", () => {
-    const state = getState();
+    stopLobbyHeartbeat();
     startGameListener(db, doc, onSnapshot);
   });
 
-  // Handle page visibility for heartbeat / disconnect
+  // Start lobby heartbeat when lobby code is set
+  startLobbyHeartbeat();
+
+  // Handle page visibility — send heartbeat on return
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") {
-      // Could trigger disconnect notification
+    if (document.visibilityState === "visible") {
+      const state = getState();
+      if (state.lobbyCode) {
+        firebaseActions.heartbeat({ code: state.lobbyCode }).catch(() => {});
+      }
     }
   });
+}
 
-  // Handle page unload
-  window.addEventListener("beforeunload", () => {
+/**
+ * Start heartbeat for lobby presence.
+ */
+function startLobbyHeartbeat() {
+  stopLobbyHeartbeat();
+  lobbyHeartbeatInterval = setInterval(() => {
     const state = getState();
     if (state.lobbyCode) {
-      // Best-effort disconnect notification
-      // navigator.sendBeacon doesn't work with Cloud Functions
-      // The heartbeat timeout will handle this
+      firebaseActions.heartbeat({ code: state.lobbyCode }).catch(() => {});
     }
-  });
+  }, 30000);
+}
+
+function stopLobbyHeartbeat() {
+  if (lobbyHeartbeatInterval) {
+    clearInterval(lobbyHeartbeatInterval);
+    lobbyHeartbeatInterval = null;
+  }
 }
 
 function showError(message) {

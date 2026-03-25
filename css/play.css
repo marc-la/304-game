@@ -153,17 +153,10 @@
 }
 
 /* ===== Player Setup ===== */
-.player-setup {
-  max-width: 400px;
+/* ===== Lobby Room ===== */
+.lobby-room {
+  max-width: 480px;
   margin: 0 auto;
-  text-align: left;
-}
-
-.player-setup h2 {
-  font-family: var(--font-heading);
-  font-size: 1.4rem;
-  text-align: center;
-  margin-bottom: 24px;
 }
 
 .setup-field {
@@ -211,46 +204,7 @@
   background: var(--clr-accent-light);
 }
 
-/* ===== Team Select ===== */
-.team-select {
-  display: flex;
-  gap: 10px;
-}
-
-.team-btn {
-  flex: 1;
-  padding: 10px;
-  font-family: var(--font-heading);
-  font-weight: 600;
-  font-size: 0.95rem;
-  border: 2px solid var(--clr-border);
-  border-radius: 6px;
-  background: var(--clr-surface);
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-}
-
-.team-btn:hover {
-  border-color: var(--clr-accent);
-}
-
-.team-btn.selected {
-  border-color: var(--clr-accent);
-  background: var(--clr-accent-light);
-  color: var(--clr-accent);
-}
-
-.player-setup .btn-primary {
-  display: block;
-  width: 100%;
-  margin-top: 24px;
-}
-
-/* ===== Waiting Room ===== */
-.waiting-room {
-  max-width: 480px;
-  margin: 0 auto;
-}
+/* (Team selection is now handled via swap buttons on player cards) */
 
 .game-code-display {
   display: flex;
@@ -365,7 +319,6 @@
   background: var(--clr-accent-light);
   padding: 2px 8px;
   border-radius: 4px;
-  margin-left: auto;
 }
 
 .host-controls {
@@ -393,6 +346,217 @@
   25% { content: '.'; }
   50% { content: '..'; }
   75% { content: '...'; }
+}
+
+/* ===== Lobby Mode Indicator ===== */
+.lobby-mode {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.lobby-mode-label {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--clr-accent);
+}
+
+.btn-ghost {
+  background: none;
+  border: 1px solid var(--clr-border);
+  color: var(--clr-text-muted);
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.btn-ghost:hover {
+  border-color: var(--clr-accent);
+  color: var(--clr-accent);
+}
+
+/* ===== Connection Status ===== */
+.connection-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ccc;
+  flex-shrink: 0;
+}
+
+.connection-dot.connected {
+  background: #2e6b3e;
+}
+
+.connection-dot.disconnected {
+  background: #b5432a;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ===== Player Slot Enhancements ===== */
+.player-slot {
+  position: relative;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s ease;
+}
+
+.slot-you-badge {
+  font-size: 0.7rem;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  color: var(--clr-text-muted);
+  background: var(--clr-bg);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.slot-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+
+.slot-edit-btn,
+.slot-swap-btn,
+.slot-kick-btn {
+  background: none;
+  border: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: var(--clr-text-muted);
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.slot-edit-btn:hover,
+.slot-swap-btn:hover {
+  color: var(--clr-accent);
+  background: var(--clr-accent-light);
+}
+
+.slot-kick-btn:hover {
+  color: #c0392b;
+  background: #fde8e8;
+}
+
+/* ===== Team Overflow (unbalanced) ===== */
+.team-slots.team-overflow .player-slot:not(.empty) {
+  border-color: var(--clr-accent);
+  background: #fdf0ed;
+}
+
+/* ===== Team Switch Animation ===== */
+.player-slot.switching-out {
+  animation: switchOut 0.25s ease-in forwards;
+}
+
+.player-slot.switching-in {
+  animation: switchIn 0.25s ease-out;
+}
+
+@keyframes switchOut {
+  to { opacity: 0; transform: translateX(30px); }
+}
+
+@keyframes switchIn {
+  from { opacity: 0; transform: translateX(-30px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ===== Edit Panel ===== */
+.edit-panel {
+  max-width: 400px;
+  margin: 0 auto 24px;
+  padding: 20px;
+  background: var(--clr-surface);
+  border: 2px solid var(--clr-border);
+  border-radius: 12px;
+  text-align: left;
+  animation: slideDown 0.2s ease-out;
+}
+
+.edit-panel[hidden] {
+  display: none;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.edit-panel h3 {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.edit-panel .btn-primary {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+}
+
+.field-hint {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--clr-accent);
+  margin-top: 4px;
+  min-height: 1.2em;
+}
+
+/* ===== Taken Avatars ===== */
+.avatar-btn.taken {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+  position: relative;
+}
+
+/* ===== Loading State ===== */
+.btn.loading {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* ===== Toast Notifications ===== */
+.lobby-toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--clr-surface);
+  border: 2px solid var(--clr-accent);
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  color: var(--clr-accent);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  animation: toastIn 0.2s ease-out, toastOut 0.2s ease-in 2.8s forwards;
+  max-width: 90vw;
+  text-align: center;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+@keyframes toastOut {
+  to { opacity: 0; transform: translateX(-50%) translateY(10px); }
 }
 
 /* ===== Game Table ===== */
@@ -678,6 +842,14 @@
   align-items: center;
   justify-content: center;
   z-index: 100;
+}
+
+.bidding-overlay[hidden],
+.trump-overlay[hidden],
+.preplay-overlay[hidden],
+.cutting-overlay[hidden],
+.result-overlay[hidden] {
+  display: none;
 }
 
 .bidding-panel,

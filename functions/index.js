@@ -17,7 +17,7 @@ const play = require("./src/play");
 const caps = require("./src/caps");
 const scoring = require("./src/scoring");
 
-const OPTS = { region: "australia-southeast1", cors: true };
+const OPTS = { region: "australia-southeast1" };
 
 // --- Lobby Functions ---
 
@@ -35,6 +35,14 @@ exports.leaveGame = onCall(OPTS, async (request) => {
 
 exports.updateTeam = onCall(OPTS, async (request) => {
   return lobby.updateTeam(request.data, { auth: request.auth });
+});
+
+exports.updateProfile = onCall(OPTS, async (request) => {
+  return lobby.updateProfile(request.data, { auth: request.auth });
+});
+
+exports.kickPlayer = onCall(OPTS, async (request) => {
+  return lobby.kickPlayer(request.data, { auth: request.auth });
 });
 
 exports.startGame = onCall(OPTS, async (request) => {

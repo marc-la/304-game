@@ -12,7 +12,9 @@ const {
   SEATS,
   INITIAL_STONE,
   PHASE,
+  ALL_AVATARS,
 } = require("./constants");
+const { generateDefaultName } = require("./names");
 const { getDealOrder, minimalShuffle, createPack, dealCards, getCutterSeat } = require("./deck");
 const { generateAllPlayerViews } = require("./views");
 
@@ -32,19 +34,17 @@ function generateCode() {
 
 /**
  * Create a new game lobby.
+ * Server assigns a default name and random avatar.
  *
- * @param {Object} data - { name: string, avatar: string }
+ * @param {Object} data - {} (no required params)
  * @param {Object} context - Firebase callable context
  */
 async function createGame(data, context) {
   const uid = context.auth?.uid;
   if (!uid) throw new Error("Authentication required.");
 
-  const name = (data.name || "").trim().slice(0, MAX_NAME_LENGTH);
-  const avatar = data.avatar || "spade";
-  const preferredTeam = data.team || "teamA";
-
-  if (!name) throw new Error("Name is required.");
+  const name = generateDefaultName();
+  const avatar = ALL_AVATARS[Math.floor(Math.random() * ALL_AVATARS.length)];
 
   // Generate a unique code
   let code;
@@ -58,7 +58,6 @@ async function createGame(data, context) {
 
   if (attempts >= 10) throw new Error("Could not generate a unique code. Try again.");
 
-  // Assign the host to the first seat
   const firstSeat = "north";
 
   const lobbyData = {
@@ -71,7 +70,7 @@ async function createGame(data, context) {
         uid,
         name,
         avatar,
-        team: preferredTeam,
+        team: "teamA",
         connected: true,
         lastSeen: FieldValue.serverTimestamp(),
       },
@@ -94,8 +93,9 @@ async function createGame(data, context) {
 
 /**
  * Join an existing game lobby.
+ * Server assigns a unique default name, available avatar, and balanced team.
  *
- * @param {Object} data - { code: string, name: string, avatar: string, team: string }
+ * @param {Object} data - { code: string }
  * @param {Object} context - Firebase callable context
  */
 async function joinGame(data, context) {
@@ -103,11 +103,6 @@ async function joinGame(data, context) {
   if (!uid) throw new Error("Authentication required.");
 
   const code = (data.code || "").toUpperCase().trim();
-  const name = (data.name || "").trim().slice(0, MAX_NAME_LENGTH);
-  const avatar = data.avatar || "spade";
-  const preferredTeam = data.team || "teamA";
-
-  if (!name) throw new Error("Name is required.");
   if (!code || code.length !== CODE_LENGTH) throw new Error("Invalid game code.");
 
   const lobbyRef = db().collection("lobbies").doc(code);
@@ -130,11 +125,39 @@ async function joinGame(data, context) {
     const emptySeat = SEATS.find((s) => lobby.seats[s] === null);
     if (!emptySeat) throw new Error("Game is full.");
 
+    // Collect taken names and avatars
+    const takenNames = [];
+    const takenAvatars = [];
+    let teamACount = 0;
+    let teamBCount = 0;
+    for (const s of SEATS) {
+      if (lobby.seats[s]) {
+        takenNames.push(lobby.seats[s].name.toLowerCase());
+        takenAvatars.push(lobby.seats[s].avatar);
+        if (lobby.seats[s].team === "teamA") teamACount++;
+        else teamBCount++;
+      }
+    }
+
+    // Generate a unique name
+    let name = generateDefaultName();
+    let nameAttempts = 0;
+    while (takenNames.includes(name.toLowerCase()) && nameAttempts < 20) {
+      name = generateDefaultName();
+      nameAttempts++;
+    }
+
+    // Pick an available avatar
+    const avatar = ALL_AVATARS.find((a) => !takenAvatars.includes(a)) || "spade";
+
+    // Auto-balance team
+    const team = teamACount <= teamBCount ? "teamA" : "teamB";
+
     lobby.seats[emptySeat] = {
       uid,
       name,
       avatar,
-      team: preferredTeam,
+      team,
       connected: true,
       lastSeen: FieldValue.serverTimestamp(),
     };
@@ -194,7 +217,8 @@ async function leaveGame(data, context) {
 }
 
 /**
- * Update team assignment for a player (host only).
+ * Update team assignment for a player.
+ * Players can switch their own team. Host can switch anyone.
  *
  * @param {Object} data - { code: string, targetSeat: string, newTeam: string }
  * @param {Object} context - Firebase callable context
@@ -216,11 +240,110 @@ async function updateTeam(data, context) {
     if (!lobbyDoc.exists) throw new Error("Game not found.");
 
     const lobby = lobbyDoc.data();
-    if (lobby.hostUid !== uid) throw new Error("Only the host can change teams.");
     if (lobby.status !== "waiting") throw new Error("Game has already started.");
     if (!lobby.seats[targetSeat]) throw new Error("No player in that seat.");
 
+    // Allow self-switch or host-switch
+    const callerSeat = SEATS.find((s) => lobby.seats[s] && lobby.seats[s].uid === uid);
+    if (callerSeat !== targetSeat && lobby.hostUid !== uid) {
+      throw new Error("Only the host can change other players' teams.");
+    }
+
     lobby.seats[targetSeat].team = newTeam;
+    transaction.update(lobbyRef, { seats: lobby.seats });
+  });
+
+  return { success: true };
+}
+
+/**
+ * Kick a player from the lobby (host only).
+ *
+ * @param {Object} data - { code: string, targetSeat: string }
+ * @param {Object} context - Firebase callable context
+ */
+async function kickPlayer(data, context) {
+  const uid = context.auth?.uid;
+  if (!uid) throw new Error("Authentication required.");
+
+  const code = (data.code || "").toUpperCase().trim();
+  const { targetSeat } = data;
+
+  if (!SEATS.includes(targetSeat)) throw new Error("Invalid seat.");
+
+  const lobbyRef = db().collection("lobbies").doc(code);
+
+  await db().runTransaction(async (transaction) => {
+    const lobbyDoc = await transaction.get(lobbyRef);
+    if (!lobbyDoc.exists) throw new Error("Game not found.");
+
+    const lobby = lobbyDoc.data();
+    if (lobby.hostUid !== uid) throw new Error("Only the host can kick players.");
+    if (lobby.status !== "waiting") throw new Error("Game has already started.");
+    if (!lobby.seats[targetSeat]) throw new Error("No player in that seat.");
+    if (lobby.seats[targetSeat].uid === uid) throw new Error("You cannot kick yourself.");
+
+    lobby.seats[targetSeat] = null;
+    transaction.update(lobbyRef, { seats: lobby.seats });
+  });
+
+  return { success: true };
+}
+
+/**
+ * Update a player's name and/or avatar within the lobby.
+ * Enforces uniqueness for both name and avatar.
+ *
+ * @param {Object} data - { code: string, name?: string, avatar?: string }
+ * @param {Object} context - Firebase callable context
+ */
+async function updateProfile(data, context) {
+  const uid = context.auth?.uid;
+  if (!uid) throw new Error("Authentication required.");
+
+  const code = (data.code || "").toUpperCase().trim();
+  const lobbyRef = db().collection("lobbies").doc(code);
+
+  await db().runTransaction(async (transaction) => {
+    const lobbyDoc = await transaction.get(lobbyRef);
+    if (!lobbyDoc.exists) throw new Error("Game not found.");
+
+    const lobby = lobbyDoc.data();
+    if (lobby.status !== "waiting") throw new Error("Game has already started.");
+
+    // Find caller's seat
+    const callerSeat = SEATS.find((s) => lobby.seats[s] && lobby.seats[s].uid === uid);
+    if (!callerSeat) throw new Error("You are not in this lobby.");
+
+    // Collect other players' names and avatars
+    const otherNames = [];
+    const otherAvatars = [];
+    for (const s of SEATS) {
+      if (s !== callerSeat && lobby.seats[s]) {
+        otherNames.push(lobby.seats[s].name.toLowerCase());
+        otherAvatars.push(lobby.seats[s].avatar);
+      }
+    }
+
+    // Update name if provided
+    if (data.name !== undefined) {
+      const newName = (data.name || "").trim().slice(0, MAX_NAME_LENGTH);
+      if (!newName) throw new Error("Name cannot be empty.");
+      if (otherNames.includes(newName.toLowerCase())) {
+        throw new Error("That name is already taken.");
+      }
+      lobby.seats[callerSeat].name = newName;
+    }
+
+    // Update avatar if provided
+    if (data.avatar !== undefined) {
+      if (!ALL_AVATARS.includes(data.avatar)) throw new Error("Invalid avatar.");
+      if (otherAvatars.includes(data.avatar)) {
+        throw new Error("That avatar is already taken.");
+      }
+      lobby.seats[callerSeat].avatar = data.avatar;
+    }
+
     transaction.update(lobbyRef, { seats: lobby.seats });
   });
 
@@ -509,6 +632,8 @@ module.exports = {
   joinGame,
   leaveGame,
   updateTeam,
+  updateProfile,
+  kickPlayer,
   startGame,
   handleCut,
   heartbeat,

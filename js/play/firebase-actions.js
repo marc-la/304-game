@@ -29,6 +29,8 @@ export const createGame = (data) => call("createGame", data);
 export const joinGame = (data) => call("joinGame", data);
 export const leaveGame = (data) => call("leaveGame", data);
 export const updateTeam = (data) => call("updateTeam", data);
+export const updateProfile = (data) => call("updateProfile", data);
+export const kickPlayer = (data) => call("kickPlayer", data);
 export const startGame = (data) => call("startGame", data);
 export const handleCut = (data) => call("handleCut", data);
 export const heartbeat = (data) => call("heartbeat", data);

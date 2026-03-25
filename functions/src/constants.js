@@ -126,6 +126,7 @@ const CODE_LENGTH = 4;
 const MAX_NAME_LENGTH = 12;
 const HEARTBEAT_INTERVAL_MS = 30000;
 const DISCONNECT_TIMEOUT_MS = 120000;
+const ALL_AVATARS = ["spade", "heart", "diamond", "club", "crown", "knight", "tower", "star"];
 
 module.exports = {
   SUITS,
@@ -156,4 +157,5 @@ module.exports = {
   MAX_NAME_LENGTH,
   HEARTBEAT_INTERVAL_MS,
   DISCONNECT_TIMEOUT_MS,
+  ALL_AVATARS,
 };

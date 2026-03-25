@@ -42,65 +42,53 @@
         </div>
       </div>
 
-      <!-- Step 2: Player Setup -->
-      <div id="player-setup" class="player-setup" hidden>
-        <h2>Choose your identity</h2>
-        <div class="setup-field">
-          <label for="player-name">Name</label>
-          <input type="text" id="player-name" class="input-name" maxlength="12" placeholder="Your name" autocomplete="off">
+      <!-- Step 2: Lobby Room (replaces player-setup + waiting-room) -->
+      <div id="lobby-room" class="lobby-room" hidden>
+        <!-- Mode indicator -->
+        <div class="lobby-mode">
+          <span class="lobby-mode-label" id="lobby-mode-label">Hosting</span>
+          <button class="btn btn-ghost btn-sm" id="btn-leave">Leave</button>
         </div>
-        <div class="setup-field">
-          <label>Avatar</label>
-          <div class="avatar-grid" id="avatar-grid">
-            <button class="avatar-btn selected" data-avatar="spade" title="Spade">♠</button>
-            <button class="avatar-btn" data-avatar="heart" title="Heart">♥</button>
-            <button class="avatar-btn" data-avatar="diamond" title="Diamond">♦</button>
-            <button class="avatar-btn" data-avatar="club" title="Club">♣</button>
-            <button class="avatar-btn" data-avatar="crown" title="Crown">♚</button>
-            <button class="avatar-btn" data-avatar="knight" title="Knight">♞</button>
-            <button class="avatar-btn" data-avatar="tower" title="Tower">♜</button>
-            <button class="avatar-btn" data-avatar="star" title="Star">★</button>
-          </div>
-        </div>
-        <div class="setup-field">
-          <label>Team</label>
-          <div class="team-select">
-            <button class="team-btn selected" data-team="teamA">Team A</button>
-            <button class="team-btn" data-team="teamB">Team B</button>
-          </div>
-        </div>
-        <button id="btn-ready" class="btn btn-primary">Ready</button>
-      </div>
 
-      <!-- Step 3: Waiting Room -->
-      <div id="waiting-room" class="waiting-room" hidden>
+        <!-- Game code display -->
         <div class="game-code-display">
           <span class="game-code-label">Game Code</span>
           <span class="game-code" id="display-code">ABCD</span>
           <button class="btn-copy" id="btn-copy-code" title="Copy code">📋</button>
         </div>
 
+        <!-- Teams display -->
         <div class="teams-display">
           <div class="team-column" data-team="teamA">
             <h3 class="team-heading">Team A</h3>
-            <div class="team-slots" id="team-a-slots">
-              <div class="player-slot empty"><span class="slot-placeholder">Waiting...</span></div>
-              <div class="player-slot empty"><span class="slot-placeholder">Waiting...</span></div>
-            </div>
+            <div class="team-slots" id="team-a-slots"></div>
           </div>
           <div class="team-vs">vs</div>
           <div class="team-column" data-team="teamB">
             <h3 class="team-heading">Team B</h3>
-            <div class="team-slots" id="team-b-slots">
-              <div class="player-slot empty"><span class="slot-placeholder">Waiting...</span></div>
-              <div class="player-slot empty"><span class="slot-placeholder">Waiting...</span></div>
-            </div>
+            <div class="team-slots" id="team-b-slots"></div>
           </div>
         </div>
 
+        <!-- Inline edit panel -->
+        <div id="edit-panel" class="edit-panel" hidden>
+          <h3>Customize</h3>
+          <div class="setup-field">
+            <label for="player-name">Name</label>
+            <input type="text" id="player-name" class="input-name" maxlength="12" placeholder="Your name" autocomplete="off">
+            <span class="field-hint" id="name-hint"></span>
+          </div>
+          <div class="setup-field">
+            <label>Avatar</label>
+            <div class="avatar-grid" id="avatar-grid"></div>
+          </div>
+          <button id="btn-save-profile" class="btn btn-primary">Done</button>
+        </div>
+
+        <!-- Host/guest controls -->
         <div id="host-controls" class="host-controls" hidden>
           <button id="btn-start" class="btn btn-primary btn-lg" disabled>Start Game</button>
-          <p class="host-hint">Waiting for 4 players (2 per team)</p>
+          <p id="host-hint" class="host-hint">Waiting for 4 players (2 per team)</p>
         </div>
         <div id="guest-waiting" class="guest-waiting" hidden>
           <p>Waiting for host to start the game<span class="loading-dots"></span></p>

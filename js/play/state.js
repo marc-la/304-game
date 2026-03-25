@@ -19,8 +19,8 @@ const state = {
   mySeat: null,
   isHost: false,
   playerName: "",
-  playerAvatar: "spade",
-  playerTeam: "teamA",
+  playerAvatar: null,
+  playerTeam: null,
   lobbyData: null,
 
   // Game
