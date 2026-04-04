@@ -1,7 +1,21 @@
 CLAUDE_CODE_CONTEXT.md
 .claude/
-node_modules/
-functions/node_modules/
-.firebase/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+*.egg
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Logs
 *.log
-.firebaserc
