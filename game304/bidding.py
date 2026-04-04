@@ -222,9 +222,8 @@ def place_bid(
     partner = partner_seat(seat)
     partner_state = bidding.player_state[partner]
 
-    if action == BidAction.PARTNER:
-        return _handle_partner(bidding, seat, player_state, partner, partner_state)
-
+    # Check for pending partner response first — the responding partner
+    # can only BET or PASS, not take other actions like PARTNER.
     if (
         bidding.pending_partner is not None
         and seat == bidding.pending_partner.partner_seat
@@ -232,6 +231,9 @@ def place_bid(
         return _handle_partner_response(
             state, bidding, seat, action, value, partner_state
         )
+
+    if action == BidAction.PARTNER:
+        return _handle_partner(bidding, seat, player_state, partner, partner_state)
 
     if action == BidAction.BET:
         return _handle_bet(state, bidding, seat, value, player_state)

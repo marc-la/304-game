@@ -389,13 +389,16 @@ def resolve_current_round(state: GameState) -> CompletedRound:
             trump_revealed_this_round = True
 
             # If the trump card itself was not played this round,
-            # it gets picked up and added to the trumper's hand
-            trump_card_played = any(
-                e.card == trump.trump_card for e in round_cards
-            )
-            if not trump_card_played:
-                state.hands[trump.trumper_seat].append(trump.trump_card)
-                trump.trump_card_in_hand = True
+            # it gets picked up and added to the trumper's hand.
+            # trump_card is None when the trumper played it face-down
+            # earlier in this round (validate_and_play clears it).
+            if trump.trump_card is not None:
+                trump_card_played = any(
+                    e.card == trump.trump_card for e in round_cards
+                )
+                if not trump_card_played:
+                    state.hands[trump.trumper_seat].append(trump.trump_card)
+                    trump.trump_card_in_hand = True
 
             # Mark revealed face-down trump cards
             for entry in round_cards:

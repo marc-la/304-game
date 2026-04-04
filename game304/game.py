@@ -711,7 +711,15 @@ class Match:
         Returns:
             ``True`` if the match is complete.
         """
-        return self._stone[Team.TEAM_A] <= 0 or self._stone[Team.TEAM_B] <= 0
+        # Check the current game's stone if it just completed (stone
+        # changes are applied to the game's state before new_game syncs)
+        stone = self._stone
+        if (
+            self._current_game is not None
+            and self._current_game.phase == Phase.COMPLETE
+        ):
+            stone = self._current_game.state.stone
+        return stone[Team.TEAM_A] <= 0 or stone[Team.TEAM_B] <= 0
 
     def winner(self) -> Team | None:
         """Return the winning team, or ``None`` if match is ongoing.
