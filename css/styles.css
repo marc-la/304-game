@@ -711,6 +711,75 @@ dd {
   font-weight: 700;
 }
 
+/* ===== Charts ===== */
+.chart-card {
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: 8px;
+  padding: 16px 18px 18px;
+  margin-bottom: 18px;
+}
+
+.chart-card h3 {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.chart-caption {
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  color: var(--clr-text-muted);
+  margin-bottom: 12px;
+}
+
+.chart-canvas-wrap {
+  position: relative;
+  height: 280px;
+  width: 100%;
+}
+
+.rev-heatmap {
+  overflow-x: auto;
+}
+
+.heatmap-grid {
+  display: grid;
+  gap: 2px;
+  min-width: 360px;
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+}
+
+.heatmap-corner {
+  background: transparent;
+}
+
+.heatmap-col-head {
+  font-weight: 700;
+  text-align: center;
+  padding: 6px 4px;
+  color: var(--clr-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.72rem;
+}
+
+.heatmap-row-head {
+  padding: 6px 10px 6px 0;
+  color: var(--clr-text-muted);
+  white-space: nowrap;
+  font-size: 0.78rem;
+}
+
+.heatmap-cell {
+  text-align: center;
+  padding: 6px 4px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
 /* ===== Mobile Sidebar Toggle ===== */
 .sidebar-toggle {
   display: none;

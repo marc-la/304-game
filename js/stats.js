@@ -3,6 +3,12 @@
 
   // ===== Constants =====
   var PLAYER_ORDER = ['LX', 'ML', 'MN', 'VM'];
+  var PLAYER_COLORS = {
+    LX: '#e76f51',
+    ML: '#2a9d8f',
+    MN: '#e9c46a',
+    VM: '#264653',
+  };
   var DATE_FMT = new Intl.DateTimeFormat('en-AU', {
     day: 'numeric',
     month: 'short',
@@ -420,6 +426,119 @@
     return div.innerHTML;
   }
 
+  // ===== Charts =====
+
+  function chronologicalRevs(revolutions) {
+    return revolutions.slice().sort(function (a, b) {
+      if (a.date - b.date !== 0) return a.date - b.date;
+      return parseRevolutionId(a.id).num - parseRevolutionId(b.id).num;
+    });
+  }
+
+  function revWinners(rev) {
+    var maxMatches = -1;
+    PLAYER_ORDER.forEach(function (p) {
+      var w = rev.playerResults[p].matchesWon;
+      if (w > maxMatches) maxMatches = w;
+    });
+    if (maxMatches <= 0) return [];
+    var topMatches = PLAYER_ORDER.filter(function (p) {
+      return rev.playerResults[p].matchesWon === maxMatches;
+    });
+    var maxScore = -1;
+    topMatches.forEach(function (p) {
+      if (rev.playerResults[p].score > maxScore) maxScore = rev.playerResults[p].score;
+    });
+    return topMatches.filter(function (p) {
+      return rev.playerResults[p].score === maxScore;
+    });
+  }
+
+  function renderCumulativeChart(revolutions, playerMap) {
+    var canvas = document.getElementById('cumulative-revs-chart');
+    if (!canvas || typeof Chart === 'undefined') return;
+
+    var chrono = chronologicalRevs(revolutions);
+    var labels = chrono.map(function (r) {
+      return formatDate(r.date) + ' #' + parseRevolutionId(r.id).num;
+    });
+
+    var running = {};
+    PLAYER_ORDER.forEach(function (p) { running[p] = 0; });
+    var series = {};
+    PLAYER_ORDER.forEach(function (p) { series[p] = []; });
+
+    chrono.forEach(function (rev) {
+      var winners = revWinners(rev);
+      winners.forEach(function (w) { running[w]++; });
+      PLAYER_ORDER.forEach(function (p) { series[p].push(running[p]); });
+    });
+
+    var datasets = PLAYER_ORDER.map(function (p) {
+      return {
+        label: shortName(p, playerMap),
+        data: series[p],
+        borderColor: PLAYER_COLORS[p],
+        backgroundColor: PLAYER_COLORS[p],
+        tension: 0.15,
+        borderWidth: 2,
+        pointRadius: 2,
+        pointHoverRadius: 5,
+      };
+    });
+
+    new Chart(canvas, {
+      type: 'line',
+      data: { labels: labels, datasets: datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: 'Revolutions won' } },
+          x: { ticks: { maxRotation: 45, minRotation: 45, autoSkip: true, maxTicksLimit: 12 } },
+        },
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: { callbacks: { title: function (items) { return items[0].label; } } },
+        },
+      },
+    });
+  }
+
+  function renderRevolutionHeatmap(revolutions, playerMap) {
+    var container = document.getElementById('rev-heatmap');
+    if (!container) return;
+
+    var maxMatches = 0;
+    revolutions.forEach(function (rev) {
+      PLAYER_ORDER.forEach(function (p) {
+        if (rev.playerResults[p].matchesWon > maxMatches) maxMatches = rev.playerResults[p].matchesWon;
+      });
+    });
+    if (maxMatches < 1) maxMatches = 3;
+
+    var html = '<div class="heatmap-grid" style="grid-template-columns: minmax(110px, auto) repeat(' + PLAYER_ORDER.length + ', 1fr);">';
+    html += '<div class="heatmap-corner"></div>';
+    PLAYER_ORDER.forEach(function (p) {
+      html += '<div class="heatmap-col-head">' + esc(shortName(p, playerMap)) + '</div>';
+    });
+
+    revolutions.forEach(function (rev) {
+      var label = formatDate(rev.date) + ' · #' + parseRevolutionId(rev.id).num;
+      html += '<div class="heatmap-row-head">' + esc(label) + '</div>';
+      PLAYER_ORDER.forEach(function (p) {
+        var won = rev.playerResults[p].matchesWon;
+        var alpha = won === 0 ? 0 : 0.15 + 0.75 * (won / maxMatches);
+        var textColor = alpha > 0.55 ? '#fff' : 'var(--clr-text)';
+        html += '<div class="heatmap-cell" style="background: rgba(181, 67, 42, ' + alpha.toFixed(2) + '); color: ' + textColor + ';">' + won + '</div>';
+      });
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
+  }
+
   // ===== Init =====
 
   function init() {
@@ -438,6 +557,8 @@
 
         // Render all sections
         renderHeroLeaderboard(ranked, data.matches);
+        renderCumulativeChart(data.revolutions, playerMap);
+        renderRevolutionHeatmap(data.revolutions, playerMap);
         renderPlayerCards(ranked, data.matches, playerMap);
         renderPartnershipCards(partnerships, playerMap);
         renderRevolutionTable(data.revolutions, playerMap);

@@ -47,6 +47,20 @@
       <div class="leaderboard-hero" id="leaderboard-hero"></div>
     </section>
 
+    <section id="trends">
+      <h2>Trends</h2>
+      <div class="chart-card">
+        <h3>Cumulative revolutions won</h3>
+        <p class="chart-caption">Winner = most matches in the revolution; ties broken on score, with any remaining tie crediting each tied player.</p>
+        <div class="chart-canvas-wrap"><canvas id="cumulative-revs-chart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Per-revolution form</h3>
+        <p class="chart-caption">Matches won by each player in each revolution. Darker = stronger result.</p>
+        <div id="rev-heatmap" class="rev-heatmap"></div>
+      </div>
+    </section>
+
     <section id="player-stats">
       <h2>Player Statistics</h2>
       <div class="player-grid" id="player-grid"></div>
@@ -72,6 +86,7 @@
 </div>
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-<script src="js/stats.js?v=2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="js/stats.js?v=3"></script>
 </body>
 </html>
