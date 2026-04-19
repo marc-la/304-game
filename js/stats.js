@@ -30,6 +30,12 @@
       });
   }
 
+  function parseRevolutionId(id) {
+    var m = String(id || '').match(/^R(\d{8})-(\d+)$/);
+    if (!m) return { dateStr: '', num: 0 };
+    return { dateStr: m[1], num: parseInt(m[2], 10) };
+  }
+
   function transformPlayers(rows) {
     return rows.map(function (r) {
       return {
@@ -59,7 +65,8 @@
         };
       })
       .sort(function (a, b) {
-        return b.date - a.date;
+        if (b.date - a.date !== 0) return b.date - a.date;
+        return parseRevolutionId(a.id).num - parseRevolutionId(b.id).num;
       });
   }
 
@@ -87,7 +94,10 @@
       .sort(function (a, b) {
         if (!a.date || !b.date) return 0;
         if (b.date - a.date !== 0) return b.date - a.date;
-        return b.setNo - a.setNo;
+        var an = parseRevolutionId(a.revolutionId).num;
+        var bn = parseRevolutionId(b.revolutionId).num;
+        if (an !== bn) return an - bn;
+        return a.setNo - b.setNo;
       });
   }
 
@@ -231,7 +241,7 @@
       card.className = 'player-card';
       card.innerHTML =
         '<div class="player-card-header">' +
-          '<h3>' + esc(player.name) + '</h3>' +
+          '<h3>' + esc(player.name.split(' ')[0]) + '</h3>' +
           '<span class="player-initials">' + esc(player.initial) + '</span>' +
         '</div>' +
         '<div class="player-card-body">' +
@@ -286,7 +296,7 @@
 
     // Find revolution winner per revolution (highest matches won, then highest score)
     var html = '<table><thead><tr>' +
-      '<th>Date</th>';
+      '<th>Date</th><th>Rev</th>';
     PLAYER_ORDER.forEach(function (p) {
       var firstName = playerMap[p] ? playerMap[p].split(' ')[0] : p;
       html += '<th>' + esc(firstName) + '</th>';
@@ -303,6 +313,7 @@
 
       html += '<tr>';
       html += '<td>' + formatDate(rev.date) + '</td>';
+      html += '<td>' + parseRevolutionId(rev.id).num + '</td>';
       PLAYER_ORDER.forEach(function (p) {
         var r = rev.playerResults[p];
         var isWinner = r.matchesWon === maxWon && maxWon > 0;
@@ -328,7 +339,7 @@
     }
 
     var html = '<table><thead><tr>' +
-      '<th>Date</th><th>Set</th><th>Team A</th><th>Team B</th>' +
+      '<th>Date</th><th>Rev</th><th>Set</th><th>Team A</th><th>Team B</th>' +
       '<th>Score</th><th>Winner</th><th>Notes</th>' +
       '</tr></thead><tbody>';
 
@@ -339,6 +350,7 @@
 
       html += '<tr>';
       html += '<td>' + (m.date ? formatDate(m.date) : '') + '</td>';
+      html += '<td>' + parseRevolutionId(m.revolutionId).num + '</td>';
       html += '<td>' + m.setNo + '</td>';
       html += '<td>' + esc(teamANames) + '</td>';
       html += '<td>' + esc(teamBNames) + '</td>';
