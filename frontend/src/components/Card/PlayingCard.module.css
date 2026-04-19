@@ -1,0 +1,89 @@
+.card {
+  position: relative;
+  width: 70px;
+  height: 100px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  font-family: var(--font-card);
+  user-select: none;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+
+.small {
+  width: 52px;
+  height: 74px;
+}
+.small .rank { font-size: 12px; }
+.small .suit { font-size: 10px; }
+.small .center { font-size: 20px; }
+.small .pointBadge { font-size: 8px; padding: 1px 3px; }
+
+.clickable {
+  cursor: pointer;
+}
+
+.dimmed {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.selected {
+  transform: translateY(-16px);
+  border: 2px solid var(--color-accent);
+  box-shadow: 0 0 12px rgba(181, 67, 42, 0.3);
+}
+
+.cornerTL {
+  position: absolute;
+  top: 4px;
+  left: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+}
+
+.cornerBR {
+  position: absolute;
+  bottom: 4px;
+  right: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+  transform: rotate(180deg);
+}
+
+.rank {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.suit {
+  font-size: 11px;
+}
+
+.center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 26px;
+}
+
+.pointBadge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--color-accent);
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 8px;
+  font-family: var(--font-ui);
+  line-height: 1.3;
+}

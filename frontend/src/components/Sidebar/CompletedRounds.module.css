@@ -1,0 +1,82 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.empty {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: 20px;
+}
+
+.round {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.roundHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  background: transparent;
+  border-radius: 0;
+  text-align: left;
+}
+.roundHeader:hover {
+  background: var(--color-accent-light);
+}
+
+.trumpBadge {
+  font-size: 9px;
+  background: #9b59b6;
+  color: white;
+  padding: 0 4px;
+  border-radius: 4px;
+}
+
+.cards {
+  padding: 4px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-top: 1px solid var(--color-border);
+  background: #fafaf8;
+}
+
+.cardEntry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.cardSeat {
+  font-weight: 600;
+  width: 50px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.cardValue {
+  font-family: var(--font-card);
+  font-weight: 700;
+}
+
+.faceDown {
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.winnerMark {
+  color: var(--color-accent);
+  font-size: 11px;
+}

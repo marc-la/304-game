@@ -1,0 +1,54 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  gap: 0;
+}
+
+.tableSection {
+  flex: 1;
+  padding: 8px;
+  overflow: hidden;
+}
+
+.sideSection {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 8px 8px 0;
+  overflow: hidden;
+}
+
+.sideSection > :first-child {
+  flex-shrink: 0;
+}
+.sideSection > :last-child {
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 1024px) {
+  .main {
+    flex-direction: column;
+  }
+  .sideSection {
+    width: 100%;
+    flex-direction: row;
+    padding: 0 8px 8px;
+    max-height: 250px;
+  }
+  .sideSection > :first-child {
+    flex: 1;
+  }
+  .sideSection > :last-child {
+    flex: 1;
+  }
+}
