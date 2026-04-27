@@ -15,6 +15,21 @@
     year: 'numeric',
   });
 
+  var TOOLTIPS = {
+    revolutionsWon:
+      'Revolutions Won is the total number of revolutions a player has won. Within a revolution, the winner is whoever took the most matches; ties are broken by stone given. If players are still tied, every tied player receives a point.',
+    matchesWon:
+      'Matches Won is the total number of individual matches (sets) this player has won across all revolutions.',
+    totalStoneGiven:
+      'Total Stone Given is the sum of all stone this player has accumulated — the bracketed numbers in the per-revolution scores.',
+    totalScore:
+      'Total Score comes from revolution placement: 1st = 4 pts, 2nd = 3, 3rd = 2, 4th = 1. A tie in placement (same matches won AND same stone given) means each tied player receives that placement’s points.',
+  };
+
+  var PARTNERSHIP_PALETTE = [
+    '#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f', '#b07aa1',
+  ];
+
   // ===== Data Layer =====
 
   function fetchAndParse() {
@@ -77,7 +92,6 @@
   }
 
   function transformMatches(matchRows, revRows) {
-    // Build a date lookup from revolutions
     var dateLookup = {};
     revRows.forEach(function (r) {
       dateLookup[r['RevolutionID']] = parseExcelDate(r['Date']);
@@ -109,16 +123,12 @@
 
   function parseExcelDate(val) {
     if (val instanceof Date) return val;
-    if (typeof val === 'number') {
-      // Excel serial date
-      return new Date((val - 25569) * 86400000);
-    }
+    if (typeof val === 'number') return new Date((val - 25569) * 86400000);
     if (typeof val === 'string') return new Date(val);
     return new Date();
   }
 
   function parsePlayerResult(str) {
-    // Format: "2 (26)" → { matchesWon: 2, score: 26 }
     if (!str) return { matchesWon: 0, score: 0 };
     var m = String(str).match(/^(\d+)\s*\((\d+)\)$/);
     if (m) return { matchesWon: parseInt(m[1]), score: parseInt(m[2]) };
@@ -133,9 +143,11 @@
     });
   }
 
-  function computePartnerships(matches, playerMap) {
-    var pairs = {};
+  function pairKey(a, b) { return [a, b].sort().join('-'); }
+  function sortedPair(a, b) { return [a, b].sort(); }
 
+  function computePartnerships(matches) {
+    var pairs = {};
     matches.forEach(function (m) {
       var keyA = pairKey(m.teamA[0], m.teamA[1]);
       var keyB = pairKey(m.teamB[0], m.teamB[1]);
@@ -146,7 +158,6 @@
       pairs[keyA].played++;
       pairs[keyB].played++;
 
-      // Winner string is like "ML/MN" — check which pair it matches
       var winParts = m.winner.split('/').sort();
       var winKey = winParts.join('-');
       if (winKey === keyA) pairs[keyA].won++;
@@ -194,35 +205,143 @@
     return best;
   }
 
-  function pairKey(a, b) {
-    return [a, b].sort().join('-');
-  }
-
-  function sortedPair(a, b) {
-    return [a, b].sort();
-  }
-
   function totalMatchesPlayed(initial, matches) {
     return matches.filter(function (m) {
       return m.teamA.indexOf(initial) >= 0 || m.teamB.indexOf(initial) >= 0;
     }).length;
   }
 
+  function countRevsPlayed(initial, matches) {
+    var seen = {};
+    matches.forEach(function (m) {
+      if (m.teamA.indexOf(initial) >= 0 || m.teamB.indexOf(initial) >= 0) {
+        seen[m.revolutionId] = true;
+      }
+    });
+    return Object.keys(seen).length;
+  }
+
+  // ===== Bets CSV layer =====
+
+  function csvUrlForRev(rev) {
+    var d = rev.date;
+    if (!(d instanceof Date) || isNaN(d)) return null;
+    var yyyy = d.getFullYear();
+    var mm = String(d.getMonth() + 1).padStart(2, '0');
+    var dd = String(d.getDate()).padStart(2, '0');
+    var revNum = String(parseRevolutionId(rev.id).num).padStart(2, '0');
+    return 'docs/bets/' + yyyy + '-' + mm + '-' + dd + '_304_rev' + revNum + '.csv';
+  }
+
+  function fetchBetsForRevs(revs) {
+    var jobs = revs.map(function (rev) {
+      var url = csvUrlForRev(rev);
+      if (!url) return Promise.resolve(null);
+      return fetch(url)
+        .then(function (res) {
+          if (!res.ok) return null;
+          return res.text().then(function (text) {
+            return { revId: rev.id, url: url, data: parseBetsCSV(text), text: text };
+          });
+        })
+        .catch(function () { return null; });
+    });
+
+    return Promise.all(jobs).then(function (results) {
+      var byRev = {};
+      results.forEach(function (r) { if (r) byRev[r.revId] = r; });
+      return byRev;
+    });
+  }
+
+  function parseBetsCSV(text) {
+    var lines = text.split(/\r?\n/);
+    var sets = [];
+    var currentSet = null;
+    var phase = 'sets';
+    var notes = [];
+    var overall = {};
+
+    function splitCells(line) {
+      // Simple split; CSVs in this format don't contain quoted commas.
+      return line.split(',').map(function (s) { return s.trim(); });
+    }
+
+    for (var i = 0; i < lines.length; i++) {
+      var raw = lines[i];
+      if (raw == null) continue;
+      var line = raw.replace(/﻿/, '');
+
+      if (!line.trim() && phase !== 'notes') continue;
+
+      var setMatch = line.match(/^Set\s+(\d+)\s+(\S+)\s+(\d+)\s*-\s*(\d+)\s+(\S+)/);
+      if (setMatch) {
+        currentSet = {
+          setNo: parseInt(setMatch[1], 10),
+          teamA: setMatch[2].split('/'),
+          scoreA: parseInt(setMatch[3], 10),
+          scoreB: parseInt(setMatch[4], 10),
+          teamB: setMatch[5].split('/'),
+          rounds: [],
+          playerBets: {},
+        };
+        sets.push(currentSet);
+        phase = 'sets';
+        continue;
+      }
+
+      if (/^OVERALL\b/i.test(line)) { phase = 'overall'; continue; }
+      if (/^NOTES\b/i.test(line))   { phase = 'notes';   continue; }
+
+      var cells = splitCells(line);
+      var first = cells[0];
+
+      if (phase === 'sets' && currentSet) {
+        if (first === '') {
+          currentSet.rounds = cells.slice(1).filter(function (c) { return c !== ''; });
+          continue;
+        }
+        if (PLAYER_ORDER.indexOf(first) >= 0) {
+          currentSet.playerBets[first] = cells.slice(1);
+        }
+      } else if (phase === 'overall') {
+        if (PLAYER_ORDER.indexOf(first) >= 0) {
+          overall[first] = {
+            sets: parseInt(cells[1], 10) || 0,
+            stone: parseInt(cells[2], 10) || 0,
+          };
+        }
+      } else if (phase === 'notes') {
+        var trimmed = line.trim();
+        if (trimmed) notes.push(trimmed.replace(/^-\s*/, ''));
+      }
+    }
+
+    return { sets: sets, overall: overall, notes: notes };
+  }
+
   // ===== Render Layer =====
+
+  var TIER_CLASS = ['leaderboard-card--first', 'leaderboard-card--second', 'leaderboard-card--third', 'leaderboard-card--fourth'];
 
   function renderHeroLeaderboard(ranked, matches) {
     var container = document.getElementById('leaderboard-hero');
+    container.innerHTML = '';
     var ordinals = ['1st', '2nd', '3rd', '4th'];
 
     ranked.forEach(function (player, i) {
       var played = totalMatchesPlayed(player.initial, matches);
       var winRate = played ? Math.round((player.matchesWon / played) * 100) : 0;
+      var color = PLAYER_COLORS[player.initial] || '#888';
 
       var card = document.createElement('div');
-      card.className = 'leaderboard-card' + (i === 0 ? ' leaderboard-card--first' : '');
+      card.className = 'leaderboard-card ' + (TIER_CLASS[i] || 'leaderboard-card--fourth');
+      card.style.setProperty('--player-color', color);
       card.innerHTML =
-        '<div class="leaderboard-rank">' + ordinals[i] + '</div>' +
+        '<div class="leaderboard-medal">' + (i + 1) + '</div>' +
+        '<div class="leaderboard-rank">' + ordinals[i] + ' place</div>' +
         '<div class="leaderboard-name">' + esc(player.name.split(' ')[0]) + '</div>' +
+        '<div class="leaderboard-initials">' + esc(player.initial) + '</div>' +
         '<div class="leaderboard-stats">' +
           '<div class="leaderboard-stat"><strong>' + player.revolutionsWon + '</strong> revolutions</div>' +
           '<div class="leaderboard-stat"><strong>' + player.matchesWon + '</strong> matches won</div>' +
@@ -232,8 +351,14 @@
     });
   }
 
+  function infoIcon(text) {
+    return '<span class="info-icon" tabindex="0" aria-label="More info">i' +
+      '<span class="info-tooltip">' + esc(text) + '</span></span>';
+  }
+
   function renderPlayerCards(players, matches, playerMap) {
     var container = document.getElementById('player-grid');
+    container.innerHTML = '';
 
     players.forEach(function (player) {
       var played = totalMatchesPlayed(player.initial, matches);
@@ -251,25 +376,14 @@
           '<span class="player-initials">' + esc(player.initial) + '</span>' +
         '</div>' +
         '<div class="player-card-body">' +
-          statRow('Revolutions', player.revolutionsWon + ' / ' + revsPlayed + ' (' + revWinRate + '%)') +
-          statRow('Matches', player.matchesWon + ' / ' + played + ' (' + matchWinRate + '%)') +
-          statRow('Total Stone Given', player.totalStoneGiven) +
-          statRow('Total Score', player.totalScore) +
+          statRowWithInfo('Revolutions Won', player.revolutionsWon + ' / ' + revsPlayed + ' (' + revWinRate + '%)', TOOLTIPS.revolutionsWon) +
+          statRowWithInfo('Matches Won', player.matchesWon + ' / ' + played + ' (' + matchWinRate + '%)', TOOLTIPS.matchesWon) +
+          statRowWithInfo('Total Stone Given', player.totalStoneGiven, TOOLTIPS.totalStoneGiven) +
+          statRowWithInfo('Total Score', player.totalScore, TOOLTIPS.totalScore) +
           statRow('Best Partner', bestPartnerName) +
         '</div>';
       container.appendChild(card);
     });
-  }
-
-  function countRevsPlayed(initial, matches) {
-    // Count distinct revolution IDs where this player participated
-    var seen = {};
-    matches.forEach(function (m) {
-      if (m.teamA.indexOf(initial) >= 0 || m.teamB.indexOf(initial) >= 0) {
-        seen[m.revolutionId] = true;
-      }
-    });
-    return Object.keys(seen).length;
   }
 
   function statRow(label, value) {
@@ -279,8 +393,16 @@
     '</div>';
   }
 
+  function statRowWithInfo(label, value, tooltip) {
+    return '<div class="player-stat-row">' +
+      '<span class="player-stat-label">' + esc(label) + infoIcon(tooltip) + '</span>' +
+      '<span class="player-stat-value">' + esc(String(value)) + '</span>' +
+    '</div>';
+  }
+
   function renderPartnershipCards(partnerships, playerMap) {
     var container = document.getElementById('partnership-grid');
+    container.innerHTML = '';
 
     partnerships.forEach(function (p) {
       var nameA = playerMap[p.players[0]] ? playerMap[p.players[0]].split(' ')[0] : p.players[0];
@@ -297,80 +419,232 @@
     });
   }
 
-  function renderRevolutionTable(revolutions, playerMap) {
-    var container = document.getElementById('revolution-table');
+  // ===== History tree (cascading: revolution -> matches -> bets) =====
 
-    // Find revolution winner per revolution (highest matches won, then highest score)
-    var html = '<table><thead><tr>' +
-      '<th>Date</th><th>Rev</th>';
+  function revWinnersForRow(rev) {
+    var maxMatches = -1;
     PLAYER_ORDER.forEach(function (p) {
-      var firstName = playerMap[p] ? playerMap[p].split(' ')[0] : p;
-      html += '<th>' + esc(firstName) + '</th>';
+      var w = rev.playerResults[p].matchesWon;
+      if (w > maxMatches) maxMatches = w;
     });
-    html += '<th>Notes</th></tr></thead><tbody>';
-
-    revolutions.forEach(function (rev) {
-      // Determine winner of this revolution
-      var maxWon = -1;
-      PLAYER_ORDER.forEach(function (p) {
-        var r = rev.playerResults[p];
-        if (r.matchesWon > maxWon) maxWon = r.matchesWon;
-      });
-
-      html += '<tr>';
-      html += '<td>' + formatDate(rev.date) + '</td>';
-      html += '<td>' + parseRevolutionId(rev.id).num + '</td>';
-      PLAYER_ORDER.forEach(function (p) {
-        var r = rev.playerResults[p];
-        var isWinner = r.matchesWon === maxWon && maxWon > 0;
-        html += '<td' + (isWinner ? ' class="winner-cell"' : '') + '>' +
-          r.matchesWon + ' (' + r.score + ')' + '</td>';
-      });
-      html += '<td>' + esc(rev.notes) + '</td>';
-      html += '</tr>';
+    if (maxMatches <= 0) return [];
+    var topMatches = PLAYER_ORDER.filter(function (p) {
+      return rev.playerResults[p].matchesWon === maxMatches;
     });
-
-    html += '</tbody></table>';
-    container.innerHTML = html;
+    var maxScore = -1;
+    topMatches.forEach(function (p) {
+      if (rev.playerResults[p].score > maxScore) maxScore = rev.playerResults[p].score;
+    });
+    return topMatches.filter(function (p) {
+      return rev.playerResults[p].score === maxScore;
+    });
   }
 
-  function renderMatchTable(matches, playerMap, filter) {
-    var container = document.getElementById('match-table');
+  function renderHistoryTree(state) {
+    var container = document.getElementById('history-tree');
+    container.innerHTML = '';
 
-    var filtered = matches;
-    if (filter) {
-      filtered = matches.filter(function (m) {
-        return m.teamA.indexOf(filter) >= 0 || m.teamB.indexOf(filter) >= 0;
+    var matchesByRev = {};
+    state.matches.forEach(function (m) {
+      (matchesByRev[m.revolutionId] = matchesByRev[m.revolutionId] || []).push(m);
+    });
+
+    state.revolutions.forEach(function (rev) {
+      var revMatches = (matchesByRev[rev.id] || []).slice().sort(function (a, b) {
+        return a.setNo - b.setNo;
       });
+
+      // Apply player filter at revolution level
+      if (state.filter) {
+        revMatches = revMatches.filter(function (m) {
+          return m.teamA.indexOf(state.filter) >= 0 || m.teamB.indexOf(state.filter) >= 0;
+        });
+        if (revMatches.length === 0) return;
+      }
+
+      var revEl = document.createElement('details');
+      revEl.className = 'rev-node';
+
+      var winners = revWinnersForRow(rev);
+      var resultsHtml = PLAYER_ORDER.map(function (p) {
+        var r = rev.playerResults[p];
+        var isWin = winners.indexOf(p) >= 0;
+        var name = state.playerMap[p] ? state.playerMap[p].split(' ')[0] : p;
+        return '<span class="rev-summary-result' + (isWin ? ' is-winner' : '') + '" style="--player-color:' + PLAYER_COLORS[p] + '">' +
+          '<span class="player-pip"></span>' + esc(name) + ' ' + r.matchesWon + ' (' + r.score + ')</span>';
+      }).join('');
+
+      var bets = state.betsByRev[rev.id];
+      var downloadBtn = bets
+        ? '<a class="rev-download-btn" href="' + bets.url + '" download title="Download betting CSV">↓ CSV</a>'
+        : '';
+
+      var summary = document.createElement('summary');
+      summary.className = 'rev-summary';
+      summary.innerHTML =
+        '<span class="tree-chevron">▶</span>' +
+        '<span class="rev-summary-date">' + formatDate(rev.date) + '</span>' +
+        '<span class="rev-summary-num">Rev ' + parseRevolutionId(rev.id).num + '</span>' +
+        '<span class="rev-summary-results">' + resultsHtml + '</span>' +
+        downloadBtn;
+      revEl.appendChild(summary);
+
+      var body = document.createElement('div');
+      body.className = 'rev-body';
+      if (rev.notes) {
+        var notesEl = document.createElement('div');
+        notesEl.className = 'rev-notes';
+        notesEl.textContent = rev.notes;
+        body.appendChild(notesEl);
+      }
+
+      var matchList = document.createElement('div');
+      matchList.className = 'match-list';
+
+      revMatches.forEach(function (m) {
+        matchList.appendChild(buildMatchNode(m, state, bets));
+      });
+
+      body.appendChild(matchList);
+      revEl.appendChild(body);
+      container.appendChild(revEl);
+    });
+
+    if (!container.children.length) {
+      container.innerHTML = '<p class="chart-caption">No revolutions match this filter.</p>';
+    }
+  }
+
+  function buildMatchNode(m, state, bets) {
+    var betSet = bets ? findBetSet(bets.data, m) : null;
+
+    var teamAIsWinner = isWinnerTeam(m.winner, m.teamA);
+    var teamBIsWinner = isWinnerTeam(m.winner, m.teamB);
+
+    var teamAStr = m.teamA.map(function (p) { return shortName(p, state.playerMap); }).join(' & ');
+    var teamBStr = m.teamB.map(function (p) { return shortName(p, state.playerMap); }).join(' & ');
+
+    var match = document.createElement('details');
+    match.className = 'match-node';
+
+    var summary = document.createElement('summary');
+    summary.className = 'match-summary';
+    summary.innerHTML =
+      '<span class="tree-chevron">▶</span>' +
+      '<span class="match-summary-set">Set ' + m.setNo + '</span>' +
+      '<span class="match-summary-teams">' +
+        '<span class="match-team' + (teamAIsWinner ? ' is-winner' : '') + '">' + esc(teamAStr) + '</span>' +
+        '<span class="match-vs">vs</span>' +
+        '<span class="match-team' + (teamBIsWinner ? ' is-winner' : '') + '">' + esc(teamBStr) + '</span>' +
+      '</span>' +
+      '<span class="match-score">' +
+        '<span class="' + (teamAIsWinner ? 'score-winner' : '') + '">' + m.scoreA + '</span>' +
+        ' – ' +
+        '<span class="' + (teamBIsWinner ? 'score-winner' : '') + '">' + m.scoreB + '</span>' +
+      '</span>';
+    match.appendChild(summary);
+
+    var body = document.createElement('div');
+    body.className = 'match-body';
+
+    if (m.notes) {
+      var n = document.createElement('div');
+      n.className = 'match-notes';
+      n.textContent = 'Note: ' + m.notes;
+      body.appendChild(n);
     }
 
-    var html = '<table><thead><tr>' +
-      '<th>Date</th><th>Rev</th><th>Set</th><th>Team A</th><th>Team B</th>' +
-      '<th>Score</th><th>Winner</th><th>Notes</th>' +
-      '</tr></thead><tbody>';
+    if (betSet) {
+      body.appendChild(buildBetTable(betSet, m));
+      var setNotes = filterNotesForSet(bets.data.notes, m.setNo);
+      if (setNotes.length) {
+        var ul = document.createElement('ul');
+        ul.className = 'bets-notes';
+        setNotes.forEach(function (note) {
+          var li = document.createElement('li');
+          li.textContent = note;
+          ul.appendChild(li);
+        });
+        body.appendChild(ul);
+      }
+    } else if (!m.notes) {
+      var empty = document.createElement('div');
+      empty.className = 'match-bets-empty';
+      empty.textContent = 'No betting data recorded for this match.';
+      body.appendChild(empty);
+    }
 
-    filtered.forEach(function (m) {
-      var teamANames = m.teamA.map(function (p) { return shortName(p, playerMap); }).join(' & ');
-      var teamBNames = m.teamB.map(function (p) { return shortName(p, playerMap); }).join(' & ');
-      var winnerNames = m.winner.split('/').map(function (p) { return shortName(p.trim(), playerMap); }).join(' & ');
+    match.appendChild(body);
+    return match;
+  }
 
-      html += '<tr>';
-      html += '<td>' + (m.date ? formatDate(m.date) : '') + '</td>';
-      html += '<td>' + parseRevolutionId(m.revolutionId).num + '</td>';
-      html += '<td>' + m.setNo + '</td>';
-      html += '<td>' + esc(teamANames) + '</td>';
-      html += '<td>' + esc(teamBNames) + '</td>';
-      html += '<td>' + m.scoreA + ' – ' + m.scoreB + '</td>';
-      html += '<td class="winner-cell">' + esc(winnerNames) + '</td>';
-      html += '<td>' + esc(m.notes) + '</td>';
+  function isWinnerTeam(winner, team) {
+    if (!winner) return false;
+    var w = winner.split('/').map(function (s) { return s.trim(); }).sort();
+    var t = team.slice().sort();
+    return w[0] === t[0] && w[1] === t[1];
+  }
+
+  function findBetSet(betData, m) {
+    if (!betData || !betData.sets) return null;
+    for (var i = 0; i < betData.sets.length; i++) {
+      if (betData.sets[i].setNo === m.setNo) return betData.sets[i];
+    }
+    return null;
+  }
+
+  function filterNotesForSet(notes, setNo) {
+    if (!notes) return [];
+    var rePrefix = new RegExp('^' + setNo + '\\.\\d');
+    return notes.filter(function (n) { return rePrefix.test(n); });
+  }
+
+  function buildBetTable(setData, match) {
+    var rounds = (setData.rounds && setData.rounds.length) ? setData.rounds : ['1','2','3','4','5','6','7','8','9','10','11','12'];
+    var teamA = match.teamA, teamB = match.teamB;
+    var winnerTeam = isWinnerTeam(match.winner, teamA) ? teamA : (isWinnerTeam(match.winner, teamB) ? teamB : []);
+
+    var wrap = document.createElement('div');
+    wrap.className = 'bets-table-wrap';
+
+    var html = '<table class="bets-table"><thead><tr><th>Player</th>';
+    rounds.forEach(function (r) { html += '<th>' + esc(String(r)) + '</th>'; });
+    html += '</tr></thead><tbody>';
+
+    PLAYER_ORDER.forEach(function (p) {
+      var team = teamA.indexOf(p) >= 0 ? 'team-a' : (teamB.indexOf(p) >= 0 ? 'team-b' : '');
+      var winCls = winnerTeam.indexOf(p) >= 0 ? ' is-winner' : '';
+      html += '<tr class="' + team + winCls + '"><td>' + esc(p) + '</td>';
+      var bets = setData.playerBets[p] || [];
+      for (var i = 0; i < rounds.length; i++) {
+        var v = (bets[i] || '').trim();
+        html += v
+          ? '<td class="bet-cell">' + esc(v) + '</td>'
+          : '<td></td>';
+      }
       html += '</tr>';
     });
 
     html += '</tbody></table>';
-    container.innerHTML = html;
+    wrap.innerHTML = html;
+
+    var pills = document.createElement('div');
+    pills.className = 'bets-overall';
+    var hasOverall = false;
+    // overall comes from parent CSV; here we show set-level score totals for context
+    pills.innerHTML =
+      '<span class="bets-overall-pill"><strong>Set score:</strong> ' +
+      setData.teamA.join('/') + ' ' + setData.scoreA + ' – ' + setData.scoreB + ' ' + setData.teamB.join('/') +
+      '</span>';
+    hasOverall = true;
+
+    var container = document.createElement('div');
+    container.appendChild(wrap);
+    if (hasOverall) container.appendChild(pills);
+    return container;
   }
 
-  function renderMatchFilters(playerMap, matches) {
+  function renderMatchFilters(state) {
     var container = document.getElementById('match-filters');
     container.innerHTML = '<span class="filter-label">Filter:</span>';
 
@@ -383,21 +657,18 @@
     PLAYER_ORDER.forEach(function (p) {
       var btn = document.createElement('button');
       btn.className = 'filter-btn';
-      btn.textContent = shortName(p, playerMap);
+      btn.textContent = shortName(p, state.playerMap);
       btn.setAttribute('data-filter', p);
       container.appendChild(btn);
     });
 
-    // Wire up filter clicks
     container.addEventListener('click', function (e) {
       var btn = e.target.closest('.filter-btn');
       if (!btn) return;
-
       container.querySelectorAll('.filter-btn').forEach(function (b) { b.classList.remove('active'); });
       btn.classList.add('active');
-
-      var filterVal = btn.getAttribute('data-filter');
-      renderMatchTable(matches, playerMap, filterVal || null);
+      state.filter = btn.getAttribute('data-filter') || null;
+      renderHistoryTree(state);
     });
   }
 
@@ -435,23 +706,19 @@
     });
   }
 
+  function chronologicalMatches(matches) {
+    return matches.slice().sort(function (a, b) {
+      if (!a.date || !b.date) return 0;
+      if (a.date - b.date !== 0) return a.date - b.date;
+      var an = parseRevolutionId(a.revolutionId).num;
+      var bn = parseRevolutionId(b.revolutionId).num;
+      if (an !== bn) return an - bn;
+      return a.setNo - b.setNo;
+    });
+  }
+
   function revWinners(rev) {
-    var maxMatches = -1;
-    PLAYER_ORDER.forEach(function (p) {
-      var w = rev.playerResults[p].matchesWon;
-      if (w > maxMatches) maxMatches = w;
-    });
-    if (maxMatches <= 0) return [];
-    var topMatches = PLAYER_ORDER.filter(function (p) {
-      return rev.playerResults[p].matchesWon === maxMatches;
-    });
-    var maxScore = -1;
-    topMatches.forEach(function (p) {
-      if (rev.playerResults[p].score > maxScore) maxScore = rev.playerResults[p].score;
-    });
-    return topMatches.filter(function (p) {
-      return rev.playerResults[p].score === maxScore;
-    });
+    return revWinnersForRow(rev);
   }
 
   function renderCumulativeChart(revolutions, playerMap) {
@@ -506,37 +773,93 @@
     });
   }
 
-  function renderRevolutionHeatmap(revolutions, playerMap) {
-    var container = document.getElementById('rev-heatmap');
-    if (!container) return;
+  function renderPartnershipsChart(matches, playerMap) {
+    var canvas = document.getElementById('partnerships-chart');
+    if (!canvas || typeof Chart === 'undefined') return;
 
-    var maxMatches = 0;
-    revolutions.forEach(function (rev) {
-      PLAYER_ORDER.forEach(function (p) {
-        if (rev.playerResults[p].matchesWon > maxMatches) maxMatches = rev.playerResults[p].matchesWon;
-      });
-    });
-    if (maxMatches < 1) maxMatches = 3;
-
-    var html = '<div class="heatmap-grid" style="grid-template-columns: minmax(110px, auto) repeat(' + PLAYER_ORDER.length + ', 1fr);">';
-    html += '<div class="heatmap-corner"></div>';
-    PLAYER_ORDER.forEach(function (p) {
-      html += '<div class="heatmap-col-head">' + esc(shortName(p, playerMap)) + '</div>';
+    var chrono = chronologicalMatches(matches);
+    var labels = chrono.map(function (m, idx) {
+      return formatDate(m.date) + ' R' + parseRevolutionId(m.revolutionId).num + 'S' + m.setNo;
     });
 
-    revolutions.forEach(function (rev) {
-      var label = formatDate(rev.date) + ' · #' + parseRevolutionId(rev.id).num;
-      html += '<div class="heatmap-row-head">' + esc(label) + '</div>';
-      PLAYER_ORDER.forEach(function (p) {
-        var won = rev.playerResults[p].matchesWon;
-        var alpha = won === 0 ? 0 : 0.15 + 0.75 * (won / maxMatches);
-        var textColor = alpha > 0.55 ? '#fff' : 'var(--clr-text)';
-        html += '<div class="heatmap-cell" style="background: rgba(181, 67, 42, ' + alpha.toFixed(2) + '); color: ' + textColor + ';">' + won + '</div>';
+    // Identify all distinct pairs
+    var pairs = {};
+    chrono.forEach(function (m) {
+      [m.teamA, m.teamB].forEach(function (t) {
+        var k = pairKey(t[0], t[1]);
+        if (!pairs[k]) pairs[k] = { players: sortedPair(t[0], t[1]), played: 0, won: 0, series: [] };
       });
     });
 
-    html += '</div>';
-    container.innerHTML = html;
+    chrono.forEach(function (m) {
+      var winSorted = m.winner.split('/').map(function (s) { return s.trim(); }).sort().join('-');
+
+      Object.keys(pairs).forEach(function (k) {
+        var pair = pairs[k];
+        var onA = (m.teamA.indexOf(pair.players[0]) >= 0 && m.teamA.indexOf(pair.players[1]) >= 0);
+        var onB = (m.teamB.indexOf(pair.players[0]) >= 0 && m.teamB.indexOf(pair.players[1]) >= 0);
+        if (onA || onB) {
+          pair.played++;
+          if (winSorted === k) pair.won++;
+        }
+        // Show NaN until pair has played at least 2 matches; this hides early noise.
+        var rate = pair.played >= 2 ? Math.round((pair.won / pair.played) * 1000) / 10 : null;
+        pair.series.push(rate);
+      });
+    });
+
+    var pairList = Object.values(pairs).sort(function (a, b) {
+      var rA = a.played ? a.won / a.played : 0;
+      var rB = b.played ? b.won / b.played : 0;
+      return rB - rA;
+    });
+
+    var datasets = pairList.map(function (pair, i) {
+      var nameA = playerMap[pair.players[0]] ? playerMap[pair.players[0]].split(' ')[0] : pair.players[0];
+      var nameB = playerMap[pair.players[1]] ? playerMap[pair.players[1]].split(' ')[0] : pair.players[1];
+      var color = PARTNERSHIP_PALETTE[i % PARTNERSHIP_PALETTE.length];
+      return {
+        label: nameA + ' & ' + nameB + ' (' + pair.won + '/' + pair.played + ')',
+        data: pair.series,
+        borderColor: color,
+        backgroundColor: color,
+        tension: 0.2,
+        borderWidth: 2,
+        pointRadius: 1.5,
+        pointHoverRadius: 4,
+        spanGaps: true,
+      };
+    });
+
+    new Chart(canvas, {
+      type: 'line',
+      data: { labels: labels, datasets: datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            ticks: { callback: function (v) { return v + '%'; } },
+            title: { display: true, text: 'Win rate' },
+          },
+          x: { ticks: { maxRotation: 45, minRotation: 45, autoSkip: true, maxTicksLimit: 14 } },
+        },
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 12, padding: 8 } },
+          tooltip: {
+            callbacks: {
+              label: function (item) {
+                if (item.parsed.y == null) return item.dataset.label + ': —';
+                return item.dataset.label + ': ' + item.parsed.y + '%';
+              },
+            },
+          },
+        },
+      },
+    });
   }
 
   // ===== Init =====
@@ -548,25 +871,34 @@
 
     fetchAndParse()
       .then(function (data) {
-        // Build player name map: initial → full name
+        return fetchBetsForRevs(data.revolutions).then(function (betsByRev) {
+          return Object.assign({}, data, { betsByRev: betsByRev });
+        });
+      })
+      .then(function (data) {
         var playerMap = {};
         data.players.forEach(function (p) { playerMap[p.initial] = p.name; });
 
         var ranked = computeRankings(data.players);
-        var partnerships = computePartnerships(data.matches, playerMap);
+        var partnerships = computePartnerships(data.matches);
 
-        // Render all sections
+        var state = {
+          revolutions: data.revolutions,
+          matches: data.matches,
+          playerMap: playerMap,
+          betsByRev: data.betsByRev || {},
+          filter: null,
+        };
+
         renderHeroLeaderboard(ranked, data.matches);
         renderCumulativeChart(data.revolutions, playerMap);
-        renderRevolutionHeatmap(data.revolutions, playerMap);
+        renderPartnershipsChart(data.matches, playerMap);
         renderPlayerCards(ranked, data.matches, playerMap);
         renderPartnershipCards(partnerships, playerMap);
-        renderRevolutionTable(data.revolutions, playerMap);
-        renderMatchFilters(playerMap, data.matches);
-        renderMatchTable(data.matches, playerMap, null);
+        renderMatchFilters(state);
+        renderHistoryTree(state);
         renderLastUpdated(data.revolutions);
 
-        // Show content
         loadingEl.hidden = true;
         mainEl.hidden = false;
       })
