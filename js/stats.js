@@ -450,22 +450,17 @@
     });
 
     state.revolutions.forEach(function (rev) {
+      var winners = revWinnersForRow(rev);
+
+      // Filter: show only revolutions this player won (sets, then stone, else tie).
+      if (state.filter && winners.indexOf(state.filter) < 0) return;
+
       var revMatches = (matchesByRev[rev.id] || []).slice().sort(function (a, b) {
         return a.setNo - b.setNo;
       });
 
-      // Apply player filter at revolution level
-      if (state.filter) {
-        revMatches = revMatches.filter(function (m) {
-          return m.teamA.indexOf(state.filter) >= 0 || m.teamB.indexOf(state.filter) >= 0;
-        });
-        if (revMatches.length === 0) return;
-      }
-
       var revEl = document.createElement('details');
       revEl.className = 'rev-node';
-
-      var winners = revWinnersForRow(rev);
       var resultsHtml = PLAYER_ORDER.map(function (p) {
         var r = rev.playerResults[p];
         var isWin = winners.indexOf(p) >= 0;
@@ -511,7 +506,7 @@
     });
 
     if (!container.children.length) {
-      container.innerHTML = '<p class="chart-caption">No revolutions match this filter.</p>';
+      container.innerHTML = '<p class="chart-caption">No revolutions won by this player yet.</p>';
     }
   }
 
@@ -892,12 +887,24 @@
 
         renderHeroLeaderboard(ranked, data.matches);
         renderCumulativeChart(data.revolutions, playerMap);
-        renderPartnershipsChart(data.matches, playerMap);
         renderPlayerCards(ranked, data.matches, playerMap);
         renderPartnershipCards(partnerships, playerMap);
         renderMatchFilters(state);
         renderHistoryTree(state);
         renderLastUpdated(data.revolutions);
+
+        // The partnerships-over-time chart lives inside a collapsed <details>;
+        // Chart.js needs a non-zero canvas size at init, so build it on first open.
+        var trendDetails = document.querySelector('.partnership-trend');
+        if (trendDetails) {
+          var built = false;
+          trendDetails.addEventListener('toggle', function () {
+            if (trendDetails.open && !built) {
+              renderPartnershipsChart(data.matches, playerMap);
+              built = true;
+            }
+          });
+        }
 
         loadingEl.hidden = true;
         mainEl.hidden = false;

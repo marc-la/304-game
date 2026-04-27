@@ -54,11 +54,6 @@
         <p class="chart-caption">Winner = most matches in the revolution; ties broken on score, with any remaining tie crediting each tied player.</p>
         <div class="chart-canvas-wrap"><canvas id="cumulative-revs-chart"></canvas></div>
       </div>
-      <div class="chart-card">
-        <h3>Partnership win rate over time</h3>
-        <p class="chart-caption">Each pair&rsquo;s running win rate as more matches are played. Lines start once a partnership has played at least two matches together.</p>
-        <div class="chart-canvas-wrap"><canvas id="partnerships-chart"></canvas></div>
-      </div>
     </section>
 
     <section id="player-stats">
@@ -69,6 +64,13 @@
     <section id="partnerships">
       <h2>Partnership Win Rates</h2>
       <div class="partnership-grid" id="partnership-grid"></div>
+      <details class="partnership-trend">
+        <summary><span class="tree-chevron">▶</span> Show partnership win rate over time</summary>
+        <div class="chart-card">
+          <p class="chart-caption">Each pair&rsquo;s running win rate as more matches are played. Lines start once a partnership has played at least two matches together.</p>
+          <div class="chart-canvas-wrap"><canvas id="partnerships-chart"></canvas></div>
+        </div>
+      </details>
     </section>
 
     <section id="history">
@@ -83,6 +85,6 @@
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="js/stats.js?v=4"></script>
+<script src="js/stats.js?v=5"></script>
 </body>
 </html>

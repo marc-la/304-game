@@ -897,6 +897,46 @@ dd {
   font-weight: 600;
 }
 
+/* ===== Partnership trend (collapsible chart) ===== */
+.partnership-trend {
+  margin-top: 16px;
+}
+
+.partnership-trend > summary {
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--clr-text-muted);
+  padding: 6px 12px;
+  border: 1px solid var(--clr-border);
+  border-radius: 999px;
+  background: var(--clr-surface);
+  transition: all 0.15s;
+}
+
+.partnership-trend > summary::-webkit-details-marker { display: none; }
+
+.partnership-trend > summary:hover {
+  border-color: var(--clr-accent);
+  color: var(--clr-accent);
+}
+
+.partnership-trend[open] > summary {
+  border-color: var(--clr-accent);
+  color: var(--clr-accent);
+  background: var(--clr-accent-light);
+}
+
+.partnership-trend > .chart-card {
+  margin-top: 10px;
+}
+
 /* ===== History (cascading tree) ===== */
 .history-tree {
   display: flex;
