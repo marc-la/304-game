@@ -1,0 +1,25 @@
+Set 1 VM/LX 1 - 10 ML/MN
+,1,2,3,4,5,6,7,8,9,10,11,12
+LX,,H10-,,,,,,,,,,
+ML,,,,,,70,,,,,,
+MN,,,60,,,,,,,,,
+VM,100-,,,70-,70,,,,,,,
+Set 2 VM/ML 10 - 7 MN/LX
+LX,PEN;60,,60,H,,,,,60-,,,
+ML,,,,,60,,,,,,,
+MN,,,,,PEN,70-,60-,,,,,
+VM,,70,,,,,,H-,,,,
+Set 3 VM/MN 2 - 10 ML/LX
+LX,,,,,,,,,,,,
+ML,,70,,,,,,,,,,
+MN,100-,,H-,100+0,80-,60-,,,,,,
+VM,,,,,,,,,,,,
+OVERALL,SETS,STONE
+LX,1,18
+ML,3,30
+MN,1,19
+VM,1,13
+NOTES
+- 2.1 LX Penalty + 60 Win simultaneously
+- 3.3 MN/VM Reverse Caps *Attempt*
+- 3.4 MN caps @ end of 7th round
