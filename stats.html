@@ -32,7 +32,7 @@
 
   <!-- Error state -->
   <div id="stats-error" class="stats-error" hidden>
-    <p>Could not load match data. Ensure you are serving this page over HTTP.</p>
+    <p>We couldn’t load the latest stats right now. Please try refreshing in a moment.</p>
   </div>
 
   <!-- Main content (hidden until data loads) -->
@@ -41,6 +41,14 @@
     <h1>Leaderboard</h1>
     <p class="subtitle">Revolution and match statistics for the 304 group.</p>
     <p class="last-updated" id="last-updated"></p>
+
+    <nav class="stats-jump" aria-label="Leaderboard sections">
+      <a href="#overall-rankings">Rankings</a>
+      <a href="#trends">Trends</a>
+      <a href="#player-stats">Players</a>
+      <a href="#partnerships">Partnerships</a>
+      <a href="#history">History</a>
+    </nav>
 
     <section id="overall-rankings">
       <h2>Overall Rankings</h2>
@@ -85,6 +93,6 @@
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="js/stats.js?v=5"></script>
+<script src="js/stats.js?v=6"></script>
 </body>
 </html>

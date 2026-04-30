@@ -494,7 +494,55 @@ dd {
   font-family: var(--font-heading);
   font-size: 0.82rem;
   color: var(--clr-text-muted);
-  margin-bottom: 32px;
+  margin-bottom: 16px;
+}
+
+/* In-page section nav, sticks under the site nav */
+.stats-jump {
+  position: sticky;
+  top: var(--nav-height);
+  z-index: 10;
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+  padding: 8px 0;
+  background: rgba(250, 249, 246, 0.92);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--clr-border);
+}
+
+.stats-jump a {
+  flex: 0 0 auto;
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--clr-text-muted);
+  text-decoration: none;
+  padding: 5px 10px;
+  border-radius: 999px;
+  transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+
+.stats-jump a:hover {
+  background: var(--clr-accent-light);
+  color: var(--clr-accent);
+}
+
+/* Visually hidden but exposed to screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* ===== Hero Leaderboard ===== */
@@ -522,6 +570,17 @@ dd {
   top: 0; left: 0; right: 0;
   height: 5px;
   background: var(--rank-color, var(--clr-border));
+}
+
+/* Bottom band echoes the player's chart colour, so each card reads as
+   "rank on top, who on the bottom". */
+.leaderboard-card::after {
+  content: "";
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--player-color, var(--clr-border));
+  opacity: 0.9;
 }
 
 .leaderboard-card:hover {
@@ -581,13 +640,13 @@ dd {
 .leaderboard-initials {
   display: inline-block;
   font-family: var(--font-heading);
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.06em;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 999px;
   background: var(--player-color, var(--clr-text-muted));
-  color: #fff;
+  color: var(--player-fg, #fff);
   margin-bottom: 16px;
 }
 
@@ -623,10 +682,11 @@ dd {
   border-radius: 50%;
   background: var(--clr-text-muted);
   color: var(--clr-bg);
-  font-family: var(--font-heading);
-  font-size: 9px;
-  font-weight: 800;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 11px;
+  font-weight: 700;
   font-style: normal;
+  line-height: 1;
   cursor: help;
   position: relative;
   margin-left: 6px;
@@ -691,10 +751,23 @@ dd {
   border: 1px solid var(--clr-border);
   border-radius: 10px;
   position: relative;
+  overflow: hidden;
+}
+
+.player-card::before {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0; left: 0;
+  width: 4px;
+  background: var(--player-color, var(--clr-border));
 }
 
 .player-card-header {
-  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 20px;
   background: var(--clr-bg);
   border-bottom: 1px solid var(--clr-border);
   border-radius: 10px 10px 0 0;
@@ -710,9 +783,13 @@ dd {
 
 .player-card-header .player-initials {
   font-family: var(--font-heading);
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--clr-text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--player-color, var(--clr-text-muted));
+  color: var(--player-fg, #fff);
 }
 
 .player-card-body {
@@ -739,7 +816,35 @@ dd {
 .player-stat-value {
   font-weight: 700;
   color: var(--clr-text);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
+
+.player-stat-sub {
+  font-weight: 500;
+  font-size: 0.78rem;
+  color: var(--clr-text-muted);
+}
+
+/* Recent-form W/L pips */
+.form-pip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  font-family: var(--font-heading);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  margin-left: 3px;
+}
+
+.form-pip:first-child { margin-left: 0; }
+.form-W { background: var(--clr-house); }
+.form-L { background: var(--clr-accent); opacity: 0.85; }
 
 /* ===== Partnership Table ===== */
 .partnership-grid {

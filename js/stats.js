@@ -9,6 +9,15 @@
     MN: '#e9c46a',
     VM: '#264653',
   };
+  // Foreground colour to pair with the player swatch — MN's yellow needs dark text
+  // for AA contrast; the others read fine as white-on-colour.
+  var PLAYER_FG = {
+    LX: '#fff',
+    ML: '#fff',
+    MN: '#1a1a1a',
+    VM: '#fff',
+  };
+  var BEST_PARTNER_MIN_GAMES = 3;
   var DATE_FMT = new Intl.DateTimeFormat('en-AU', {
     day: 'numeric',
     month: 'short',
@@ -24,6 +33,10 @@
       'Total Stone Given is the sum of all stone this player has accumulated — the bracketed numbers in the per-revolution scores.',
     totalScore:
       'Total Score comes from revolution placement: 1st = 4 pts, 2nd = 3, 3rd = 2, 4th = 1. A tie in placement (same matches won AND same stone given) means each tied player receives that placement’s points.',
+    bestPartner:
+      'Best Partner is the partner with this player’s highest match win rate, requiring at least ' + BEST_PARTNER_MIN_GAMES + ' games together. Ties broken by total wins.',
+    recentForm:
+      'Recent Form shows wins (W) and losses (L) across this player’s most recent matches, oldest on the left.',
   };
 
   var PARTNERSHIP_PALETTE = [
@@ -86,7 +99,9 @@
         };
       })
       .sort(function (a, b) {
-        if (b.date - a.date !== 0) return b.date - a.date;
+        if (a.date && b.date && b.date - a.date !== 0) return b.date - a.date;
+        if (a.date && !b.date) return -1;
+        if (!a.date && b.date) return 1;
         return parseRevolutionId(a.id).num - parseRevolutionId(b.id).num;
       });
   }
@@ -124,8 +139,11 @@
   function parseExcelDate(val) {
     if (val instanceof Date) return val;
     if (typeof val === 'number') return new Date((val - 25569) * 86400000);
-    if (typeof val === 'string') return new Date(val);
-    return new Date();
+    if (typeof val === 'string' && val.trim()) {
+      var d = new Date(val);
+      return isNaN(d) ? null : d;
+    }
+    return null;
   }
 
   function parsePlayerResult(str) {
@@ -195,6 +213,7 @@
     var best = null;
     var bestRate = -1;
     Object.keys(partnerPlayed).forEach(function (p) {
+      if (partnerPlayed[p] < BEST_PARTNER_MIN_GAMES) return;
       var rate = partnerWins[p] / partnerPlayed[p];
       if (rate > bestRate || (rate === bestRate && partnerWins[p] > (best ? partnerWins[best] : 0))) {
         best = p;
@@ -202,7 +221,20 @@
       }
     });
 
-    return best;
+    if (!best) return null;
+    return { initial: best, played: partnerPlayed[best], won: partnerWins[best] };
+  }
+
+  function computeRecentForm(initial, matches, n) {
+    var played = matches.filter(function (m) {
+      return m.teamA.indexOf(initial) >= 0 || m.teamB.indexOf(initial) >= 0;
+    });
+    // matches are sorted newest-first; we want the most recent n in chronological order
+    var recent = played.slice(0, n).reverse();
+    return recent.map(function (m) {
+      var team = m.teamA.indexOf(initial) >= 0 ? m.teamA : m.teamB;
+      return isWinnerTeam(m.winner, team) ? 'W' : 'L';
+    });
   }
 
   function totalMatchesPlayed(initial, matches) {
@@ -333,10 +365,12 @@
       var played = totalMatchesPlayed(player.initial, matches);
       var winRate = played ? Math.round((player.matchesWon / played) * 100) : 0;
       var color = PLAYER_COLORS[player.initial] || '#888';
+      var fg = PLAYER_FG[player.initial] || '#fff';
 
       var card = document.createElement('div');
       card.className = 'leaderboard-card ' + (TIER_CLASS[i] || 'leaderboard-card--fourth');
       card.style.setProperty('--player-color', color);
+      card.style.setProperty('--player-fg', fg);
       card.innerHTML =
         '<div class="leaderboard-medal">' + (i + 1) + '</div>' +
         '<div class="leaderboard-rank">' + ordinals[i] + ' place</div>' +
@@ -365,11 +399,26 @@
       var matchWinRate = played ? Math.round((player.matchesWon / played) * 100) : 0;
       var revsPlayed = countRevsPlayed(player.initial, matches);
       var revWinRate = revsPlayed ? Math.round((player.revolutionsWon / revsPlayed) * 100) : 0;
-      var bestPartner = computeBestPartner(player.initial, matches);
-      var bestPartnerName = bestPartner && playerMap[bestPartner] ? playerMap[bestPartner].split(' ')[0] : '—';
+
+      var best = computeBestPartner(player.initial, matches);
+      var bestPartnerHtml;
+      if (best) {
+        var bpName = playerMap[best.initial] ? playerMap[best.initial].split(' ')[0] : best.initial;
+        var bpRate = Math.round((best.won / best.played) * 100);
+        bestPartnerHtml = esc(bpName) + ' <span class="player-stat-sub">(' + bpRate + '% in ' + best.played + ')</span>';
+      } else {
+        bestPartnerHtml = '<span class="player-stat-sub">— (need ' + BEST_PARTNER_MIN_GAMES + '+ games)</span>';
+      }
+
+      var form = computeRecentForm(player.initial, matches, 5);
+      var formHtml = form.length
+        ? form.map(function (r) { return '<span class="form-pip form-' + r + '" aria-label="' + (r === 'W' ? 'Win' : 'Loss') + '">' + r + '</span>'; }).join('')
+        : '<span class="player-stat-sub">—</span>';
 
       var card = document.createElement('div');
       card.className = 'player-card';
+      card.style.setProperty('--player-color', PLAYER_COLORS[player.initial] || '#888');
+      card.style.setProperty('--player-fg', PLAYER_FG[player.initial] || '#fff');
       card.innerHTML =
         '<div class="player-card-header">' +
           '<h3>' + esc(player.name.split(' ')[0]) + '</h3>' +
@@ -379,8 +428,9 @@
           statRowWithInfo('Revolutions Won', player.revolutionsWon + ' / ' + revsPlayed + ' (' + revWinRate + '%)', TOOLTIPS.revolutionsWon) +
           statRowWithInfo('Matches Won', player.matchesWon + ' / ' + played + ' (' + matchWinRate + '%)', TOOLTIPS.matchesWon) +
           statRowWithInfo('Total Stone Given', player.totalStoneGiven, TOOLTIPS.totalStoneGiven) +
-          statRowWithInfo('Total Score', player.totalScore, TOOLTIPS.totalScore) +
-          statRow('Best Partner', bestPartnerName) +
+          statRowWithInfo('Total Score', player.totalScore + ' pts', TOOLTIPS.totalScore) +
+          statRowWithInfoHtml('Best Partner', bestPartnerHtml, TOOLTIPS.bestPartner) +
+          statRowWithInfoHtml('Recent Form', formHtml, TOOLTIPS.recentForm) +
         '</div>';
       container.appendChild(card);
     });
@@ -397,6 +447,13 @@
     return '<div class="player-stat-row">' +
       '<span class="player-stat-label">' + esc(label) + infoIcon(tooltip) + '</span>' +
       '<span class="player-stat-value">' + esc(String(value)) + '</span>' +
+    '</div>';
+  }
+
+  function statRowWithInfoHtml(label, valueHtml, tooltip) {
+    return '<div class="player-stat-row">' +
+      '<span class="player-stat-label">' + esc(label) + infoIcon(tooltip) + '</span>' +
+      '<span class="player-stat-value">' + valueHtml + '</span>' +
     '</div>';
   }
 
@@ -471,7 +528,7 @@
 
       var bets = state.betsByRev[rev.id];
       var downloadBtn = bets
-        ? '<a class="rev-download-btn" href="' + bets.url + '" download title="Download betting CSV">↓ CSV</a>'
+        ? '<a class="rev-download-btn" href="' + bets.url + '" download title="Download betting CSV" onclick="event.stopPropagation()">↓ CSV</a>'
         : '';
 
       var summary = document.createElement('summary');
@@ -641,27 +698,34 @@
 
   function renderMatchFilters(state) {
     var container = document.getElementById('match-filters');
-    container.innerHTML = '<span class="filter-label">Filter:</span>';
+    container.setAttribute('role', 'group');
+    container.setAttribute('aria-label', 'Filter history by revolution winner');
+    container.innerHTML = '<span class="filter-label">Filter by winner:</span>';
 
-    var allBtn = document.createElement('button');
-    allBtn.className = 'filter-btn active';
-    allBtn.textContent = 'All';
-    allBtn.setAttribute('data-filter', '');
-    container.appendChild(allBtn);
-
-    PLAYER_ORDER.forEach(function (p) {
+    function makeBtn(label, filterVal, isActive) {
       var btn = document.createElement('button');
-      btn.className = 'filter-btn';
-      btn.textContent = shortName(p, state.playerMap);
-      btn.setAttribute('data-filter', p);
-      container.appendChild(btn);
+      btn.type = 'button';
+      btn.className = 'filter-btn' + (isActive ? ' active' : '');
+      btn.textContent = label;
+      btn.setAttribute('data-filter', filterVal);
+      btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      return btn;
+    }
+
+    container.appendChild(makeBtn('All', '', true));
+    PLAYER_ORDER.forEach(function (p) {
+      container.appendChild(makeBtn(shortName(p, state.playerMap), p, false));
     });
 
     container.addEventListener('click', function (e) {
       var btn = e.target.closest('.filter-btn');
       if (!btn) return;
-      container.querySelectorAll('.filter-btn').forEach(function (b) { b.classList.remove('active'); });
+      container.querySelectorAll('.filter-btn').forEach(function (b) {
+        b.classList.remove('active');
+        b.setAttribute('aria-pressed', 'false');
+      });
       btn.classList.add('active');
+      btn.setAttribute('aria-pressed', 'true');
       state.filter = btn.getAttribute('data-filter') || null;
       renderHistoryTree(state);
     });
@@ -690,6 +754,45 @@
     var div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+  }
+
+  // Provide a screen-reader summary alongside the canvas, since Chart.js
+  // canvases are otherwise opaque to assistive tech.
+  function setChartFallback(canvas, summaryText) {
+    if (!canvas) return;
+    var id = canvas.id + '-sr';
+    var existing = document.getElementById(id);
+    if (existing) existing.remove();
+    var sr = document.createElement('p');
+    sr.id = id;
+    sr.className = 'sr-only';
+    sr.textContent = summaryText;
+    canvas.parentNode.appendChild(sr);
+    canvas.setAttribute('role', 'img');
+    canvas.setAttribute('aria-describedby', id);
+  }
+
+  function buildCumulativeFallback(chrono, playerMap) {
+    var totals = {};
+    PLAYER_ORDER.forEach(function (p) { totals[p] = 0; });
+    chrono.forEach(function (rev) {
+      revWinnersForRow(rev).forEach(function (w) { totals[w]++; });
+    });
+    var parts = PLAYER_ORDER.map(function (p) {
+      return shortName(p, playerMap) + ' ' + totals[p];
+    });
+    return 'Cumulative revolutions won across ' + chrono.length + ' revolutions: ' + parts.join(', ') + '.';
+  }
+
+  function buildPartnershipFallback(pairList, playerMap) {
+    if (!pairList.length) return 'No partnerships have played enough matches to chart.';
+    var parts = pairList.slice(0, 6).map(function (p) {
+      var nameA = playerMap[p.players[0]] ? playerMap[p.players[0]].split(' ')[0] : p.players[0];
+      var nameB = playerMap[p.players[1]] ? playerMap[p.players[1]].split(' ')[0] : p.players[1];
+      var rate = p.played ? Math.round((p.won / p.played) * 100) : 0;
+      return nameA + ' & ' + nameB + ' ' + rate + '% (' + p.won + '/' + p.played + ')';
+    });
+    return 'Partnership win rates over time: ' + parts.join('; ') + '.';
   }
 
   // ===== Charts =====
@@ -721,9 +824,21 @@
     if (!canvas || typeof Chart === 'undefined') return;
 
     var chrono = chronologicalRevs(revolutions);
-    var labels = chrono.map(function (r) {
-      return formatDate(r.date) + ' #' + parseRevolutionId(r.id).num;
+
+    // Suffix "#N" only when a single date hosts more than one revolution.
+    var dateCounts = {};
+    chrono.forEach(function (r) {
+      var key = formatDate(r.date);
+      dateCounts[key] = (dateCounts[key] || 0) + 1;
     });
+    var labels = chrono.map(function (r) {
+      var key = formatDate(r.date);
+      return dateCounts[key] > 1
+        ? key + ' #' + parseRevolutionId(r.id).num
+        : key;
+    });
+
+    setChartFallback(canvas, buildCumulativeFallback(chrono, playerMap));
 
     var running = {};
     PLAYER_ORDER.forEach(function (p) { running[p] = 0; });
@@ -773,8 +888,8 @@
     if (!canvas || typeof Chart === 'undefined') return;
 
     var chrono = chronologicalMatches(matches);
-    var labels = chrono.map(function (m, idx) {
-      return formatDate(m.date) + ' R' + parseRevolutionId(m.revolutionId).num + 'S' + m.setNo;
+    var labels = chrono.map(function (m) {
+      return formatDate(m.date) + ' S' + m.setNo;
     });
 
     // Identify all distinct pairs
@@ -803,11 +918,17 @@
       });
     });
 
-    var pairList = Object.values(pairs).sort(function (a, b) {
-      var rA = a.played ? a.won / a.played : 0;
-      var rB = b.played ? b.won / b.played : 0;
-      return rB - rA;
-    });
+    // Drop pairs whose series never reached the 2-match threshold — otherwise
+    // they appear in the legend with an empty line, which is confusing.
+    var pairList = Object.values(pairs)
+      .filter(function (pair) { return pair.series.some(function (v) { return v !== null; }); })
+      .sort(function (a, b) {
+        var rA = a.played ? a.won / a.played : 0;
+        var rB = b.played ? b.won / b.played : 0;
+        return rB - rA;
+      });
+
+    setChartFallback(canvas, buildPartnershipFallback(pairList, playerMap));
 
     var datasets = pairList.map(function (pair, i) {
       var nameA = playerMap[pair.players[0]] ? playerMap[pair.players[0]].split(' ')[0] : pair.players[0];
