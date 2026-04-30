@@ -215,7 +215,10 @@ body {
 
 /* Wordmark: a clean serif "304" in the warm body typeface, with positive
    tracking so the digits read as a deliberate logotype rather than a
-   number. No decorative pip — the typography carries it alone. */
+   number. The lozenge inside the zero is the one concealed device — it
+   echoes the face-down trump card at the centre of a 304 table, and
+   nods to the lozenge-and-rosette geometry shared by Dutch delft
+   tilework and Sri Lankan textile motifs. One quiet flourish. */
 .site-nav-brand {
   font-family: var(--font-body);
   font-size: 2rem;
@@ -228,6 +231,32 @@ body {
 
 .site-nav-brand:hover {
   color: var(--clr-accent);
+}
+
+.site-nav-brand .brand-zero {
+  position: relative;
+  display: inline-block;
+}
+
+.site-nav-brand .brand-zero::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.11em;
+  height: 0.20em;
+  transform: translate(-50%, -50%);
+  background: currentColor;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  pointer-events: none;
+}
+
+/* Below ~32px cap height (mobile, favicon contexts) the lozenge gets
+   illegible; the wordmark drops it and stands on the typography alone. */
+@media (max-width: 500px) {
+  .site-nav-brand .brand-zero::after {
+    display: none;
+  }
 }
 
 .site-nav-links {
