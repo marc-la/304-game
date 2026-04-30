@@ -22,11 +22,13 @@ A match typically lasts 30 minutes to an hour. A revolution (3 matches covering 
 
 Each game proceeds through the following phases:
 
-1. **Shuffling and Dealing** — The dealer shuffles and deals cards.
+1. **Shuffling and First Deal** — The dealer shuffles and deals the first batch of 4 cards to each player.
 2. **4-Card Betting** — Players bid on their first 4 cards.
-3. **8-Card Betting** — A second round of bidding after all 8 cards are dealt.
-4. **Play** — 8 rounds of trick-taking.
-5. **Scrutiny** — Teams count points and determine whether the betting team met their threshold. Caps calls are verified. Stone is exchanged accordingly. This phase can involve spirited deliberation.
+3. **Choosing Trump** — The highest 4-card bidder places one of their cards face down to indicate trump.
+4. **Second Deal** — The dealer deals the remaining 4 cards to each player.
+5. **8-Card Betting** — A second round of bidding after all 8 cards are dealt.
+6. **Play** — 8 rounds of trick-taking.
+7. **Scrutiny** — Teams count points and determine whether the betting team met their threshold. Caps calls are verified. Stone is exchanged accordingly. This phase can involve spirited deliberation.
 
 ---
 
@@ -53,15 +55,21 @@ Note that J has precedence over 9, which has precedence over A, and so on. 8 bea
 
 ## Setup
 
-The deck is sorted into the **pack** (32 playable cards, 7–A) and the **stone** (the remaining 20 cards, 2–6). Each team receives 10 stone, sorted by colour, held by one player on each team. The pack is shuffled. Any player may deal first.
+The deck is sorted into the **pack** (32 playable cards, 7–A) and the **stone** (the remaining 20 cards, 2–6). Each team receives 10 stone, sorted by colour, held by one player on each team. The pack is shuffled. Any player may deal first — the choice is informal (random or by group convention).
+
+The "stone holder" role on each team is informal. In practice, the stone holders are typically adjacent (e.g. A and B holding for their respective teams), so each can hand stone to the opposing-team holder seated next to them. Pick whatever assignment works for your group; competence at multitasking through scrutiny disputes is the main criterion.
 
 ---
 
 ## Dealing
 
-The **dealer** shuffles the pack, performing 1–4 overhand shuffles. Minimal shuffling is key — this preserves the order of cards from the previous game to encourage high-value betting. Once shuffled, the player to the **left** of the dealer may cut the pack once, or tap the top of the deck to decline the cut. No further shuffles from the dealer after the cut.
+The **dealer** shuffles the pack, performing 1–4 overhand shuffles. Minimal shuffling is preferred — this preserves the order of cards from the previous game to encourage high-value betting. Once shuffled, the player to the **left** of the dealer may cut the pack once, or tap the top of the deck to decline the cut. No further shuffles from the dealer after the cut.
 
 The dealer then deals the top 4 cards to the player on their **right**, then 4 to the next player (anticlockwise), and so on, finishing with themselves. This deals half the pack (4 cards each).
+
+Between games, the dealer rotates one seat anticlockwise.
+
+> **Tip — Riffle remedy.** If consecutive 4-card redeals (low-point hands) keep occurring at the same seat, the dealer may perform one **riffle shuffle** to break up clumped low cards before the next deal. This is not a strict rule, just a practical remedy.
 
 ---
 
@@ -75,105 +83,138 @@ On a player's turn, they may take one of three actions. Each counts as a **speec
 
 - **Bet** — Declare a bid higher than the current highest bid (with sufficient increment). This signals the player believes their team can win at least that many points.
 - **Pass** — Decline to bet.
-- **Partner** — Ask your partner to bid in your place. The partner may then bet or pass as if it were their own turn, but this occurs in the position of the player who partnered. Both players have now used their first speech. The partner's normal turn is skipped when bidding comes around to them. Partnering is available on any speech, not just the first, though it is almost never done after the first.
+- **Partner** — Ask your partner to bid in your place. The partner immediately takes a turn in your seat (bet or pass), and that bid/pass is treated as their first speech. **[House Rule]** Partnering is restricted to:
+  - **Phase**: 4-card betting only — never on 8 cards.
+  - **Player**: only the player to dealer's right or the player across from dealer. Their respective partners (the dealer-left player and the dealer themselves) cannot partner.
+  - **Speech**: only on that player's *first* speech.
+  - **No partner-back**: the partnered player cannot return the partner action.
 
-Bidding continues anticlockwise for as many circuits as needed. The highest bid is established once **three consecutive passes** occur — at that point, no further bids are allowed.
+#### Skips
+
+Bidding proceeds anticlockwise. When bidding reaches a player, they are **skipped** (silent — no bid, no pass, no event) under either of the following conditions:
+
+1. **Partnered-player skip.** Their first speech was used by their partner asking them to bid. Their normal turn is skipped exactly once (the next time bidding reaches their seat). On subsequent circuits, they speak normally.
+2. **Current-bid-holder skip.** They currently hold the highest bid. They are skipped on every subsequent turn until another player overtakes the highest bid, at which point they re-enter rotation.
+
+A skipped turn is silent: it neither advances nor resets the consecutive-pass counter.
+
+#### Termination
+
+Bidding ends when **both** of the following are true:
+
+- Every player has had a first speech (a bid, pass, or partner action — including a partnered bid/pass, which counts as the partner's first speech).
+- **Three consecutive passes** have occurred since the last bid (or since the start of bidding if no bid has been made).
+
+Any bid (including a partnered bid) resets the consecutive-pass counter to zero. Skips do not affect the counter. Once 3 consecutive passes have accumulated and all 4 players have had a first speech, bidding ends — even if a skip would otherwise have been actuated next.
+
+If termination occurs without any bid having been placed, a **pass-on** is triggered (see below).
 
 #### Constraints on Bidding Below 200
 
 Bids below 200 are subject to two constraints:
 
-1. **First speech only.** A player can bid below 200 only on their first opportunity to speak. If they have already bet, passed, or partnered, their minimum bid becomes 200.
-2. **Cannot undercut your own partner.** If your partner currently holds the highest bid, you cannot bid below 200 — you must bid 200 or higher to take over, or pass.
+1. **First speech only.** A player can bid below 200 only on their first opportunity to speak. After they have bet, passed, or had their first speech consumed via partnering, their minimum bid becomes 200.
+2. **Cannot undercut your own partner.** If your partner currently holds the highest bid, you cannot bid below 200 — you must bid 200 or higher to take over, or pass. Bidding below 200 to overtake the *opposing* team's bid (e.g. bidding 180 over their 170 on your first speech) is fine.
 
-There is no upper limit on 4-card bids — a player could theoretically bid 220 or higher on 4 cards. However, this is extremely unwise, as seeing all 8 cards before committing to a high bid is far more beneficial. In practice, 4-card bids rarely exceed 200.
+There is no upper limit on 4-card bids in principle — a player could theoretically bid 220 or higher, including PCC, on 4 cards. In practice, this is extremely unwise (you are committing without seeing 4 of your cards), and bids of 220+ on 4 cards are virtually never made.
 
 > **Worked Example — 4-Card Betting (Simple)**
 >
-> Players are seated anticlockwise from the dealer: **A** (right of dealer), **B**, **C** (A's partner), **D** (B's partner).
+> Players are seated anticlockwise from the dealer: **A** (right of dealer), **B**, **C** (A's partner), **D** (B's partner, dealer).
 >
-> 1. **A** bids 60 (i.e. 160). A's first speech. ✓
-> 2. **B** bids 70 (170). B's first speech, increment of 10. ✓
-> 3. **C** passes. C's first speech. ✓
-> 4. **D** passes. D's first speech. ✓
-> 5. **A** wants to continue. A has already spoken, so A's minimum is now 200. A bids 100 (200). ✓
-> 6. **B** wants to continue. B has already spoken, so B's minimum is also 200. Current bid is 200, so B must go higher — B bids 105 (205), in increments of 5 (since the bid is above 200). ✓
-> 7. **C** passes. **D** passes. **A** bids 110 (210). ✓
-> 8. **B** passes. **A** is the highest bidder at 210.
+> 1. **A** bids 60 (160). A's first speech. Counter: 0.
+> 2. **B** bids 70 (170). B's first speech, increment of 10. Counter: 0 (reset by bid).
+> 3. **C** passes. C's first speech. Counter: 1.
+> 4. **D** passes. D's first speech. Counter: 2. All 4 have now spoken.
+> 5. **A**'s second turn. A has spoken, minimum is 200. A bids 100 (200). Counter: 0.
+> 6. **B** bids 105 (205), increment of 5 above 200. Counter: 0.
+> 7. **C** passes (1). **D** passes (2). **A** bids 110 (210). Counter: 0.
+> 8. **B** passes (1). **C** passes (2). **D** passes (3). Counter hits 3 → bidding ends. **A** wins at 210.
+>
+> In practice, the trailing "C passes, D passes" in step 8 are formalities and rarely spoken aloud once a bid is established and the next speaker has already passed. Formally they are still required for the counter to reach 3.
 
 > **Worked Example — 4-Card Betting (Partnering)**
 >
-> Same seating. This time, A has cards in multiple suits and no strong trump preference — A would rather let their partner choose.
+> Same seating. A has cards in multiple suits and no strong trump preference.
 >
-> 1. **A** says **"partner"**. C (A's partner) bids in A's place. C bids 60 (160). Both A and C have now used their first speech.
-> 2. **B** bids 70 (170). B's first speech. ✓
-> 3. **C**'s normal turn is skipped (already used when A partnered).
-> 4. **D** passes. D's first speech. ✓
-> 5. **A**'s turn comes around again. A has already spoken (when they said "partner"), so A's minimum is 200. A passes.
-> 6. **B** has already spoken, so B's minimum is 200. B passes. **D** passes. **B** is the highest bidder at 170.
+> 1. **A** says **"partner"**. C (A's partner) immediately bids in A's seat. C bids 60 (160). Both A's and C's first speeches are now used.
+> 2. **B** bids 70 (170). B's first speech. Counter: 0.
+> 3. **C**'s normal turn — **skipped** (partnered-player skip; used once). Counter unchanged.
+> 4. **D** passes. D's first speech. Counter: 1. All 4 have now spoken.
+> 5. **A**'s second turn. A has spoken; minimum 200. A passes. Counter: 2.
+> 6. **B**'s turn — **skipped** (B holds the highest bid at 170). Counter unchanged.
+> 7. **C**'s turn (back in rotation; partnered-skip already used). C has spoken (via partnering); minimum 200. C bids 200. Counter: 0.
+> 8. **D** passes (1). **A** passes (2). **B** passes (3). Counter hits 3 → bidding ends. **C** wins at 200.
 >
-> Note: Partnering is typically done when you have strong supporting cards but no clear trump suit — you want your partner to choose the trump.
+> Alternative scenario with no bid: *A=partner → C=pass, B=pass, (C skip), D=pass.* Counter advances to 3 at D's pass; all 4 have spoken; no bid was placed → **pass-on**.
 
-#### Reshuffle on 4 Cards
+#### Redeal on 4 Cards (low points)
 
-A player may trigger a **reshuffle** (same dealer replays the game) if:
+A **redeal** (the *same* dealer reshuffles and deals again) may be triggered if:
 
-- They are the player to the dealer's right (i.e. the player with priority), **or** **[House Rule]** their partner was given the turn via "partner" by the player to the dealer's right; **and**
-- Their 4 cards total **less than 15 points** (i.e. 14 or lower).
+- The player to the dealer's right (priority player), **or** **[House Rule]** their partner if the priority player partnered to them, holds 4 cards totalling **less than 15 points** (i.e. 14 or lower); **and**
+- They declare it during the 4-card betting phase, before the second deal.
 
-A reshuffle must be declared during the 4-card betting phase, before the 8-card deal. Standard rules restrict reshuffles to only the player to the dealer's right. Our group extends this to also cover the partner who was given the turn via "partner."
+Standard rules restrict this to the priority player only; our group extends to the partnered partner. Redeal is optional — a brave player may continue.
 
-This is optional — a brave player may choose to continue. **[House Rule]** Three consecutive reshuffles on 4 cards trigger a full reset of the pack (thorough shuffle) before play resumes.
+#### Pass-on on 4 Cards (no bid placed)
 
-#### Redeal on 4 Cards
-
-If all 4 players pass on 4 cards, a **redeal** occurs. The deal moves to the next dealer (anticlockwise).
+If 4-card betting terminates with no bid placed, a **pass-on** occurs: the deal moves to the next dealer (anticlockwise).
 
 ### Choosing a Trump Suit
 
-The highest bidder selects one of their 4 cards and places it **face down** on the table without showing it. This is the **Trump card**. The suit of this card is the **Trump suit** for the game. The highest bidder is now the **Trumper**. The Trumper must not look at their remaining 4 cards before selecting the Trump card.
+The highest 4-card bidder selects one of their 4 cards and places it **face down** on the table without showing it. This is the **Trump card**. The suit of this card is the **Trump suit** for the game. The highest bidder is now the **Trumper**. The Trumper must not look at their remaining 4 cards before selecting the Trump card.
+
+If 8-card bidding later supersedes the 4-card bid, the new highest bidder picks up any prior Trump card and selects a fresh one from their full 8-card hand (placed face down).
 
 Not to be confused with the 45th & 47th President of the United States of America, [Donald J. Trump](https://en.wikipedia.org/wiki/Donald_Trump).
 
 ### Betting on 8 Cards
 
-After the Trump card is placed, the dealer completes the deal with another batch of 4 cards to each player (same dealing order). After everyone has seen their 8 cards, a second round of betting begins.
+After the Trump card is placed, the dealer deals the second batch of 4 cards to each player (same dealing order). After everyone has seen their 8 cards, a second round of betting begins.
 
 **[House Rule]** 8-card betting begins with the player to the dealer's right, the same as 4-card betting. (Standard rules start with the highest bidder from the 4-card round.)
 
-The minimum 8-card bid is **220**, referred to as **"Honest"** **[House Rule — standard rules set the 8-card minimum at 250]**. If the existing 4-card bid is 220 or higher, the 8-card bid must exceed it using the standard increment of 5. Increments are **5** above 220. Further bids above Honest are named accordingly: Honest 5 (225), Honest 10 (230), and so on up to Honest 25 (245). A bid of 250 is simply called "250."
+**[House Rule]** On 8 cards, players may **only bet or pass** — partnering is not allowed. (Standard rules permit partnering on 8 cards; we do not.)
 
-As with 4-card betting, 8-card bidding ends after **three consecutive passes**. If no player bids on 8 cards — which is the most common scenario — the 4-card bid remains the prevailing bet and play proceeds accordingly.
+The minimum 8-card bid is **220**, referred to as **"Honest"** **[House Rule — standard rules set the 8-card minimum at 250]**. If the existing 4-card bid is 220 or higher, the 8-card bid must exceed it. Bids from 220 onwards proceed in increments of **5**. Bids above Honest are named accordingly: Honest 5 (225), Honest 10 (230), and so on up to Honest 25 (245). A bid of 250 is simply called "250."
 
-If any player bids on 8 cards, this **supersedes** the 4-card bid entirely. The 4-card Trumper picks up their Trump card. The new highest 8-card bidder becomes the Trumper and selects a new Trump card from their 8 cards. The original 4-card Trumper may also choose to overbet on 8 cards if they wish to remain Trumper (or to change their Trump suit).
+The skip and termination mechanics from 4-card betting apply identically to 8-card betting (current-bid-holder skip; bidding ends after all 4 first speeches and 3 consecutive passes).
 
-**[House Rule]** Partnering is allowed on 8-card betting (following the same rules as 4-card partnering), though it is rarely done in practice. Standard rules prohibit partnering on 8 cards.
+If no player bids on 8 cards — which is the most common scenario — the 4-card bid remains the prevailing bet and play proceeds accordingly.
+
+If any player bids on 8 cards, this **supersedes** the 4-card bid entirely. The 4-card Trumper picks up their Trump card. The new highest 8-card bidder becomes the Trumper and selects a new Trump card from their 8-card hand. The original 4-card Trumper may also overbet on 8 cards if they wish to remain Trumper (or to change their Trump suit).
 
 #### Constraints on Bidding Below 250
 
-The same constraint structure as 4-card betting applies, but with 250 as the threshold instead of 200:
+The same first-speech constraint as 4-card betting applies, with 250 as the threshold:
 
 1. **First speech only.** A player can bid below 250 only on their first opportunity to speak in the 8-card round. After speaking, their minimum becomes 250.
 2. **Cannot undercut your own partner.** If your partner holds the highest 8-card bid, you must bid 250 or higher to take over.
 
-The only bid higher than 250 is **PCC (Partner Closed Caps)**.
+The only legal bid higher than 250 is **PCC (Partner Closed Caps)**.
 
-#### Redeal on 8 Cards
+#### Pass-on on 8 Cards (low points)
 
-**[House Rule]** Any player may elect to redeal if their hand totals **less than 25 points** on 8 cards. This must be declared during the 8-card betting phase, before play begins. The deal moves to the next dealer.
+**[House Rule]** A player may elect a **pass-on** if their hand totals **less than 25 points** on 8 cards. This must be declared on the player's *first* 8-card speech — once they have bet, passed, or been skipped past, the option is waived. Pass-on moves the deal to the next dealer.
 
 #### Absolute Hand
 
-**[House Rule]** If a player, before the beginning of the first round, is guaranteed to win all 8 rounds regardless of how others play, this is an **absolute hand**. It is uncompetitive to play against, so a redeal is called. No stone is exchanged. This is exceptionally rare.
+**[House Rule]** An **absolute hand** is one so strong that the holder is guaranteed to win all 8 rounds before play begins, regardless of how others play and regardless of priority order. This is exceptionally rare (well under 1% of hands).
+
+Two paths exist:
+
+- **Goodwill declaration.** The holder lays their hand face up before round 1 and announces an absolute hand. A pass-on is triggered (next dealer), no stone is exchanged, and the holder forfeits the (otherwise certain) Caps reward. Most players play goodwill.
+- **Post-game claim by opposition.** If the opposition lost every round and can demonstrate that no permutation of their play would have won them any round, they may claim absolute hand during scrutiny. If accepted by group consensus, the result is reversed to a pass-on with no stone exchanged. No penalty for an incorrect claim — the burden is on the opposition to make a convincing case.
 
 #### Partner Closed Caps (PCC)
 
 PCC is the highest possible bid. When a player bids PCC:
 
 - Their partner puts down their hand and is no longer in play for all 8 rounds.
-- The Trumper plays **Open Trump** (see below).
+- The Trumper plays **Open Trump** (see below). Unlike other open-trump games, the PCC Trumper is **not** required to lead with Trump on round 1 — they may lead any card. Trump is revealed via the standard "pick up folded card, reveal any trump-suit card to others, return to hand" mechanism before play begins.
 - The Trumper has priority for the first round. Play proceeds anticlockwise as normal, skipping the Trumper's partner.
-- Caps does not need to be called. The bid succeeds if and only if the Trumper wins all 8 rounds.
+- Caps does not need to be called — the bid itself is staked entirely on winning all 8 rounds. **Caps and External Caps mechanics do not apply to PCC.**
 - The Exhausted Trumps rule does not apply.
 - **[House Rule]** PCC rewards/punishes **5 stone** (win 5 / lose 5). Standard rules award 4 for a win and 5 for a loss.
 
@@ -181,7 +222,7 @@ PCC is the highest possible bid. When a player bids PCC:
 
 ## Play
 
-The player to the dealer's right has **priority** for the first round — they lead by playing a card face up. Thereafter, the winner of each round gains priority and leads the next. The other three players each play a card in turn (anticlockwise).
+The player to the dealer's right has **priority** for the first round — they lead by playing a card face up. Thereafter, the winner of each round gains priority and leads the next. The other three players each play a card in turn (anticlockwise). (PCC: the Trumper has priority for round 1; the Trumper's partner is out for the entire game.)
 
 **Following suit is mandatory.** Players must play a card of the same suit that was led (the **led suit**) if they have one. If they cannot follow suit, they may play any card.
 
@@ -191,13 +232,16 @@ Between rounds, players may inspect the face-up cards from the **most recently c
 
 ### Open Trump Games
 
-After 8-card betting and before the first round, the Trumper may elect to play **Open Trump**. **[House Rule]** To declare Open Trump, the Trumper: (1) picks up the folded Trump card from the table and returns it to their hand, then (2) reveals any card of the Trump suit to the other players — not necessarily the original Trump card. This allows the Trumper to conceal which specific card was folded, preserving strategic information. (In standard rules, the Trumper simply flips the folded Trump card face up, then returns it to hand.) From this point, all cards are played face up and basic play rules apply.
+After 8-card betting and before the first round, the Trumper may elect to play **Open Trump**. The declaration mechanic depends on whether the Trumper has priority for round 1:
 
-In Open Trump games, the Trumper is **not** required to lead with the Trump suit on the first round when they have priority (but may choose to do so, e.g. to draw out opposing Trump cards).
+- **Trumper has priority for round 1.** The Trumper picks up the folded Trump card and returns it to their hand, then **must lead round 1 with a card of the Trump suit** (any trump-suit card from hand, not necessarily the originally folded one). Leading the trump card serves as the reveal.
+- **Trumper does not have priority for round 1.** The Trumper picks up the folded Trump card, returns it to their hand, then reveals any card of the Trump suit to the other players (not necessarily the originally folded one). The revealed card returns to hand and is not visible thereafter — players who fail to remember the trump suit later have only themselves to blame; requests for re-confirmation will be denied.
 
-Open Trump is sometimes preferable — for instance, if the Trumper wants their partner to cut the first round, or if the Trumper has priority and wishes to begin with Trump.
+From the moment of declaration, all cards are played face up and basic play rules apply.
 
-**[House Rule]** In standard rules, bids of 250 or higher require the Trump card to be revealed at the end of the first round, with play proceeding as Open Trump from the second round onwards. We do not play this rule — Closed Trump games remain closed regardless of the bid amount, following the same rules as any other Closed Trump game.
+**[House Rule]** **PCC exception**: the PCC Trumper plays Open Trump but is **not** bound to lead with Trump on round 1. They may lead any card.
+
+**[House Rule]** In standard rules, bids of 250 or higher require the Trump card to be revealed at the end of the first round, with play proceeding as Open Trump from the second round onwards. We do not play this rule — Closed Trump games remain closed regardless of the bid amount.
 
 ### Closed Trump Games
 
@@ -214,36 +258,42 @@ Playing a card face down is either an attempt to **cut** (play a card of the Tru
    - In the 8th round, when it is the Trumper's last remaining card.
 
 3. **If the Trumper cannot follow the led suit**, they may choose to:
-   - **Cut** using the Trump card (played face down), or
-   - **Minus** — fold a non-led, non-Trump card. This is useful if the Trumper's partner is winning the round, or if the Trumper wants to discard a constraining card.
+   - **Cut** using the folded Trump card (played face down), or
+   - **Minus** — fold a non-led, non-Trump-suit card. Useful when the Trumper's partner is winning the round, or when the Trumper wants to discard a constraining card.
 
-4. **If the Trumper has no Trump in hand except the face-down Trump card**, and the led suit is the Trump suit, the Trumper cannot follow suit. They must minus a non-Trump card face down (the Trump card cannot be played face up to follow suit while it remains the indicator).
+4. **The Trumper cannot fold an in-hand trump-suit card.** In-hand trump-suit cards (those *not* on the table as the folded Trump card) may only be played **face up** — never folded. Concretely, the Trumper's face-down options are restricted to (a) cutting with the folded Trump card or (b) minusing a non-trump-suit card. If the Trumper holds *only* trump-suit cards in hand plus the folded Trump card, and is unable to follow a non-trump led suit, they must cut with the folded Trump card (no minus is possible).
+
+5. **If the Trumper has no Trump in hand except the folded Trump card, and the led suit is the Trump suit**, the Trumper cannot follow suit (the folded Trump card cannot be played face up while it remains the indicator). They must minus a non-trump-suit card face down.
 
 #### Resolving Folded Cards
 
 At the end of each round, if any cards were played face down, the Trumper inspects them privately:
 
 - **No Trump among the folded cards:** The folded cards remain face down and no one else may look at them. The round is won by the highest card of the led suit.
-- **At least one Trump among the folded cards:** The Trumper reveals **all** Trump cards that were played face down, and also reveals the Trump card (flipping it face up). The round is won by the highest Trump played to it. If the Trump card was not played to that round, it is picked up after everyone has seen it and added to the Trumper's hand. Any non-Trump folded cards (including a Trumper's minus) are **not** revealed.
+- **At least one Trump among the folded cards:** The Trumper reveals **all** Trump cards that were played face down to that round, *regardless of which one wins*. The folded Trump card on the table is also flipped face up. The round is won by the highest Trump played to it. If the folded Trump card itself was not played to the round, it is shown to all players, then picked up and added to the Trumper's hand. Any non-Trump folded cards (including a Trumper's minus) are **not** revealed.
 - After the Trump card has been revealed, the Trump is said to be **open**. From this point forward, all cards are played face up and basic play rules apply.
 
 **Missing the cut:** If a player attempts to cut but plays the wrong suit (not the Trump suit), their card has no power. A sign of bad things to come.
 
-**Overcut:** If multiple players attempt to cut, and more than one plays the Trump suit, the highest Trump card among them wins the round. The winner is said to have **overcut** the others.
+**Overcut:** If multiple players attempt to cut and more than one plays a card of the Trump suit, the highest Trump card among them wins the round. The winner is said to have **overcut** the others. *All* trump-suit cards played to the round are revealed; non-trump folded cards remain hidden.
 
 ### Exhausted Trumps
 
 If the Trumper has priority, leads with a Trump card, and no other player can respond with the Trump suit (meaning the Trumper holds all remaining Trump), the Trumper must continue leading all remaining Trump from their hand before leading any other suit.
 
-**[House Rule]** This rule only applies once the Trump suit has been revealed (i.e. in Open Trump games, or after the Trump card has been flipped in a Closed Trump game). If the Trump card is still face down, Exhausted Trumps does not apply — the Trumper is free to lead any suit. In standard rules, Exhausted Trumps applies even when the Trump card is still face down.
+This rule applies in both Open and Closed Trump games. In Closed Trump it can only meaningfully fire after Trump has been revealed (the Trumper cannot lead the folded Trump card; only in-hand trumps can be led). In practice it applies in rounds 3–7 of closed trump — round 2 leading-out implies Spoilt Trumps (no opposition trumps from the deal), and round 8 is the trivial final-card case.
+
+The rule does **not** apply in PCC.
 
 ### Spoilt Trumps
 
-If the Trumping team's opponents collectively hold **zero** Trump cards from the deal (i.e. between their 16 cards, not a single card belongs to the Trump suit), any player who notices may declare **Spoilt Trumps**. The game is void — no stone is exchanged, the cards are thrown in, and the deal moves to the next dealer. In practice, the opposition almost always calls Spoilt Trumps as it greatly benefits them, but the Trumping team may also call it if they notice.
+If the Trumping team's opponents collectively hold **zero** Trump cards from the deal (i.e. between their 16 cards, not a single card belongs to the Trump suit), any player who notices may declare **Spoilt Trumps**. The game is void — no stone is exchanged, the cards are thrown in, and a pass-on triggers (next dealer). In practice the opposition almost always calls Spoilt Trumps as it greatly benefits them, but the Trumping team may also call it (typically the Trumper, deducing from their partner's trump plays).
 
 Spoilt Trumps may be declared at any time **before** the last card of the last round is played. After that, it is too late.
 
 **Clarification:** If the opposition originally held Trump cards but lost them through cuts during play (i.e. Trump was "pulled from them"), this does **not** count as Spoilt Trumps. The opposition must have held zero Trump from the outset of the game.
+
+**False Spoilt Trumps call:** Calling Spoilt Trumps is itself a "speech" — it can divulge that the caller has been counting trumps. A false call (the opposition did in fact hold trumps) attracts a **1-stone penalty** (caller's team receives 1 stone). In practice this is exceedingly rare.
 
 ---
 
@@ -261,7 +311,9 @@ This is what makes Caps genuinely difficult — and why it has not been well imp
 
 When calling Caps, the player puts their cards down and states the order of play. The opposition may scrutinise to verify there are no holes in the claim.
 
-In strict play, Caps should be called on the precise card at which certainty is first achieved — potentially mid-round. In practice, calling Caps before a player makes their next play is acceptable, giving a brief grace period to recognise the situation.
+In strict play, Caps should be called on the precise card at which certainty is first achieved — potentially mid-round. In practice, calling Caps before the calling player makes their next play is acceptable, giving a brief grace period to recognise the situation.
+
+**Caps cannot be called after the final card of round 8 is played.** Once the game ends, the call window is closed. Scrutiny may retroactively determine that a Caps situation was missed and apply Late Caps (see below), but no new call can be made.
 
 > **Worked Example — Caps**
 >
@@ -296,27 +348,50 @@ In strict play, Caps should be called on the precise card at which certainty is 
 
 ### Correct Caps
 
-Calling Caps correctly, at the first opportunity, and **before the start of the 7th round**, rewards the team with **+1 stone** on top of the normal win (e.g. a correct Caps on Honest = 2 + 1 = 3 stone).
+Calling Caps correctly, at the first opportunity, and **before the start of the 7th round**, rewards the team with **+1 stone** on top of the normal win (e.g. a correct Caps on Honest = 2 + 1 = 3 stone given).
 
 After the start of the 7th round, a player must still call Caps at the first opportunity, but a correct call attracts **no bonus** — the win is scored normally. (By the 7th round, there is typically enough information for any competent player to recognise Caps, so no reward is given.)
 
 ### Late Caps
 
-Calling Caps **after** the first opportunity to do so. Punished by **loss + 1 stone** on top of the usual loss, even if the team won enough points to meet their original bid. (E.g. Late Caps on Honest = 3 + 1 = 4 stone received by the betting team.) **[House Rule — standard rules treat late and early Caps identically as "Wrong Caps".]**
+Calling Caps **after** the first opportunity to do so, OR — winning all 8 rounds during play without ever calling Caps, where scrutiny determines a first opportunity existed. The Trumper, who has full visibility of every played card, is held to a higher standard than other players: by the final rounds the Trumper should know what they hold and what opponents have left, so a missed Caps from the Trumper's seat is rarely defensible.
+
+Punished by **loss + 1 stone** on top of the usual loss for the bid, even if the team won enough points to meet their original bid. (E.g. Late Caps on Honest = 3 + 1 = 4 stone received by the betting team.) **[House Rule — standard rules treat late and early Caps identically as "Wrong Caps".]**
+
+A Late Caps loss flips the game outcome: even though Caps was achieved physically, the team scores it as a loss.
 
 ### Wrong/Early Caps
 
-Calling Caps too early (the player prescribes an order of play, but there exists a way for the opposition to win a round), or calling Caps incorrectly (e.g. misremembering which cards have been played). Also includes deliberately throwing a round to conceal a Caps situation, or forgetting that the opposition has already won a round. Punished by **5 stone**. **[House Rule — standard rules distinguish between Wrong Caps where you still win all tricks (2 token penalty) and losing a trick after calling Caps (5 token penalty). We collapse both into 5 stone.]**
+Calling Caps too early (the player prescribes an order of play, but there exists a way for the opposition to win a round), or calling Caps incorrectly (e.g. misremembering which cards have been played). Also includes **deliberately throwing a round to conceal a Caps situation** (revealed during scrutiny by analysis of card play), or forgetting that the opposition has already won a round. Punished by **5 stone**. **[House Rule — standard rules distinguish between Wrong Caps where you still win all tricks (2 token penalty) and losing a trick after calling Caps (5 token penalty). We collapse both into 5 stone.]**
 
 A Caps loss **supersedes** the points threshold for regular betting — if you failed to call Caps correctly but won more than enough points for your bid, this is still a loss punishable by the Caps penalty.
 
 ### External Caps (Caps from Opposition)
 
-The non-Trumping team may also call Caps, following the same rules as regular Caps — the player must be able to guarantee all remaining rounds, irrespective of how others choose to play (deducible certainty, not reliance on choice).
+The non-Trumping team may also call Caps when they win all 8 rounds. The same "deducible certainty" test applies. **External Caps does not apply to PCC** (PCC is decided purely on the Trumper winning all 8 rounds).
 
-If the opposition correctly calls External Caps before the start of Round 7, the betting team loses their normal stone **plus 1 additional stone** (e.g. if the bet was 160, the betting team loses 2 + 1 = 3 stone). After Round 7, the normal loss applies with no additional penalty, but Late/Wrong Caps rules still apply.
+External Caps must be called during play, no later than before the final card of round 8 is played. The external team's information is more limited than the Trumper's (they have not seen folded cards, and have less ability to deduce hand contents), so scrutiny applies a more lenient "first opportunity" standard than for the Trumping team.
 
-This is exceedingly rare in practice.
+**Outcomes:**
+
+- **Correct External Caps before the start of Round 7.** The external team's win is bumped — the betting team gives **+1 additional stone** on top of the normal loss (e.g. on a 160 bid, betting team gives 2 + 1 = 3 stone to the external team).
+- **Correct External Caps in or after Round 7.** No bonus — normal opposition win is scored, betting team gives the usual stone for the bid amount.
+- **Late External Caps.** The external team won all 8 rounds but, in scrutiny's judgement, had a first opportunity to call Caps during play and missed it. Even though they won every round physically, they **lose** the game on the technicality, and the betting team takes a **win + 1 stone** outcome (e.g. on Honest, betting team gives 2 + 1 = 3 stone *to the external team*). This is harsh by design, exceedingly rare in practice, and exists to ensure the external team takes External Caps seriously when they have the deductive ability to recognise it.
+- **Wrong External Caps.** The external team called Caps but the call doesn't hold up under scrutiny (the prescribed order can be broken, or the external team had not in fact won every round). The external team takes a **5-stone penalty** (receives 5 stone).
+
+### Summary of Caps Outcomes
+
+| Situation | Effect |
+|-----------|--------|
+| Correct Caps (before Round 7) | Win + 1 stone (bonus) |
+| Correct Caps (Round 7 onward) | Normal win, no bonus |
+| Late Caps | Normal loss + 1 stone (game flipped to loss) |
+| Wrong/Early Caps | 5 stone (received by offending team) |
+| Correct External Caps (before Round 7) | Betting team's loss + 1 stone (extra to external) |
+| Correct External Caps (Round 7 onward) | Normal opposition win, no bonus |
+| Late External Caps | Betting team gives win + 1 stone (game flipped to external loss) |
+| Wrong External Caps | 5 stone (received by external team) |
+| PCC | Caps and External Caps mechanics do not apply |
 
 ---
 
@@ -349,28 +424,19 @@ Note on thresholds: The betting team's threshold is simply their bid (e.g. a bid
 | 250 | "250" | 3 | 4 | 55 | 8-card, subsequent speech |
 | PCC | "Partner Closed Caps" | 5 | 5 | — | 8-card, subsequent speech |
 
-The "Available On" column shows the *typical* phase and speech for each bid. In theory, any bid above 200 can be made on 4 cards (subsequent speech), but bids of 220 and above on 4 cards are extremely unwise and virtually never occur in practice.
+The "Available On" column shows the *typical* phase and speech for each bid. In theory, any bid (including PCC) can be made on 4 cards (subsequent speech), but bids of 220 and above on 4 cards are extremely unwise and virtually never occur in practice.
 
-### Caps Modifiers
-
-| Situation | Effect |
-|-----------|--------|
-| Correct Caps (before Round 7) | +1 stone reward |
-| Correct External Caps (before Round 7) | +1 stone punishment to the betting team (on top of normal loss) |
-| Late Caps | +1 stone punishment (on top of normal loss) |
-| Wrong/Early Caps | 5 stone punishment |
+PCC is decided solely by whether the Trumper wins all 8 rounds — Caps and External Caps modifiers do not apply.
 
 ---
 
 ## In-Game Penalties
 
-Certain behaviours attract penalties during a game as they unfairly divulge information or alter the course of play. The standard penalty is **1 stone received** by the offending team (i.e. the opposing team gives 1 stone to the offenders, which is bad for the offenders). This is agreed upon by the 3 non-offending players after the offender commits the act.
+Certain behaviours attract penalties during a game as they unfairly divulge information or alter the course of play. The standard penalty is **1 stone received** by the offending team (i.e. the opposing team gives 1 stone to the offenders, which is bad for the offenders). A penalty applies if the 3 non-offending players reach consensus that one is warranted. If consensus is not reached, the case is adjourned and no penalty applies — penalties are sportsmanship-driven and not strict-liability.
 
-There is a fair bit of pride involved in this game, and good sportsmanship is expected. Beginner players may be given more leeway, but intermediate-to-advanced players should expect stricter enforcement.
+There is a fair bit of pride involved in this game, and good sportsmanship is expected. Beginner players may be given more leeway, but intermediate-to-advanced players should expect stricter enforcement. The lists below are non-exhaustive — the principle is the rule, not the list.
 
 ### Examples of Penalisable Behaviour (1 stone)
-
-The following are punishable by precedent in our home games. This list is non-exhaustive:
 
 - Telling your partner how to play (e.g. "Play the Jack of Spades").
 - Revealing information about your own hand (e.g. "I have the Jack of that suit").
@@ -380,13 +446,14 @@ The following are punishable by precedent in our home games. This list is non-ex
 - Deducing and sharing information from your own hand that others cannot access (e.g. "Player X has no more Clubs — I'm holding all of them").
 - Playing cuts or minuses **unfolded** in Closed Trump games.
 - The dealer shuffling the pack in any way after the opposition has cut (or declined to cut).
+- Falsely calling Spoilt Trumps (the opposition did in fact hold trumps).
 
 ### Severe Penalties (automatic loss + 1 stone)
 
 Some behaviours are so egregious that the offending team **automatically loses the game** — regardless of the points collected — and receives 1 additional stone on top of the normal loss for their bid:
 
 - Playing a non-led suit when you hold a card of the led suit (i.e. reneging/revoking).
-- Claiming balance (asserting that the remaining points are sufficient to meet the threshold) when your team could theoretically still lose another round.
+- **Wrongly claiming balance.** *Claim balance* is an optional house exercise where, having lost one or more rounds, a player asserts that the remaining points are guaranteed sufficient to meet their team's threshold. It is analogous to Caps, but for the points threshold rather than rounds. If the claim doesn't hold under scrutiny (the team could still lose another round and fall short), the severe penalty applies.
 
 This list is non-exhaustive.
 
@@ -408,7 +475,7 @@ Terms are ordered to minimise forward references. Terms in **bold** within defin
 
 **Revolution:** A series of matches where all combinations of players play against each other to determine the overall winner.
 
-**Dealer:** The player who shuffles and deals. The player to the dealer's left cuts; the player to the dealer's right has **priority** for the first round of betting and play.
+**Dealer:** The player who shuffles and deals. The player to the dealer's left cuts; the player to the dealer's right has **priority** for the first round of betting and play. Between games, the dealer rotates one seat anticlockwise.
 
 **Priority:** The right to lead a round (i.e. play the first card). The player to the dealer's right has priority for the first round. Thereafter, the winner of each round gains priority for the next.
 
@@ -424,50 +491,56 @@ Terms are ordered to minimise forward references. Terms in **bold** within defin
 
 **Pass:** Declining to bid on your turn. Counts as a speech.
 
-**Partner (action):** Asking your partner to bid in your place. Counts as a speech for both players.
+**Partner (action):** **[House Rule — restricted]** Asking your partner to bid in your place. Available only in 4-card betting, only by the player to dealer's right or the player across from dealer, only on their first speech. Counts as a speech for both players. The partnered player's bid (or pass) is treated as their first speech.
 
-**First Speech:** A player's first opportunity to bid, pass, or partner in a given betting phase (4-card or 8-card separately).
+**Skip:** A silent turn in betting where a player is bypassed without bidding or passing. Two cases: (1) the partnered player's normal turn is skipped exactly once after they bid via partnering; (2) the current highest bidder is skipped on every subsequent turn until another player overtakes the bid. Skips do not advance or reset the consecutive-pass counter.
+
+**First Speech:** A player's first opportunity to bid, pass, or partner in a given betting phase (4-card or 8-card separately). A bid/pass placed via a partner action counts as the partnered player's first speech.
 
 **Threshold:** The number of points a team needs to win. For the betting team, this is their bid. For the opposing team, this is 304 − bid + 1.
 
-**Open Trump:** A mode of play where the Trump suit is known to all players. All cards are played face up.
+**Open Trump:** A mode of play where the Trump suit is known to all players. All cards are played face up. Declared by the Trumper before round 1.
 
 **Closed Trump:** The default mode where the Trump Card remains face down. Players who cannot follow the led suit play their cards face down.
 
 **Fold:** To lay a card face down — used for the Trump Card, cuts, and minuses.
 
-**Cut:** Playing a card of the **Trump Suit** face down when unable to follow the **Led Suit**, in an attempt to win the round. In Closed Trump, this involves guessing the Trump Suit.
+**Cut:** Playing a card of the **Trump Suit** face down when unable to follow the **Led Suit**, in an attempt to win the round. In Closed Trump, this involves guessing the Trump Suit. The Trumper's only face-down trump-suit play is the folded Trump card itself — in-hand trump-suit cards may not be folded by the Trumper.
 
-**Overcut:** When multiple players attempt to cut, the highest **Trump** card wins the round and is said to have overcut the others.
+**Overcut:** When multiple players attempt to cut and more than one plays a trump-suit card, the highest **Trump** wins the round and is said to have overcut the others. All trump-suit cuts in the round are revealed; non-trump folded cards remain hidden.
 
 **Missing the Cut:** Attempting to cut but playing the wrong suit (not the Trump Suit). The card has no power.
 
-**Minus:** In Closed Trump, when the **Trumper** cannot follow the **Led Suit** and chooses to play a non-Trump, non-led-suit card face down. This concedes the round but may be strategically useful (e.g. discarding constraints while the partner is winning).
+**Minus:** In Closed Trump, when a player (typically the Trumper) cannot follow the **Led Suit** and chooses to play a non-Trump, non-led-suit card face down. This concedes the round but may be strategically useful (e.g. discarding constraints while the partner is winning).
 
-**Caps:** Winning all 8 rounds in a game. Must be called at the first opportunity where a player can guarantee the outcome — through their own cards and any outcomes deducible from the rules, but not relying on any player's choice.
+**Caps:** Winning all 8 rounds in a game. Must be called at the first opportunity where a player can guarantee the outcome — through their own cards and any outcomes deducible from the rules, but not relying on any player's choice. Cannot be called after the final card of round 8.
 
-**Correct Caps:** Calling Caps at the first opportunity, correctly. Rewards +1 stone if called before the start of Round 7.
+**Correct Caps:** Calling Caps at the first opportunity, correctly. Rewards +1 stone if called before the start of Round 7; no bonus thereafter.
 
-**Late Caps:** Calling Caps after the first opportunity. Punished by loss + 1 stone.
+**Late Caps:** Calling Caps after the first opportunity, OR winning all 8 rounds without ever calling and missing a first opportunity identifiable in scrutiny. Punished by loss + 1 stone (game flipped to loss).
 
-**Wrong/Early Caps:** Calling Caps incorrectly or too early. Punished by 5 stone.
+**Wrong/Early Caps:** Calling Caps incorrectly, too early, or deliberately throwing a round to conceal a Caps situation. Punished by 5 stone.
 
-**External Caps (Caps from Opposition):** When the non-Trumping team calls Caps. Follows the same rules as regular Caps. If correctly called before Round 7, the betting team loses an additional +1 stone on top of their normal loss.
+**External Caps:** Caps called by the non-Trumping team. Same correctness test as regular Caps but with a more lenient "first opportunity" standard given limited information. Does not apply to PCC. Outcomes mirror regular Caps in structure but framed against the betting team's loss.
 
-**Absolute Hand:** **[House Rule]** A hand so strong that a player is guaranteed to win all 8 rounds before play begins. Triggers a redeal with no stone exchanged.
+**Absolute Hand:** **[House Rule]** A hand so strong that the holder is guaranteed to win all 8 rounds before play begins, regardless of priority order. Holder may declare pre-round-1 (goodwill) or opposition may claim post-game during scrutiny. Triggers a pass-on with no stone exchanged. Exceptionally rare (<1% of hands).
 
-**Exhausted Trumps:** A situation where the Trumper holds all remaining cards of the Trump Suit. If the Trumper has **priority** and leads Trump, they must lead all remaining Trump from their hand before playing any other suit. **[House Rule]** Only applies once the Trump suit has been revealed; does not apply while the Trump card is still face down.
+**Exhausted Trumps:** A situation where the Trumper holds all remaining cards of the Trump Suit. If the Trumper has **priority** and leads Trump, they must lead all remaining Trump from their hand before playing any other suit. Applies in both Open and Closed Trump (does not apply in PCC).
 
-**Spoilt Trumps:** When the opposition holds zero Trump cards between them. Triggers a void game with no stone exchanged, provided it is declared before the last card is played.
+**Spoilt Trumps:** When the opposition holds zero Trump cards between them from the deal. Triggers a pass-on with no stone exchanged, provided it is declared before the last card is played. False call: 1-stone penalty.
 
-**Honest:** **[House Rule term]** A bid of 220 on 8 cards. Increments above are Honest 5 (225), Honest 10 (230), etc.
+**Honest:** **[House Rule term]** A bid of 220 on 8 cards. Increments above are Honest 5 (225), Honest 10 (230), … up to Honest 25 (245), then 250, then PCC.
 
-**PCC (Partner Closed Caps):** The highest possible bid. The Trumper plays alone (partner sits out), must win all 8 rounds, and plays Open Trump.
+**PCC (Partner Closed Caps):** The highest possible bid. The Trumper plays alone (partner sits out), must win all 8 rounds, and plays Open Trump (with the freedom to lead any card on round 1 — the only open-trump bid not bound to lead trump). Caps and External Caps do not apply.
 
-**Redeal:** The deal moves to the next player in the dealing order (anticlockwise). Triggered by all players passing, 8-card low-point hands, or Spoilt Trumps.
+**Redeal:** **[Terminology]** The *same* dealer reshuffles and deals again. Triggered by a 4-card hand below 15 points (priority player or their partnered partner).
 
-**Reshuffle:** The same dealer re-deals the game. Triggered by low-point 4-card hands (below 15 points).
+**Pass-on:** **[Terminology]** The deal moves to the next dealer (anticlockwise). Triggered by 4-card betting ending with no bid, an 8-card hand below 25 points (declared on first 8-card speech), Spoilt Trumps, or Absolute Hand.
 
-**Hand:** The 8 cards (or 7, for the Trumper) a player holds at the beginning of play.
+**Hand:** The cards a player holds at any point during play. At the start of play, this is 8 cards (or 7, for the Trumper, with the 8th being the folded Trump card on the table). Hands shrink by one card per round.
 
-**Points:** The value of cards as given by the face value / point value table. Determines hand strength, thresholds, and redeals.
+**Points:** The value of cards as given by the face value / point value table. Determines hand strength, thresholds, and triggers for Redeal/Pass-on.
+
+**Claim Balance:** **[House Rule]** An optional house exercise: having lost one or more rounds, a player asserts that the remaining points are guaranteed to meet their team's threshold. Analogous to Caps but for the points threshold rather than rounds. A wrong claim incurs the severe penalty (auto-loss + 1 stone).
+
+**Scrutiny:** The post-play deliberation phase. Both teams count points, verify Caps/External Caps timing, resolve penalty disputes, and exchange stone. Caps cannot be newly called during scrutiny — only verified or retroactively flagged as Late.
