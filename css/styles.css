@@ -10,6 +10,7 @@
 :root {
   --clr-bg: #faf9f6;
   --clr-surface: #ffffff;
+  --clr-surface-elev: #ffffff;
   --clr-text: #1a1a1a;
   --clr-text-muted: #555;
   --clr-accent: #b5432a;
@@ -22,12 +23,144 @@
   --clr-sidebar-bg: #f5f4f1;
   --clr-sidebar-active: var(--clr-accent);
   --clr-link: #2a5db0;
+  --clr-tooltip-bg: rgba(26, 26, 26, 0.94);
+  --clr-tooltip-fg: #ffffff;
+  --clr-shadow: rgba(0, 0, 0, 0.06);
+  --clr-shadow-strong: rgba(0, 0, 0, 0.12);
+  --clr-jump-bg: rgba(250, 249, 246, 0.92);
+  --clr-row-hover: rgba(0, 0, 0, 0.025);
+  --clr-table-head-bg: #1a1a1a;
+  --clr-table-head-fg: #ffffff;
+  --clr-table-rowhead-bg: rgba(0, 0, 0, 0.04);
+  --clr-hero-first-bg: linear-gradient(180deg, #fffaf0 0%, var(--clr-surface) 60%);
+
+  /* Player swatches — overridden in dark mode where needed for contrast. */
+  --player-LX: #e76f51;
+  --player-ML: #2a9d8f;
+  --player-MN: #e9c46a;
+  --player-VM: #264653;
+
+  /* Bet-chip palette (rule severity) */
+  --chip-win-bg:        #e7f4ea;
+  --chip-win-fg:        #2e6b3e;
+  --chip-loss-bg:       #fae3dc;
+  --chip-loss-fg:       #9c3a23;
+  --chip-caps-win-bg:   #fbe9b3;
+  --chip-caps-win-fg:   #7a5a10;
+  --chip-caps-late-bg:  #f3c5b8;
+  --chip-caps-late-fg:  #7d2918;
+  --chip-caps-wrong-bg: #4d1a10;
+  --chip-caps-wrong-fg: #ffe7df;
+  --chip-pcc-win-bg:    linear-gradient(135deg, #f6d36b, #c98d1f);
+  --chip-pcc-win-fg:    #fffaef;
+  --chip-pcc-loss-bg:   #4d1a10;
+  --chip-pcc-loss-fg:   #ffe7df;
+  --chip-pn-bg:         #fff4d4;
+  --chip-pn-fg:         #6b541a;
+  --chip-pn-border:     #d6a949;
+
   --font-body: 'Crimson Pro', Georgia, 'Times New Roman', serif;
   --font-heading: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
   --max-width: 860px;
   --sidebar-width: 260px;
   --nav-height: 48px;
+}
+
+/* Dark overrides apply when (a) the system prefers dark and the user hasn't
+   explicitly opted into light, OR (b) the user explicitly forced dark via
+   ?theme=dark (data-theme attribute set by main.js). */
+:root[data-theme="dark"],
+:root.theme-dark {
+  --clr-bg: #15140f;
+  --clr-surface: #1f1d18;
+  --clr-surface-elev: #26241e;
+  --clr-text: #ece8de;
+  --clr-text-muted: #9c958a;
+  --clr-accent: #e08163;
+  --clr-accent-light: #2c1d18;
+  --clr-border: #34302a;
+  --clr-house: #6dbe7e;
+  --clr-house-bg: #1a2a1f;
+  --clr-example-bg: #232019;
+  --clr-example-border: #3d3830;
+  --clr-sidebar-bg: #1b1914;
+  --clr-link: #7aa3df;
+  --clr-tooltip-bg: rgba(240, 235, 222, 0.96);
+  --clr-tooltip-fg: #1a1a1a;
+  --clr-shadow: rgba(0, 0, 0, 0.45);
+  --clr-shadow-strong: rgba(0, 0, 0, 0.65);
+  --clr-jump-bg: rgba(21, 20, 15, 0.9);
+  --clr-row-hover: rgba(255, 255, 255, 0.04);
+  --clr-table-head-bg: #2a2620;
+  --clr-table-head-fg: #f0ede5;
+  --clr-table-rowhead-bg: rgba(255, 255, 255, 0.04);
+  --clr-hero-first-bg: linear-gradient(180deg, #2c2418 0%, var(--clr-surface) 70%);
+  --player-VM: #6f93a6;
+  --chip-win-bg:        #1d3324;
+  --chip-win-fg:        #80d290;
+  --chip-loss-bg:       #3a1d15;
+  --chip-loss-fg:       #f0a48d;
+  --chip-caps-win-bg:   #4a3812;
+  --chip-caps-win-fg:   #f6d36b;
+  --chip-caps-late-bg:  #4a221a;
+  --chip-caps-late-fg:  #f3c5b8;
+  --chip-caps-wrong-bg: #6b1f15;
+  --chip-caps-wrong-fg: #ffe7df;
+  --chip-pcc-win-bg:    linear-gradient(135deg, #f6d36b, #c98d1f);
+  --chip-pcc-win-fg:    #1a1a1a;
+  --chip-pcc-loss-bg:   #6b1f15;
+  --chip-pcc-loss-fg:   #ffe7df;
+  --chip-pn-bg:         #3a2e10;
+  --chip-pn-fg:         #f5cf73;
+  --chip-pn-border:     #7a5e1a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --clr-bg: #15140f;
+    --clr-surface: #1f1d18;
+    --clr-surface-elev: #26241e;
+    --clr-text: #ece8de;
+    --clr-text-muted: #9c958a;
+    --clr-accent: #e08163;
+    --clr-accent-light: #2c1d18;
+    --clr-border: #34302a;
+    --clr-house: #6dbe7e;
+    --clr-house-bg: #1a2a1f;
+    --clr-example-bg: #232019;
+    --clr-example-border: #3d3830;
+    --clr-sidebar-bg: #1b1914;
+    --clr-link: #7aa3df;
+    --clr-tooltip-bg: rgba(240, 235, 222, 0.96);
+    --clr-tooltip-fg: #1a1a1a;
+    --clr-shadow: rgba(0, 0, 0, 0.45);
+    --clr-shadow-strong: rgba(0, 0, 0, 0.65);
+    --clr-jump-bg: rgba(21, 20, 15, 0.9);
+    --clr-row-hover: rgba(255, 255, 255, 0.04);
+    --clr-table-head-bg: #2a2620;
+    --clr-table-head-fg: #f0ede5;
+    --clr-table-rowhead-bg: rgba(255, 255, 255, 0.04);
+    --clr-hero-first-bg: linear-gradient(180deg, #2c2418 0%, var(--clr-surface) 70%);
+    --player-VM: #6f93a6;
+    --chip-win-bg:        #1d3324;
+    --chip-win-fg:        #80d290;
+    --chip-loss-bg:       #3a1d15;
+    --chip-loss-fg:       #f0a48d;
+    --chip-caps-win-bg:   #4a3812;
+    --chip-caps-win-fg:   #f6d36b;
+    --chip-caps-late-bg:  #4a221a;
+    --chip-caps-late-fg:  #f3c5b8;
+    --chip-caps-wrong-bg: #6b1f15;
+    --chip-caps-wrong-fg: #ffe7df;
+    --chip-pcc-win-bg:    linear-gradient(135deg, #f6d36b, #c98d1f);
+    --chip-pcc-win-fg:    #1a1a1a;
+    --chip-pcc-loss-bg:   #6b1f15;
+    --chip-pcc-loss-fg:   #ffe7df;
+    --chip-pn-bg:         #3a2e10;
+    --chip-pn-fg:         #f5cf73;
+    --chip-pn-border:     #7a5e1a;
+  }
 }
 
 html {
@@ -507,7 +640,7 @@ dd {
   flex-wrap: wrap;
   margin-bottom: 28px;
   padding: 8px 0;
-  background: rgba(250, 249, 246, 0.92);
+  background: var(--clr-jump-bg);
   backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--clr-border);
 }
@@ -585,12 +718,12 @@ dd {
 
 .leaderboard-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 6px 20px var(--clr-shadow);
 }
 
 .leaderboard-card--first {
   --rank-color: linear-gradient(90deg, #d4a437, #f6d36b, #d4a437);
-  background: linear-gradient(180deg, #fffaf0 0%, var(--clr-surface) 60%);
+  background: var(--clr-hero-first-bg);
   box-shadow: 0 6px 22px rgba(212, 164, 55, 0.18);
 }
 
@@ -620,7 +753,7 @@ dd {
   font-weight: 800;
   color: #fff;
   margin-bottom: 8px;
-  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 -2px 0 var(--clr-shadow-strong), 0 2px 6px var(--clr-shadow);
 }
 
 .leaderboard-card--first  .leaderboard-medal { background: linear-gradient(135deg, #f6d36b 0%, #c98d1f 100%); }
@@ -843,8 +976,6 @@ dd {
 }
 
 .form-pip:first-child { margin-left: 0; }
-.form-W { background: var(--clr-house); }
-.form-L { background: var(--clr-accent); opacity: 0.85; }
 
 /* ===== Partnership Table ===== */
 .partnership-grid {
@@ -1081,7 +1212,7 @@ dd {
 
 .rev-summary:hover,
 .match-summary:hover {
-  background: rgba(0, 0, 0, 0.025);
+  background: var(--clr-row-hover);
 }
 
 .tree-chevron {
@@ -1097,12 +1228,6 @@ details[open] > summary .tree-chevron {
   transform: rotate(90deg);
 }
 
-.rev-summary-date {
-  font-weight: 700;
-  color: var(--clr-text);
-  min-width: 130px;
-}
-
 .rev-summary-num {
   display: inline-flex;
   align-items: center;
@@ -1114,36 +1239,107 @@ details[open] > summary .tree-chevron {
   padding: 2px 9px;
   border-radius: 999px;
   letter-spacing: 0.04em;
+  flex-shrink: 0;
 }
 
-.rev-summary-results {
+/* ===== Date grouping ===== */
+.rev-day-group {
+  margin-bottom: 14px;
+}
+
+.rev-day-header {
   display: flex;
-  gap: 10px;
-  flex: 1;
-  flex-wrap: wrap;
-  font-size: 0.82rem;
-  color: var(--clr-text-muted);
-}
-
-.rev-summary-result {
-  display: inline-flex;
   align-items: baseline;
+  gap: 10px;
+  padding: 4px 4px 8px;
+  font-family: var(--font-heading);
+}
+
+.rev-day-date {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--clr-text);
+}
+
+.rev-day-count {
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--clr-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.rev-day-group .rev-node {
+  margin-bottom: 6px;
+}
+
+/* ===== Placement chips ===== */
+.rev-placements {
+  display: flex;
+  flex: 1;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 0.82rem;
+}
+
+.rev-place {
+  display: inline-flex;
+  align-items: center;
   gap: 4px;
+  padding: 3px 9px 3px 7px;
+  border-radius: 6px;
+  border: 1px solid var(--clr-border);
+  background: var(--clr-bg);
+  color: var(--clr-text-muted);
+  font-family: var(--font-heading);
+  white-space: nowrap;
 }
 
-.rev-summary-result .player-pip {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--player-color, var(--clr-text-muted));
-  margin-right: 4px;
-  vertical-align: middle;
-}
-
-.rev-summary-result.is-winner {
+.rev-place--win {
+  background: var(--clr-house-bg);
+  border-color: var(--clr-house);
   color: var(--clr-house);
   font-weight: 700;
+}
+
+.rev-medal {
+  color: #c98d1f;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.rev-place-rank {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--clr-text-muted);
+  margin-right: 2px;
+}
+
+.rev-place--win .rev-place-rank {
+  color: #c98d1f;
+}
+
+.rev-place-name {
+  font-weight: 600;
+  color: var(--player-color, currentColor);
+}
+
+.rev-place--win .rev-place-name {
+  color: var(--clr-house);
+}
+
+.rev-place-score {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--clr-text-muted);
+  font-weight: 500;
+}
+
+.rev-place--win .rev-place-score {
+  color: var(--clr-house);
 }
 
 .rev-download-btn {
@@ -1277,7 +1473,7 @@ details[open] > summary .tree-chevron {
 }
 
 .bets-table thead {
-  background: var(--clr-text);
+  background: var(--clr-table-head-bg);
 }
 
 .bets-table th {
@@ -1286,7 +1482,7 @@ details[open] > summary .tree-chevron {
   font-size: 0.7rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #fff;
+  color: var(--clr-table-head-fg);
   font-weight: 600;
   font-family: var(--font-heading);
 }
@@ -1296,7 +1492,7 @@ details[open] > summary .tree-chevron {
   text-align: left;
   font-family: var(--font-heading);
   font-weight: 700;
-  background: rgba(0, 0, 0, 0.04);
+  background: var(--clr-table-rowhead-bg);
 }
 
 .bets-table td {
@@ -1315,10 +1511,36 @@ details[open] > summary .tree-chevron {
 .bets-table tbody tr.is-winner td:first-child { background: var(--clr-house-bg); color: var(--clr-house); }
 
 .bets-table td.bet-cell {
-  background: var(--clr-accent-light);
-  color: var(--clr-accent);
-  font-weight: 600;
+  padding: 4px 4px;
+  background: transparent;
+  white-space: nowrap;
 }
+
+.bet-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 6px;
+  margin: 1px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: help;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.bet-chip--win        { background: var(--chip-win-bg);        color: var(--chip-win-fg); }
+.bet-chip--loss       { background: var(--chip-loss-bg);       color: var(--chip-loss-fg); }
+.bet-chip--caps-win   { background: var(--chip-caps-win-bg);   color: var(--chip-caps-win-fg); font-weight: 700; }
+.bet-chip--caps-late  { background: var(--chip-caps-late-bg);  color: var(--chip-caps-late-fg); font-weight: 700; }
+.bet-chip--caps-wrong { background: var(--chip-caps-wrong-bg); color: var(--chip-caps-wrong-fg); font-weight: 700; }
+.bet-chip--pcc-win    { background: var(--chip-pcc-win-bg);    color: var(--chip-pcc-win-fg); font-weight: 700; }
+.bet-chip--pcc-loss   { background: var(--chip-pcc-loss-bg);   color: var(--chip-pcc-loss-fg); font-weight: 700; }
+.bet-chip--pn         { background: var(--chip-pn-bg);         color: var(--chip-pn-fg); border-color: var(--chip-pn-border); }
+.bet-chip--unknown    { background: var(--clr-border);         color: var(--clr-text-muted); border: 1px dashed var(--clr-text-muted); }
 
 .bets-section-title {
   font-family: var(--font-heading);
@@ -1502,13 +1724,82 @@ details[open] > summary .tree-chevron {
   }
 }
 
+/* ===== Bet-stats table (Trends) ===== */
+.bet-stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-heading);
+  font-size: 0.82rem;
+}
+
+.bet-stats-table thead th {
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--clr-text-muted);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--clr-border);
+  white-space: nowrap;
+}
+
+.bet-stats-table tbody td {
+  padding: 10px;
+  border-bottom: 1px solid var(--clr-border);
+  color: var(--clr-text);
+  font-weight: 600;
+}
+
+.bet-stats-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.bet-stats-table tbody td:first-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bet-stats-pip {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.bet-stats-sub {
+  font-weight: 500;
+  font-size: 0.74rem;
+  color: var(--clr-text-muted);
+  margin-left: 4px;
+}
+
+/* ===== Recent-form placement pips ===== */
+.form-pip.form-T,
+.form-pip.form-W {
+  background: var(--clr-house);
+  color: #fff;
+}
+
+.form-pip.form-T {
+  background: linear-gradient(135deg, #c98d1f, #f6d36b);
+  color: #fff;
+}
+
+.form-pip.form-L1,
+.form-pip.form-L2 { background: var(--clr-border); color: var(--clr-text); }
+.form-pip.form-L3,
+.form-pip.form-L4 { background: var(--clr-border); color: var(--clr-text-muted); }
+
 /* ===== Scrollbar styling ===== */
 .sidebar::-webkit-scrollbar {
   width: 6px;
 }
 
 .sidebar::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
+  background: var(--clr-border);
   border-radius: 3px;
 }
 

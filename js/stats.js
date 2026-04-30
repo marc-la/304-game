@@ -1,23 +1,46 @@
 (function () {
   'use strict';
 
+  // ===== Theme override (?theme=dark|light persisted to localStorage) =====
+  (function applyTheme() {
+    try {
+      var url = new URL(window.location.href);
+      var qp = url.searchParams.get('theme');
+      var stored = localStorage.getItem('theme');
+      var t = (qp === 'dark' || qp === 'light') ? qp : stored;
+      if (qp) localStorage.setItem('theme', qp);
+      if (t === 'dark' || t === 'light') {
+        document.documentElement.setAttribute('data-theme', t);
+      }
+    } catch (e) { /* localStorage may be blocked */ }
+  })();
+
   // ===== Constants =====
   var PLAYER_ORDER = ['LX', 'ML', 'MN', 'VM'];
-  var PLAYER_COLORS = {
+
+  // Player colours live in CSS so they can adapt to light/dark mode. The
+  // fallbacks here are only used if the CSS variable is missing.
+  var PLAYER_COLOR_FALLBACK = {
     LX: '#e76f51',
     ML: '#2a9d8f',
     MN: '#e9c46a',
     VM: '#264653',
   };
-  // Foreground colour to pair with the player swatch — MN's yellow needs dark text
-  // for AA contrast; the others read fine as white-on-colour.
-  var PLAYER_FG = {
-    LX: '#fff',
-    ML: '#fff',
-    MN: '#1a1a1a',
-    VM: '#fff',
-  };
+  function readPlayerColors() {
+    var cs = getComputedStyle(document.documentElement);
+    var map = {};
+    PLAYER_ORDER.forEach(function (p) {
+      map[p] = (cs.getPropertyValue('--player-' + p) || '').trim() || PLAYER_COLOR_FALLBACK[p];
+    });
+    return map;
+  }
+  var PLAYER_COLORS = readPlayerColors();
+
+  // MN's yellow needs dark text; the others read white on coloured backgrounds.
+  var PLAYER_FG = { LX: '#fff', ML: '#fff', MN: '#1a1a1a', VM: '#fff' };
+
   var BEST_PARTNER_MIN_GAMES = 3;
+  var RECENT_FORM_REVS = 5;
   var DATE_FMT = new Intl.DateTimeFormat('en-AU', {
     day: 'numeric',
     month: 'short',
@@ -36,8 +59,136 @@
     bestPartner:
       'Best Partner is the partner with this player’s highest match win rate, requiring at least ' + BEST_PARTNER_MIN_GAMES + ' games together. Ties broken by total wins.',
     recentForm:
-      'Recent Form shows wins (W) and losses (L) across this player’s most recent matches, oldest on the left.',
+      'Recent Form shows revolution placement (1–4) over the last ' + RECENT_FORM_REVS + ' revolutions, oldest on the left. T marks a shared 1st.',
+    penalties:
+      'Penalties (PN) — count of in-game penalties recorded against this player. Each costs the team 1 stone for that game.',
+    capsWon:
+      'Caps Won — successful Caps calls. +0 = correct Caps with no bonus (R7+); +1 = correct Caps before R7 (+1 stone reward).',
+    capsLost:
+      'Caps Lost — failed Caps calls. L = Late Caps (loss + 1 stone); W = Wrong/Early Caps (5 stone penalty).',
+    capsRate:
+      'Caps Rate — share of this player’s Caps calls that were correct.',
+    pccRecord:
+      'PCC Record — wins and losses on Partner Closed Caps bids. Win or loss is 5 stone.',
   };
+
+  // ====== Bet grammar parser ======
+  // Tokens are split on ';' within a cell. Each token is one of:
+  //   PN                 → penalty
+  //   PCC | PCC-         → PCC win / loss
+  //   <bet>              → bet won
+  //   <bet>-             → bet lost
+  //   <bet>+0 | <bet>+1  → Caps won (no bonus / +1 stone bonus)
+  //   <bet>-L | <bet>-W  → Late Caps / Wrong Caps (loss)
+  // <bet> is a numeric bid (60..250) or H-prefixed code (H, H5, H10, …).
+  function parseBetEvent(token) {
+    if (!token) return null;
+    if (token === 'PN') return { type: 'penalty' };
+    if (token === 'PCC') return { type: 'pcc-win' };
+    if (token === 'PCC-') return { type: 'pcc-loss' };
+
+    var m = token.match(/^(\d+|H\d*)(\+0|\+1|-L|-W|-)?$/);
+    if (!m) return { type: 'unknown', text: token };
+
+    var bet = m[1];
+    var suffix = m[2] || '';
+    switch (suffix) {
+      case '+0': return { type: 'caps-win', bet: bet, bonus: 0 };
+      case '+1': return { type: 'caps-win', bet: bet, bonus: 1 };
+      case '-L': return { type: 'caps-late', bet: bet };
+      case '-W': return { type: 'caps-wrong', bet: bet };
+      case '-':  return { type: 'bet-loss', bet: bet };
+      default:   return { type: 'bet-win', bet: bet };
+    }
+  }
+
+  function renderBetEvent(ev) {
+    if (!ev) return '';
+    var bet = ev.bet ? esc(ev.bet) : '';
+    switch (ev.type) {
+      case 'penalty':
+        return chip('pn', 'PN', 'Penalty (1 stone to opponents)');
+      case 'pcc-win':
+        return chip('pcc-win', 'PCC', 'PCC won (5 stone given)');
+      case 'pcc-loss':
+        return chip('pcc-loss', 'PCC−', 'PCC lost (5 stone received)');
+      case 'caps-win':
+        return chip('caps-win', bet + '+' + ev.bonus,
+          ev.bonus
+            ? 'Caps +1 — correct Caps before R7 (+1 stone bonus)'
+            : 'Caps +0 — correct Caps after R7 (no bonus)');
+      case 'caps-late':
+        return chip('caps-late', bet + '−L', 'Late Caps (loss + 1 stone)');
+      case 'caps-wrong':
+        return chip('caps-wrong', bet + '−W', 'Wrong Caps (5 stone penalty)');
+      case 'bet-loss':
+        return chip('loss', bet + '−', 'Bet lost');
+      case 'bet-win':
+        return chip('win', bet, 'Bet won');
+      default:
+        return chip('unknown', esc(ev.text || '?'), 'Unrecognised token');
+    }
+  }
+
+  function chip(variant, label, tooltip) {
+    return '<span class="bet-chip bet-chip--' + variant + '" title="' + esc(tooltip) + '">' + label + '</span>';
+  }
+
+  function renderBetCell(raw) {
+    var trimmed = (raw || '').trim();
+    if (!trimmed) return '';
+    return trimmed.split(';').map(function (tok) {
+      return renderBetEvent(parseBetEvent(tok.trim()));
+    }).join('');
+  }
+
+  function aggregateBetStats(betsByRev) {
+    var stats = {};
+    PLAYER_ORDER.forEach(function (p) {
+      stats[p] = {
+        penalties: 0,
+        capsWinPlain: 0, capsWinBonus: 0,
+        capsLate: 0, capsWrong: 0,
+        pccWin: 0, pccLoss: 0,
+      };
+    });
+
+    Object.keys(betsByRev).forEach(function (revId) {
+      var sheet = betsByRev[revId];
+      if (!sheet || !sheet.data || !sheet.data.sets) return;
+      sheet.data.sets.forEach(function (set) {
+        PLAYER_ORDER.forEach(function (p) {
+          var cells = set.playerBets[p] || [];
+          cells.forEach(function (raw) {
+            var cell = (raw || '').trim();
+            if (!cell) return;
+            cell.split(';').forEach(function (tok) {
+              var ev = parseBetEvent(tok.trim());
+              if (!ev) return;
+              switch (ev.type) {
+                case 'penalty':    stats[p].penalties++; break;
+                case 'pcc-win':    stats[p].pccWin++; break;
+                case 'pcc-loss':   stats[p].pccLoss++; break;
+                case 'caps-win':   if (ev.bonus) stats[p].capsWinBonus++; else stats[p].capsWinPlain++; break;
+                case 'caps-late':  stats[p].capsLate++; break;
+                case 'caps-wrong': stats[p].capsWrong++; break;
+              }
+            });
+          });
+        });
+      });
+    });
+
+    PLAYER_ORDER.forEach(function (p) {
+      var s = stats[p];
+      s.capsWin = s.capsWinPlain + s.capsWinBonus;
+      s.capsLoss = s.capsLate + s.capsWrong;
+      s.capsTotal = s.capsWin + s.capsLoss;
+      s.capsRate = s.capsTotal ? Math.round(s.capsWin / s.capsTotal * 100) : null;
+    });
+
+    return stats;
+  }
 
   var PARTNERSHIP_PALETTE = [
     '#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f', '#b07aa1',
@@ -225,15 +376,51 @@
     return { initial: best, played: partnerPlayed[best], won: partnerWins[best] };
   }
 
-  function computeRecentForm(initial, matches, n) {
-    var played = matches.filter(function (m) {
-      return m.teamA.indexOf(initial) >= 0 || m.teamB.indexOf(initial) >= 0;
+  function computeRevPlacements(rev) {
+    var sorted = PLAYER_ORDER.slice().sort(function (a, b) {
+      var ra = rev.playerResults[a], rb = rev.playerResults[b];
+      if (rb.matchesWon !== ra.matchesWon) return rb.matchesWon - ra.matchesWon;
+      return rb.score - ra.score;
     });
-    // matches are sorted newest-first; we want the most recent n in chronological order
-    var recent = played.slice(0, n).reverse();
-    return recent.map(function (m) {
-      var team = m.teamA.indexOf(initial) >= 0 ? m.teamA : m.teamB;
-      return isWinnerTeam(m.winner, team) ? 'W' : 'L';
+
+    var placements = [];
+    var rank = 1;
+    for (var i = 0; i < sorted.length; i++) {
+      if (i > 0) {
+        var prev = rev.playerResults[sorted[i - 1]];
+        var cur = rev.playerResults[sorted[i]];
+        if (prev.matchesWon !== cur.matchesWon || prev.score !== cur.score) {
+          rank = i + 1;
+        }
+      }
+      placements.push({
+        initial: sorted[i],
+        rank: rank,
+        result: rev.playerResults[sorted[i]],
+      });
+    }
+
+    var winnerCount = 0;
+    placements.forEach(function (p) { if (p.rank === 1) winnerCount++; });
+    placements.forEach(function (p) {
+      p.isWinner = p.rank === 1;
+      p.isTiedWinner = p.rank === 1 && winnerCount > 1;
+    });
+    return placements;
+  }
+
+  function computeRecentRevForm(initial, revolutions, n) {
+    // revolutions are sorted newest-first; reverse for oldest-on-the-left display.
+    var recent = revolutions.slice(0, n).reverse();
+    return recent.map(function (rev) {
+      var placements = computeRevPlacements(rev);
+      var p = null;
+      for (var i = 0; i < placements.length; i++) {
+        if (placements[i].initial === initial) { p = placements[i]; break; }
+      }
+      if (!p) return null;
+      if (p.isTiedWinner) return { rank: 'T', won: true };
+      return { rank: String(p.rank), won: p.isWinner };
     });
   }
 
@@ -390,7 +577,7 @@
       '<span class="info-tooltip">' + esc(text) + '</span></span>';
   }
 
-  function renderPlayerCards(players, matches, playerMap) {
+  function renderPlayerCards(players, matches, revolutions, playerMap) {
     var container = document.getElementById('player-grid');
     container.innerHTML = '';
 
@@ -410,9 +597,16 @@
         bestPartnerHtml = '<span class="player-stat-sub">— (need ' + BEST_PARTNER_MIN_GAMES + '+ games)</span>';
       }
 
-      var form = computeRecentForm(player.initial, matches, 5);
+      var form = computeRecentRevForm(player.initial, revolutions, RECENT_FORM_REVS);
       var formHtml = form.length
-        ? form.map(function (r) { return '<span class="form-pip form-' + r + '" aria-label="' + (r === 'W' ? 'Win' : 'Loss') + '">' + r + '</span>'; }).join('')
+        ? form.map(function (f) {
+            if (!f) return '';
+            var cls = f.won ? (f.rank === 'T' ? 'form-T' : 'form-W') : 'form-L' + f.rank;
+            var label = f.rank === 'T'
+              ? 'Tied 1st'
+              : (f.rank === '1' ? '1st' : (f.rank === '2' ? '2nd' : (f.rank === '3' ? '3rd' : '4th')));
+            return '<span class="form-pip ' + cls + '" aria-label="' + label + '">' + f.rank + '</span>';
+          }).join('')
         : '<span class="player-stat-sub">—</span>';
 
       var card = document.createElement('div');
@@ -455,6 +649,53 @@
       '<span class="player-stat-label">' + esc(label) + infoIcon(tooltip) + '</span>' +
       '<span class="player-stat-value">' + valueHtml + '</span>' +
     '</div>';
+  }
+
+  function renderBetStats(stats, playerMap) {
+    var container = document.getElementById('bet-stats');
+    if (!container) return;
+
+    var anyData = PLAYER_ORDER.some(function (p) {
+      var s = stats[p];
+      return s.penalties || s.capsTotal || s.pccWin || s.pccLoss;
+    });
+    if (!anyData) {
+      container.innerHTML = '<p class="chart-caption">No betting data parsed yet.</p>';
+      return;
+    }
+
+    var head =
+      '<thead><tr>' +
+        '<th>Player</th>' +
+        '<th>' + 'Penalties' + infoIcon(TOOLTIPS.penalties) + '</th>' +
+        '<th>' + 'Caps Won' + infoIcon(TOOLTIPS.capsWon) + '</th>' +
+        '<th>' + 'Caps Lost' + infoIcon(TOOLTIPS.capsLost) + '</th>' +
+        '<th>' + 'Caps Rate' + infoIcon(TOOLTIPS.capsRate) + '</th>' +
+        '<th>' + 'PCC W/L' + infoIcon(TOOLTIPS.pccRecord) + '</th>' +
+      '</tr></thead>';
+
+    var rows = PLAYER_ORDER.map(function (p) {
+      var s = stats[p];
+      var name = playerMap[p] ? playerMap[p].split(' ')[0] : p;
+      var capsWon = s.capsWin
+        ? s.capsWin + ' <span class="bet-stats-sub">+0:' + s.capsWinPlain + ' · +1:' + s.capsWinBonus + '</span>'
+        : '0';
+      var capsLost = s.capsLoss
+        ? s.capsLoss + ' <span class="bet-stats-sub">L:' + s.capsLate + ' · W:' + s.capsWrong + '</span>'
+        : '0';
+      var rate = s.capsRate !== null ? s.capsRate + '%' : '—';
+      var pccCell = (s.pccWin || s.pccLoss) ? (s.pccWin + ' / ' + s.pccLoss) : '—';
+      return '<tr>' +
+        '<td><span class="bet-stats-pip" style="background:var(--player-' + p + ')"></span>' + esc(name) + '</td>' +
+        '<td>' + s.penalties + '</td>' +
+        '<td>' + capsWon + '</td>' +
+        '<td>' + capsLost + '</td>' +
+        '<td>' + rate + '</td>' +
+        '<td>' + pccCell + '</td>' +
+      '</tr>';
+    }).join('');
+
+    container.innerHTML = '<table class="bet-stats-table">' + head + '<tbody>' + rows + '</tbody></table>';
   }
 
   function renderPartnershipCards(partnerships, playerMap) {
@@ -506,65 +747,100 @@
       (matchesByRev[m.revolutionId] = matchesByRev[m.revolutionId] || []).push(m);
     });
 
+    // Group revolutions by date (newest-first ordering preserved).
+    var groups = [];
+    var byKey = {};
     state.revolutions.forEach(function (rev) {
       var winners = revWinnersForRow(rev);
-
-      // Filter: show only revolutions this player won (sets, then stone, else tie).
       if (state.filter && winners.indexOf(state.filter) < 0) return;
-
-      var revMatches = (matchesByRev[rev.id] || []).slice().sort(function (a, b) {
-        return a.setNo - b.setNo;
-      });
-
-      var revEl = document.createElement('details');
-      revEl.className = 'rev-node';
-      var resultsHtml = PLAYER_ORDER.map(function (p) {
-        var r = rev.playerResults[p];
-        var isWin = winners.indexOf(p) >= 0;
-        var name = state.playerMap[p] ? state.playerMap[p].split(' ')[0] : p;
-        return '<span class="rev-summary-result' + (isWin ? ' is-winner' : '') + '" style="--player-color:' + PLAYER_COLORS[p] + '">' +
-          '<span class="player-pip"></span>' + esc(name) + ' ' + r.matchesWon + ' (' + r.score + ')</span>';
-      }).join('');
-
-      var bets = state.betsByRev[rev.id];
-      var downloadBtn = bets
-        ? '<a class="rev-download-btn" href="' + bets.url + '" download title="Download betting CSV" onclick="event.stopPropagation()">↓ CSV</a>'
-        : '';
-
-      var summary = document.createElement('summary');
-      summary.className = 'rev-summary';
-      summary.innerHTML =
-        '<span class="tree-chevron">▶</span>' +
-        '<span class="rev-summary-date">' + formatDate(rev.date) + '</span>' +
-        '<span class="rev-summary-num">Rev ' + parseRevolutionId(rev.id).num + '</span>' +
-        '<span class="rev-summary-results">' + resultsHtml + '</span>' +
-        downloadBtn;
-      revEl.appendChild(summary);
-
-      var body = document.createElement('div');
-      body.className = 'rev-body';
-      if (rev.notes) {
-        var notesEl = document.createElement('div');
-        notesEl.className = 'rev-notes';
-        notesEl.textContent = rev.notes;
-        body.appendChild(notesEl);
+      var key = formatDate(rev.date) || 'Undated';
+      if (!byKey[key]) {
+        byKey[key] = { key: key, date: rev.date, revs: [] };
+        groups.push(byKey[key]);
       }
-
-      var matchList = document.createElement('div');
-      matchList.className = 'match-list';
-
-      revMatches.forEach(function (m) {
-        matchList.appendChild(buildMatchNode(m, state, bets));
-      });
-
-      body.appendChild(matchList);
-      revEl.appendChild(body);
-      container.appendChild(revEl);
+      byKey[key].revs.push(rev);
     });
 
-    if (!container.children.length) {
-      container.innerHTML = '<p class="chart-caption">No revolutions won by this player yet.</p>';
+    if (!groups.length) {
+      container.innerHTML = '<p class="chart-caption">No revolutions match the current filter.</p>';
+      return;
     }
+
+    groups.forEach(function (g) {
+      var section = document.createElement('div');
+      section.className = 'rev-day-group';
+
+      var header = document.createElement('div');
+      header.className = 'rev-day-header';
+      header.innerHTML =
+        '<span class="rev-day-date">' + esc(g.key) + '</span>' +
+        '<span class="rev-day-count">' + g.revs.length + ' revolution' + (g.revs.length === 1 ? '' : 's') + '</span>';
+      section.appendChild(header);
+
+      g.revs.forEach(function (rev) {
+        section.appendChild(buildRevNode(rev, state, matchesByRev[rev.id] || []));
+      });
+      container.appendChild(section);
+    });
+  }
+
+  function buildRevNode(rev, state, revMatches) {
+    var placements = computeRevPlacements(rev);
+    var bets = state.betsByRev[rev.id];
+
+    var placementHtml = placements.map(function (pl) {
+      var name = state.playerMap[pl.initial]
+        ? state.playerMap[pl.initial].split(' ')[0]
+        : pl.initial;
+      var rankLabel = pl.isTiedWinner ? 'T1' : ordinalShort(pl.rank);
+      var medal = pl.isWinner ? '<span class="rev-medal" aria-hidden="true">★</span>' : '';
+      return '<span class="rev-place rev-place--' + (pl.isWinner ? 'win' : 'rank' + pl.rank) + '" ' +
+             'style="--player-color:var(--player-' + pl.initial + ')">' +
+        medal +
+        '<span class="rev-place-rank">' + rankLabel + '</span>' +
+        '<span class="rev-place-name">' + esc(name) + '</span>' +
+        '<span class="rev-place-score">' + pl.result.matchesWon + '·' + pl.result.score + '</span>' +
+      '</span>';
+    }).join('');
+
+    var downloadBtn = bets
+      ? '<a class="rev-download-btn" href="' + bets.url + '" download title="Download betting CSV" onclick="event.stopPropagation()">↓ CSV</a>'
+      : '';
+
+    var revEl = document.createElement('details');
+    revEl.className = 'rev-node';
+    var summary = document.createElement('summary');
+    summary.className = 'rev-summary';
+    summary.innerHTML =
+      '<span class="tree-chevron">▶</span>' +
+      '<span class="rev-summary-num">Rev ' + parseRevolutionId(rev.id).num + '</span>' +
+      '<span class="rev-placements">' + placementHtml + '</span>' +
+      downloadBtn;
+    revEl.appendChild(summary);
+
+    var body = document.createElement('div');
+    body.className = 'rev-body';
+    if (rev.notes) {
+      var notesEl = document.createElement('div');
+      notesEl.className = 'rev-notes';
+      notesEl.textContent = rev.notes;
+      body.appendChild(notesEl);
+    }
+
+    var matchList = document.createElement('div');
+    matchList.className = 'match-list';
+    revMatches.slice().sort(function (a, b) { return a.setNo - b.setNo; })
+      .forEach(function (m) { matchList.appendChild(buildMatchNode(m, state, bets)); });
+    body.appendChild(matchList);
+    revEl.appendChild(body);
+    return revEl;
+  }
+
+  function ordinalShort(n) {
+    if (n === 1) return '1st';
+    if (n === 2) return '2nd';
+    if (n === 3) return '3rd';
+    return n + 'th';
   }
 
   function buildMatchNode(m, state, bets) {
@@ -669,9 +945,9 @@
       html += '<tr class="' + team + winCls + '"><td>' + esc(p) + '</td>';
       var bets = setData.playerBets[p] || [];
       for (var i = 0; i < rounds.length; i++) {
-        var v = (bets[i] || '').trim();
-        html += v
-          ? '<td class="bet-cell">' + esc(v) + '</td>'
+        var rendered = renderBetCell(bets[i]);
+        html += rendered
+          ? '<td class="bet-cell">' + rendered + '</td>'
           : '<td></td>';
       }
       html += '</tr>';
@@ -875,10 +1151,7 @@
           y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: 'Revolutions won' } },
           x: { ticks: { maxRotation: 45, minRotation: 45, autoSkip: true, maxTicksLimit: 12 } },
         },
-        plugins: {
-          legend: { position: 'bottom' },
-          tooltip: { callbacks: { title: function (items) { return items[0].label; } } },
-        },
+        plugins: chartPlugins(),
       },
     });
   }
@@ -963,19 +1236,48 @@
           },
           x: { ticks: { maxRotation: 45, minRotation: 45, autoSkip: true, maxTicksLimit: 14 } },
         },
-        plugins: {
-          legend: { position: 'bottom', labels: { boxWidth: 12, padding: 8 } },
-          tooltip: {
-            callbacks: {
-              label: function (item) {
-                if (item.parsed.y == null) return item.dataset.label + ': —';
-                return item.dataset.label + ': ' + item.parsed.y + '%';
-              },
-            },
+        plugins: chartPlugins({
+          tooltipLabel: function (item) {
+            if (item.parsed.y == null) return item.dataset.label + ': —';
+            return item.dataset.label + ': ' + item.parsed.y + '%';
           },
-        },
+        }),
       },
     });
+  }
+
+  function chartPlugins(opts) {
+    opts = opts || {};
+    var cs = getComputedStyle(document.documentElement);
+    var bg = (cs.getPropertyValue('--clr-tooltip-bg') || '').trim() || 'rgba(26, 26, 26, 0.94)';
+    var fg = (cs.getPropertyValue('--clr-tooltip-fg') || '').trim() || '#fff';
+    var tooltipCallbacks = {
+      title: function (items) { return items[0].label; },
+    };
+    if (opts.tooltipLabel) tooltipCallbacks.label = opts.tooltipLabel;
+
+    return {
+      legend: {
+        position: 'bottom',
+        labels: { boxWidth: 10, boxHeight: 10, padding: 12, usePointStyle: true, font: { family: 'Inter, sans-serif', size: 12 } },
+      },
+      tooltip: {
+        backgroundColor: bg,
+        titleColor: fg,
+        bodyColor: fg,
+        titleFont: { family: 'Inter, sans-serif', size: 12, weight: '600' },
+        bodyFont: { family: 'Inter, sans-serif', size: 12, weight: '400' },
+        padding: 10,
+        cornerRadius: 6,
+        boxWidth: 8,
+        boxHeight: 8,
+        boxPadding: 6,
+        usePointStyle: true,
+        displayColors: true,
+        borderWidth: 0,
+        callbacks: tooltipCallbacks,
+      },
+    };
   }
 
   // ===== Init =====
@@ -1006,9 +1308,13 @@
           filter: null,
         };
 
+        var betStats = aggregateBetStats(data.betsByRev || {});
+        state.betStats = betStats;
+
         renderHeroLeaderboard(ranked, data.matches);
         renderCumulativeChart(data.revolutions, playerMap);
-        renderPlayerCards(ranked, data.matches, playerMap);
+        renderBetStats(betStats, playerMap);
+        renderPlayerCards(ranked, data.matches, data.revolutions, playerMap);
         renderPartnershipCards(partnerships, playerMap);
         renderMatchFilters(state);
         renderHistoryTree(state);
@@ -1029,6 +1335,18 @@
 
         loadingEl.hidden = true;
         mainEl.hidden = false;
+
+        // Optional dev aid: ?expand=N opens the first N revolutions and their matches.
+        try {
+          var n = parseInt(new URL(location.href).searchParams.get('expand') || '0', 10);
+          if (n > 0) {
+            var revs = document.querySelectorAll('.rev-node');
+            for (var i = 0; i < Math.min(n, revs.length); i++) {
+              revs[i].open = true;
+              revs[i].querySelectorAll('.match-node').forEach(function (m) { m.open = true; });
+            }
+          }
+        } catch (e) { /* ignore */ }
       })
       .catch(function (err) {
         console.error('Failed to load stats:', err);
