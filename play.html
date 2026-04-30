@@ -5,6 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>304 — Play</title>
   <meta name="description" content="Play 304 online with friends. Real-time multiplayer trick-taking card game.">
+  <meta name="color-scheme" content="light dark">
+  <script>
+    (function () {
+      try {
+        var qp = new URL(location.href).searchParams.get('theme');
+        var t = (qp === 'dark' || qp === 'light') ? qp : localStorage.getItem('theme');
+        if (qp) localStorage.setItem('theme', qp);
+        if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -265,6 +276,7 @@
 
 </div>
 
+<script src="js/theme.js?v=1"></script>
 <script type="module" src="js/play/app.js"></script>
 </body>
 </html>
