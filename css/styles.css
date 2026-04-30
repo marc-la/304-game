@@ -213,37 +213,21 @@ body {
   padding: 0 24px;
 }
 
+/* Wordmark: a clean serif "304" in the warm body typeface, with positive
+   tracking so the digits read as a deliberate logotype rather than a
+   number. No decorative pip — the typography carries it alone. */
 .site-nav-brand {
   font-family: var(--font-body);
-  font-size: 1.6rem;
+  font-size: 2rem;
   font-weight: 700;
   color: var(--clr-accent);
   text-decoration: none;
-  letter-spacing: -0.04em;
+  letter-spacing: 0.04em;
   line-height: 1;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 4px;
-  position: relative;
-}
-
-.site-nav-brand::after {
-  content: "♠";
-  font-family: 'Segoe UI Symbol', 'Apple Symbols', sans-serif;
-  font-size: 0.55em;
-  font-weight: 600;
-  color: var(--clr-text-muted);
-  transform: translateY(-0.55em);
-  transition: color 0.2s, transform 0.2s;
 }
 
 .site-nav-brand:hover {
   color: var(--clr-accent);
-}
-
-.site-nav-brand:hover::after {
-  color: var(--clr-accent);
-  transform: translateY(-0.55em) rotate(-12deg);
 }
 
 .site-nav-links {
@@ -275,7 +259,7 @@ body {
   justify-content: center;
   width: 32px;
   height: 32px;
-  margin-left: 4px;
+  margin-left: 16px;
   padding: 0;
   border: 1px solid transparent;
   border-radius: 6px;
@@ -306,7 +290,8 @@ body {
 }
 
 /* Primary call-to-action in the nav. Promoted from a plain link to a
-   pill so Play reads as the main user flow on every page. */
+   pill so Play reads as the main user flow on every page. No arrow —
+   the pill itself carries the affordance. */
 .site-nav-links a.site-nav-cta {
   background: var(--clr-accent);
   color: #fff;
@@ -314,9 +299,6 @@ body {
   margin-left: 6px;
   border-radius: 999px;
   letter-spacing: 0.04em;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
   box-shadow: 0 2px 8px rgba(156, 47, 29, 0.18);
   transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
 }
@@ -328,16 +310,7 @@ body {
   box-shadow: 0 4px 14px rgba(156, 47, 29, 0.32);
 }
 
-.site-nav-links a.site-nav-cta span {
-  transition: transform 0.18s;
-}
-
-.site-nav-links a.site-nav-cta:hover span {
-  transform: translateX(2px);
-}
-
 .site-nav-links a.site-nav-cta.is-active {
-  /* On play.html itself: keep the pill but tone it down a touch. */
   box-shadow: inset 0 0 0 2px var(--clr-accent), 0 2px 8px rgba(156, 47, 29, 0.18);
   background: var(--clr-accent);
 }
@@ -1871,13 +1844,11 @@ details[open] > summary .tree-chevron {
 }
 
 .hero-mantra {
-  position: relative;
   min-height: min(900px, calc(100vh - var(--nav-height)));
   display: flex;
   align-items: center;
   padding: 96px 48px;
   background: var(--clr-bg);
-  overflow: hidden;
 }
 
 .hero-mantra-inner {
@@ -1914,83 +1885,6 @@ details[open] > summary .tree-chevron {
   text-decoration-thickness: 2px;
 }
 
-/* Bidding marginalia: italic snippets of the conversational layer of 304,
-   floating in the mantra section's whitespace like overheard calls. They
-   never overlap the headline; positioning is hand-tuned, not algorithmic. */
-.hero-marginalia {
-  position: absolute;
-  font-family: var(--font-body);
-  font-style: italic;
-  font-weight: 400;
-  color: var(--clr-text-muted);
-  opacity: 0;
-  pointer-events: none;
-  user-select: none;
-  white-space: nowrap;
-  letter-spacing: 0.01em;
-  animation: hero-marginalia-in 0.8s ease-out forwards;
-}
-
-.hero-marginalia--1 {
-  top: 12%;
-  left: 4%;
-  font-size: 1.15rem;
-  transform: rotate(-3deg);
-  animation-delay: 2.8s;
-}
-
-.hero-marginalia--2 {
-  top: 18%;
-  right: 6%;
-  font-size: 0.95rem;
-  transform: rotate(2deg);
-  animation-delay: 3.0s;
-}
-
-.hero-marginalia--3 {
-  bottom: 14%;
-  left: 2%;
-  font-size: 0.9rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-style: normal;
-  font-weight: 600;
-  animation-delay: 3.2s;
-}
-
-.hero-marginalia--4 {
-  top: 8%;
-  left: 38%;
-  font-size: 1.05rem;
-  transform: rotate(-1deg);
-  animation-delay: 3.4s;
-}
-
-.hero-marginalia--5 {
-  bottom: 18%;
-  right: 3%;
-  font-size: 1rem;
-  transform: rotate(4deg);
-  animation-delay: 3.6s;
-}
-
-@keyframes hero-marginalia-in {
-  from { opacity: 0; transform: translateY(-4px) rotate(var(--mar-rot, 0deg)); }
-  to   { opacity: 0.55; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hero-marginalia {
-    opacity: 0.55;
-    animation: none;
-  }
-}
-
-@media (max-width: 900px) {
-  .hero-marginalia {
-    display: none;
-  }
-}
 
 /* ----- Partnership-table figure (replaces house-edition meta) ----- */
 .hero-table-figure {
