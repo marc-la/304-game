@@ -29,7 +29,7 @@
     <nav class="site-nav-links">
       <a href="rules.html">Rules</a>
       <a href="stats.html">Leaderboard</a>
-      <a href="play.html">Play</a>
+      <a href="play.html" class="site-nav-cta">Play a hand <span aria-hidden="true">→</span></a>
     </nav>
   </div>
 </header>
@@ -39,26 +39,75 @@
   <section class="hero-mantra">
     <div class="hero-mantra-inner">
       <p class="hero-mantra-text">
-        A four-player partnership trick-taking game from Sri Lanka.<br>
-        Learn the <a href="rules.html">rules</a>, check the <a href="stats.html">leaderboard</a>,<br>
-        or <a href="play.html">play</a> a hand.
+        A four-player partnership trick-taking game from Sri Lanka. Learn the <a href="rules.html">rules</a>, check the <a href="stats.html">leaderboard</a>, or <a href="play.html">play</a> a hand.
       </p>
-      <aside class="hero-mantra-meta">
-        <p class="hero-meta-tag">House edition</p>
-        <p class="hero-meta-blurb">
-          The rules we follow, the matches we've played, and the next hand to deal.
-        </p>
-        <dl class="hero-meta-stats">
-          <div><dt>Points</dt><dd>304</dd></div>
-          <div><dt>Cards</dt><dd>52</dd></div>
-          <div><dt>Partnerships</dt><dd>2</dd></div>
-        </dl>
-      </aside>
+
+      <figure class="hero-table-figure" aria-hidden="true">
+        <svg class="hero-table" viewBox="0 0 360 360" role="img">
+          <defs>
+            <pattern id="card-back" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="6" stroke="currentColor" stroke-width="0.6" opacity="0.18" />
+            </pattern>
+          </defs>
+
+          <!-- Partnership ties: dashed lines linking N-S and W-E.
+               Drawn first so cards sit on top. -->
+          <g class="hero-table-ties">
+            <line class="tie tie-ns" x1="180" y1="68" x2="180" y2="292" />
+            <line class="tie tie-we" x1="68"  y1="180" x2="292" y2="180" />
+          </g>
+
+          <!-- Four hands at compass positions, one suit each. -->
+          <g class="hero-card hero-card-n" transform="translate(150 10)">
+            <rect class="card-body" width="60" height="84" rx="7" />
+            <rect class="card-pattern" x="6" y="6" width="48" height="72" rx="3" fill="url(#card-back)" />
+            <text class="card-pip card-pip-tl" x="9" y="20">♠</text>
+            <text class="card-pip card-pip-br" x="51" y="76" text-anchor="end">♠</text>
+          </g>
+
+          <g class="hero-card hero-card-s" transform="translate(150 266)">
+            <rect class="card-body" width="60" height="84" rx="7" />
+            <rect class="card-pattern" x="6" y="6" width="48" height="72" rx="3" fill="url(#card-back)" />
+            <text class="card-pip card-pip-tl" x="9" y="20">♣</text>
+            <text class="card-pip card-pip-br" x="51" y="76" text-anchor="end">♣</text>
+          </g>
+
+          <g class="hero-card hero-card-w" transform="translate(10 150)">
+            <rect class="card-body" width="60" height="84" rx="7" />
+            <rect class="card-pattern" x="6" y="6" width="48" height="72" rx="3" fill="url(#card-back)" />
+            <text class="card-pip card-pip-tl" x="9" y="20">♥</text>
+            <text class="card-pip card-pip-br" x="51" y="76" text-anchor="end">♥</text>
+          </g>
+
+          <g class="hero-card hero-card-e" transform="translate(290 150)">
+            <rect class="card-body" width="60" height="84" rx="7" />
+            <rect class="card-pattern" x="6" y="6" width="48" height="72" rx="3" fill="url(#card-back)" />
+            <text class="card-pip card-pip-tl" x="9" y="20">♦</text>
+            <text class="card-pip card-pip-br" x="51" y="76" text-anchor="end">♦</text>
+          </g>
+
+          <!-- The trick pile: three cards laid down at slight angles. -->
+          <g class="hero-pile" transform="translate(180 180)">
+            <rect class="pile-card" x="-30" y="-21" width="60" height="42" rx="4" transform="rotate(-14)" />
+            <rect class="pile-card" x="-30" y="-21" width="60" height="42" rx="4" transform="rotate(6)" />
+            <rect class="pile-card" x="-30" y="-21" width="60" height="42" rx="4" transform="rotate(-2)" />
+          </g>
+        </svg>
+      </figure>
     </div>
   </section>
 
   <section class="hero-panel" aria-labelledby="hero-panel-title">
-    <svg class="hero-lattice" viewBox="0 0 460 270" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <svg class="hero-lattice" viewBox="0 0 392 292" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <filter id="accent-glow" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur stdDeviation="3" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
       <g class="hero-lattice-cells"></g>
     </svg>
     <div class="hero-panel-inner">
@@ -78,17 +127,19 @@
     if (!host) return;
     var SVG = 'http://www.w3.org/2000/svg';
     var suits = ['♠︎', '♥︎', '♦︎', '♣︎'];
-    var sx = 40, sy = 35, pad = 20;
-    // Hand-picked accent cells: a constellation framing the centre,
-    // never crossing the title band (rows 3-4, cols 4-7).
+    var sx = 30, sy = 26, pad = 16;
+    var rows = 11;
+    // Accents in the central visible band (cols 3-9), framing the title
+    // without crossing rows 4-6 where the headline lives.
     var accent = {
-      '5-1': 1, '5-2': 1, '6-1': 1, '6-2': 1, '6-3': 1, // bottom-left cluster
-      '0-9': 1, '1-8': 1,                               // top-right pair
-      '2-0': 1                                          // mid-left singleton
+      '2-4': 1, '2-8': 1,
+      '3-3': 1, '3-9': 1,
+      '7-2': 1, '7-8': 1,
+      '8-4': 1, '8-7': 1
     };
-    for (var row = 0; row < 7; row++) {
+    for (var row = 0; row < rows; row++) {
       var odd = row % 2;
-      var cols = odd ? 10 : 11;
+      var cols = odd ? 12 : 13;
       var offset = odd ? sx / 2 : 0;
       for (var col = 0; col < cols; col++) {
         var x = pad + offset + col * sx;
@@ -96,6 +147,7 @@
         var isAccent = accent[row + '-' + col];
         var g = document.createElementNS(SVG, 'g');
         g.setAttribute('class', 'lattice-cell' + (isAccent ? ' is-accent' : ''));
+        g.setAttribute('style', '--cell-delay: ' + ((row + col) * 18) + 'ms');
         g.setAttribute('transform', 'translate(' + x + ' ' + y + ')');
         var t = document.createElementNS(SVG, 'text');
         t.setAttribute('text-anchor', 'middle');

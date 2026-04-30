@@ -205,16 +205,36 @@ body {
 }
 
 .site-nav-brand {
-  font-family: var(--font-heading);
-  font-size: 1.1rem;
-  font-weight: 800;
+  font-family: var(--font-body);
+  font-size: 1.6rem;
+  font-weight: 700;
   color: var(--clr-accent);
   text-decoration: none;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  position: relative;
+}
+
+.site-nav-brand::after {
+  content: "♠";
+  font-family: 'Segoe UI Symbol', 'Apple Symbols', sans-serif;
+  font-size: 0.55em;
+  font-weight: 600;
+  color: var(--clr-text-muted);
+  transform: translateY(-0.55em);
+  transition: color 0.2s, transform 0.2s;
 }
 
 .site-nav-brand:hover {
   color: var(--clr-accent);
+}
+
+.site-nav-brand:hover::after {
+  color: var(--clr-accent);
+  transform: translateY(-0.55em) rotate(-12deg);
 }
 
 .site-nav-links {
@@ -274,6 +294,43 @@ body {
 .site-nav-links a.active {
   background: var(--clr-accent-light);
   color: var(--clr-accent);
+}
+
+/* Primary call-to-action in the nav. Promoted from a plain link to a
+   pill so Play reads as the main user flow on every page. */
+.site-nav-links a.site-nav-cta {
+  background: var(--clr-accent);
+  color: #fff;
+  padding: 7px 18px;
+  margin-left: 6px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(181, 67, 42, 0.18);
+  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+
+.site-nav-links a.site-nav-cta:hover {
+  background: #c95035;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(181, 67, 42, 0.32);
+}
+
+.site-nav-links a.site-nav-cta span {
+  transition: transform 0.18s;
+}
+
+.site-nav-links a.site-nav-cta:hover span {
+  transform: translateX(2px);
+}
+
+.site-nav-links a.site-nav-cta.is-active {
+  /* On play.html itself: keep the pill but tone it down a touch. */
+  box-shadow: inset 0 0 0 2px var(--clr-accent), 0 2px 8px rgba(181, 67, 42, 0.18);
+  background: var(--clr-accent);
 }
 
 /* ===== Layout ===== */
@@ -1817,15 +1874,15 @@ details[open] > summary .tree-chevron {
   width: 100%;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   gap: 72px;
-  align-items: end;
+  align-items: center;
 }
 
 .hero-mantra-text {
   font-family: var(--font-body);
-  font-size: clamp(2rem, 4.6vw, 4.25rem);
-  line-height: 1.12;
+  font-size: clamp(2rem, 5vw, 4.5rem);
+  line-height: 1.1;
   letter-spacing: -0.02em;
   color: var(--clr-text);
   font-weight: 400;
@@ -1845,86 +1902,136 @@ details[open] > summary .tree-chevron {
   text-decoration-thickness: 2px;
 }
 
-.hero-mantra-meta {
-  font-family: var(--font-heading);
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 4px 0 8px 28px;
-  border-left: 1px solid var(--clr-border);
-}
-
-.hero-meta-tag {
-  font-size: 0.74rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: var(--clr-accent);
+/* ----- Partnership-table figure (replaces house-edition meta) ----- */
+.hero-table-figure {
   margin: 0;
-}
-
-.hero-meta-blurb {
-  font-family: var(--font-body);
-  font-size: 1.05rem;
-  line-height: 1.55;
-  color: var(--clr-text-muted);
-  margin: 0;
-  max-width: 28ch;
-}
-
-.hero-meta-stats {
   display: flex;
-  flex-direction: column;
-  gap: 0;
-  margin: 8px 0 0;
-  padding: 0;
+  justify-content: center;
+  align-items: center;
 }
 
-.hero-meta-stats > div {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 16px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--clr-border);
-}
-
-.hero-meta-stats > div:last-child {
-  border-bottom: none;
-}
-
-.hero-meta-stats dt {
-  color: var(--clr-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.72rem;
-  font-weight: 600;
-  margin: 0;
-  font-family: var(--font-heading);
-}
-
-.hero-meta-stats dd {
+.hero-table {
+  width: 100%;
+  max-width: 360px;
+  height: auto;
   color: var(--clr-text);
-  font-weight: 700;
-  font-size: 1.35rem;
-  font-family: var(--font-heading);
-  margin: 0;
-  padding: 0;
-  border: none;
-  letter-spacing: -0.01em;
+  overflow: visible;
 }
 
-/* Dark panel */
+.hero-table .card-body {
+  fill: var(--clr-surface);
+  stroke: var(--clr-text);
+  stroke-width: 1.4;
+}
+
+.hero-table .card-pip {
+  font-family: 'Segoe UI Symbol', 'Apple Symbols', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  fill: var(--clr-text);
+}
+
+.hero-table .hero-card-n .card-pip,
+.hero-table .hero-card-s .card-pip { fill: var(--clr-text); }
+
+.hero-table .hero-card-w .card-pip,
+.hero-table .hero-card-e .card-pip { fill: var(--clr-accent); }
+
+.hero-table .hero-card-w .card-body,
+.hero-table .hero-card-e .card-body { stroke: var(--clr-accent); }
+
+.hero-table .tie {
+  stroke: var(--clr-accent);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-dasharray: 3 6;
+  /* Animated draw-in on first paint. */
+  stroke-dashoffset: 240;
+  animation: hero-tie-draw 1.6s ease-out 0.4s forwards;
+}
+
+.hero-table .tie-we { animation-delay: 0.7s; }
+
+@keyframes hero-tie-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+.hero-table .pile-card {
+  fill: var(--clr-surface);
+  stroke: var(--clr-text-muted);
+  stroke-width: 1.2;
+  opacity: 0.95;
+}
+
+.hero-table .pile-card:nth-child(3) {
+  fill: var(--clr-accent-light);
+  stroke: var(--clr-accent);
+}
+
+.hero-table .hero-card,
+.hero-table .hero-pile {
+  opacity: 0;
+  animation: hero-card-in 0.6s ease-out forwards;
+}
+
+.hero-table .hero-card-n    { animation-delay: 0.05s; }
+.hero-table .hero-card-e    { animation-delay: 0.18s; }
+.hero-table .hero-card-s    { animation-delay: 0.31s; }
+.hero-table .hero-card-w    { animation-delay: 0.44s; }
+.hero-table .hero-pile      { animation-delay: 1.4s; }
+
+@keyframes hero-card-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-table .tie {
+    stroke-dashoffset: 0;
+    animation: none;
+  }
+  .hero-table .hero-card,
+  .hero-table .hero-pile {
+    opacity: 1;
+    animation: none;
+  }
+}
+
+/* Dark panel — full-bleed, hosts the lattice + headline. */
 .hero-panel {
   position: relative;
   overflow: hidden;
-  min-height: 78vh;
+  min-height: 80vh;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 120px 24px;
   background: #0c0b09;
   color: #ece8de;
+  /* Scroll-driven growth: panel starts inset like a card, expands to full
+     bleed as it scrolls into view. Falls back to static full-bleed when
+     scroll-driven animations aren't supported. */
+  clip-path: inset(0 0 0 0 round 0);
+}
+
+@supports (animation-timeline: view()) {
+  .hero-panel {
+    animation: hero-panel-grow linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 70%;
+  }
+
+  @keyframes hero-panel-grow {
+    from { clip-path: inset(8% 6% 8% 6% round 28px); }
+    to   { clip-path: inset(0 0 0 0 round 0); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-panel {
+    animation: none;
+    clip-path: none;
+  }
 }
 
 .hero-lattice {
@@ -1937,16 +2044,36 @@ details[open] > summary .tree-chevron {
 
 .hero-lattice text {
   font-family: 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans Symbols', system-ui, sans-serif;
-  font-size: 16px;
+  font-size: 12px;
   font-weight: 500;
-  fill: rgba(236, 232, 222, 0.32);
+  fill: rgba(236, 232, 222, 0.28);
   transition: fill 0.2s;
+}
+
+.hero-lattice .lattice-cell {
+  opacity: 0;
+  animation: lattice-fade-in 0.6s ease-out var(--cell-delay, 0ms) forwards;
+}
+
+@keyframes lattice-fade-in {
+  to { opacity: 1; }
+}
+
+.hero-lattice .is-accent {
+  filter: url(#accent-glow);
 }
 
 .hero-lattice .is-accent text {
   fill: #e08163;
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-lattice .lattice-cell {
+    opacity: 1;
+    animation: none;
+  }
 }
 
 /* Soft radial vignette so the centre text reads cleanly without
@@ -1979,11 +2106,11 @@ details[open] > summary .tree-chevron {
 
 .hero-panel-title {
   font-family: var(--font-body);
-  font-size: clamp(1.85rem, 3.4vw, 3.1rem);
-  line-height: 1.18;
+  font-size: clamp(2rem, 4.2vw, 4rem);
+  line-height: 1.12;
   font-weight: 400;
-  letter-spacing: -0.015em;
-  margin: 0 0 40px;
+  letter-spacing: -0.02em;
+  margin: 0 0 44px;
   color: #f5f0e3;
   border: none;
   padding: 0;
@@ -2024,10 +2151,8 @@ details[open] > summary .tree-chevron {
     gap: 40px;
   }
 
-  .hero-mantra-meta {
-    border-left: none;
-    border-top: 1px solid var(--clr-border);
-    padding: 24px 0 0;
+  .hero-table {
+    max-width: 280px;
   }
 
   .hero-panel {
