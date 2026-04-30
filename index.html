@@ -79,8 +79,13 @@
     var SVG = 'http://www.w3.org/2000/svg';
     var suits = ['♠︎', '♥︎', '♦︎', '♣︎'];
     var sx = 40, sy = 35, pad = 20;
-    // Hand-picked accent cells: a tight cluster near centre + two outliers.
-    var accent = { '2-5': 1, '3-4': 1, '3-5': 1, '4-5': 1, '4-6': 1, '0-9': 1, '6-1': 1 };
+    // Hand-picked accent cells: a constellation framing the centre,
+    // never crossing the title band (rows 3-4, cols 4-7).
+    var accent = {
+      '5-1': 1, '5-2': 1, '6-1': 1, '6-2': 1, '6-3': 1, // bottom-left cluster
+      '0-9': 1, '1-8': 1,                               // top-right pair
+      '2-0': 1                                          // mid-left singleton
+    };
     for (var row = 0; row < 7; row++) {
       var odd = row % 2;
       var cols = odd ? 10 : 11;
