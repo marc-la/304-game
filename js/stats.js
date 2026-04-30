@@ -1,19 +1,7 @@
 (function () {
   'use strict';
 
-  // ===== Theme override (?theme=dark|light persisted to localStorage) =====
-  (function applyTheme() {
-    try {
-      var url = new URL(window.location.href);
-      var qp = url.searchParams.get('theme');
-      var stored = localStorage.getItem('theme');
-      var t = (qp === 'dark' || qp === 'light') ? qp : stored;
-      if (qp) localStorage.setItem('theme', qp);
-      if (t === 'dark' || t === 'light') {
-        document.documentElement.setAttribute('data-theme', t);
-      }
-    } catch (e) { /* localStorage may be blocked */ }
-  })();
+  // Theme handling is owned by js/theme.js (loaded before this file).
 
   // ===== Constants =====
   var PLAYER_ORDER = ['LX', 'ML', 'MN', 'VM'];
@@ -70,6 +58,8 @@
       'Caps Rate — share of this player’s Caps calls that were correct.',
     pccRecord:
       'PCC Record — wins and losses on Partner Closed Caps bids. Win or loss is 5 stone.',
+    capsRecord:
+      'Caps Record — successful vs failed Caps calls. Hover detail shows the breakdown by suffix and any PCC bids.',
   };
 
   // ====== Bet grammar parser ======
@@ -577,7 +567,7 @@
       '<span class="info-tooltip">' + esc(text) + '</span></span>';
   }
 
-  function renderPlayerCards(players, matches, revolutions, playerMap) {
+  function renderPlayerCards(players, matches, revolutions, playerMap, betStats) {
     var container = document.getElementById('player-grid');
     container.innerHTML = '';
 
@@ -609,6 +599,27 @@
           }).join('')
         : '<span class="player-stat-sub">—</span>';
 
+      // Bet-derived stats: keep the headline numbers on the card, push the
+      // breakdown (per-suffix counts and PCC tally) into the info-tooltip.
+      var bs = betStats && betStats[player.initial];
+      var capsHtml, capsTooltip, penaltiesHtml;
+      if (bs) {
+        capsTooltip = TOOLTIPS.capsRecord
+          + '\n+0:' + bs.capsWinPlain + ' · +1:' + bs.capsWinBonus
+          + ' · L:' + bs.capsLate + ' · W:' + bs.capsWrong
+          + (bs.pccWin || bs.pccLoss ? '\nPCC: ' + bs.pccWin + 'W / ' + bs.pccLoss + 'L' : '');
+        if (bs.capsTotal) {
+          capsHtml = bs.capsWin + 'W / ' + bs.capsLoss + 'L <span class="player-stat-sub">' + bs.capsRate + '%</span>';
+        } else {
+          capsHtml = '<span class="player-stat-sub">—</span>';
+        }
+        penaltiesHtml = bs.penalties === 0 ? '<span class="player-stat-sub">0</span>' : String(bs.penalties);
+      } else {
+        capsHtml = '<span class="player-stat-sub">—</span>';
+        penaltiesHtml = '<span class="player-stat-sub">—</span>';
+        capsTooltip = TOOLTIPS.capsRecord;
+      }
+
       var card = document.createElement('div');
       card.className = 'player-card';
       card.style.setProperty('--player-color', PLAYER_COLORS[player.initial] || '#888');
@@ -625,6 +636,9 @@
           statRowWithInfo('Total Score', player.totalScore + ' pts', TOOLTIPS.totalScore) +
           statRowWithInfoHtml('Best Partner', bestPartnerHtml, TOOLTIPS.bestPartner) +
           statRowWithInfoHtml('Recent Form', formHtml, TOOLTIPS.recentForm) +
+          '<div class="player-stat-divider" aria-hidden="true"></div>' +
+          statRowWithInfoHtml('Caps Record', capsHtml, capsTooltip) +
+          statRowWithInfoHtml('Penalties', penaltiesHtml, TOOLTIPS.penalties) +
         '</div>';
       container.appendChild(card);
     });
@@ -649,53 +663,6 @@
       '<span class="player-stat-label">' + esc(label) + infoIcon(tooltip) + '</span>' +
       '<span class="player-stat-value">' + valueHtml + '</span>' +
     '</div>';
-  }
-
-  function renderBetStats(stats, playerMap) {
-    var container = document.getElementById('bet-stats');
-    if (!container) return;
-
-    var anyData = PLAYER_ORDER.some(function (p) {
-      var s = stats[p];
-      return s.penalties || s.capsTotal || s.pccWin || s.pccLoss;
-    });
-    if (!anyData) {
-      container.innerHTML = '<p class="chart-caption">No betting data parsed yet.</p>';
-      return;
-    }
-
-    var head =
-      '<thead><tr>' +
-        '<th>Player</th>' +
-        '<th>' + 'Penalties' + infoIcon(TOOLTIPS.penalties) + '</th>' +
-        '<th>' + 'Caps Won' + infoIcon(TOOLTIPS.capsWon) + '</th>' +
-        '<th>' + 'Caps Lost' + infoIcon(TOOLTIPS.capsLost) + '</th>' +
-        '<th>' + 'Caps Rate' + infoIcon(TOOLTIPS.capsRate) + '</th>' +
-        '<th>' + 'PCC W/L' + infoIcon(TOOLTIPS.pccRecord) + '</th>' +
-      '</tr></thead>';
-
-    var rows = PLAYER_ORDER.map(function (p) {
-      var s = stats[p];
-      var name = playerMap[p] ? playerMap[p].split(' ')[0] : p;
-      var capsWon = s.capsWin
-        ? s.capsWin + ' <span class="bet-stats-sub">+0:' + s.capsWinPlain + ' · +1:' + s.capsWinBonus + '</span>'
-        : '0';
-      var capsLost = s.capsLoss
-        ? s.capsLoss + ' <span class="bet-stats-sub">L:' + s.capsLate + ' · W:' + s.capsWrong + '</span>'
-        : '0';
-      var rate = s.capsRate !== null ? s.capsRate + '%' : '—';
-      var pccCell = (s.pccWin || s.pccLoss) ? (s.pccWin + ' / ' + s.pccLoss) : '—';
-      return '<tr>' +
-        '<td><span class="bet-stats-pip" style="background:var(--player-' + p + ')"></span>' + esc(name) + '</td>' +
-        '<td>' + s.penalties + '</td>' +
-        '<td>' + capsWon + '</td>' +
-        '<td>' + capsLost + '</td>' +
-        '<td>' + rate + '</td>' +
-        '<td>' + pccCell + '</td>' +
-      '</tr>';
-    }).join('');
-
-    container.innerHTML = '<table class="bet-stats-table">' + head + '<tbody>' + rows + '</tbody></table>';
   }
 
   function renderPartnershipCards(partnerships, playerMap) {
@@ -1313,8 +1280,7 @@
 
         renderHeroLeaderboard(ranked, data.matches);
         renderCumulativeChart(data.revolutions, playerMap);
-        renderBetStats(betStats, playerMap);
-        renderPlayerCards(ranked, data.matches, data.revolutions, playerMap);
+        renderPlayerCards(ranked, data.matches, data.revolutions, playerMap, betStats);
         renderPartnershipCards(partnerships, playerMap);
         renderMatchFilters(state);
         renderHistoryTree(state);
