@@ -8,31 +8,36 @@
 }
 
 :root {
-  --clr-bg: #faf9f6;
-  --clr-surface: #ffffff;
+  /* Warmed-up palette: aged-paper bg, deeper cinnabar accent, and a new
+     cool accent for the second partnership. Inherited from the parlour-
+     and-Dutch-trader description, not the design-system minimal cream. */
+  --clr-bg: #f4ecd8;
+  --clr-surface: #fbf6e8;
   --clr-surface-elev: #ffffff;
-  --clr-text: #1a1a1a;
-  --clr-text-muted: #555;
-  --clr-accent: #b5432a;
-  --clr-accent-light: #fdf0ed;
-  --clr-border: #e0ddd8;
+  --clr-text: #1f1611;
+  --clr-text-muted: #6a5d4d;
+  --clr-accent: #9c2f1d;
+  --clr-accent-light: #f0dccb;
+  --clr-accent-cool: #2d4a52;
+  --clr-accent-cool-light: #d9e1e3;
+  --clr-border: #d8cfb6;
   --clr-house: #2e6b3e;
   --clr-house-bg: #eaf5ec;
-  --clr-example-bg: #f4f1eb;
-  --clr-example-border: #c9c3b8;
-  --clr-sidebar-bg: #f5f4f1;
+  --clr-example-bg: #ebe2c7;
+  --clr-example-border: #c2b896;
+  --clr-sidebar-bg: #ede4cc;
   --clr-sidebar-active: var(--clr-accent);
   --clr-link: #2a5db0;
-  --clr-tooltip-bg: rgba(26, 26, 26, 0.94);
-  --clr-tooltip-fg: #ffffff;
-  --clr-shadow: rgba(0, 0, 0, 0.06);
-  --clr-shadow-strong: rgba(0, 0, 0, 0.12);
-  --clr-jump-bg: rgba(250, 249, 246, 0.92);
-  --clr-row-hover: rgba(0, 0, 0, 0.025);
-  --clr-table-head-bg: #1a1a1a;
-  --clr-table-head-fg: #ffffff;
-  --clr-table-rowhead-bg: rgba(0, 0, 0, 0.04);
-  --clr-hero-first-bg: linear-gradient(180deg, #fffaf0 0%, var(--clr-surface) 60%);
+  --clr-tooltip-bg: rgba(31, 22, 17, 0.94);
+  --clr-tooltip-fg: #fbf6e8;
+  --clr-shadow: rgba(31, 22, 17, 0.07);
+  --clr-shadow-strong: rgba(31, 22, 17, 0.16);
+  --clr-jump-bg: rgba(244, 236, 216, 0.92);
+  --clr-row-hover: rgba(31, 22, 17, 0.035);
+  --clr-table-head-bg: #1f1611;
+  --clr-table-head-fg: #fbf6e8;
+  --clr-table-rowhead-bg: rgba(31, 22, 17, 0.05);
+  --clr-hero-first-bg: linear-gradient(180deg, #faf2dd 0%, var(--clr-surface) 60%);
   --clr-house-border: rgba(46, 107, 62, 0.25);
   --clr-note-bg: #f0f4ff;
   --clr-example-header-bg: rgba(0, 0, 0, 0.03);
@@ -76,22 +81,24 @@
    ?theme=dark (data-theme attribute set by main.js). */
 :root[data-theme="dark"],
 :root.theme-dark {
-  --clr-bg: #15140f;
-  --clr-surface: #1f1d18;
-  --clr-surface-elev: #26241e;
-  --clr-text: #ece8de;
-  --clr-text-muted: #9c958a;
-  --clr-accent: #e08163;
-  --clr-accent-light: #2c1d18;
-  --clr-border: #34302a;
+  --clr-bg: #1a0f0a;
+  --clr-surface: #251812;
+  --clr-surface-elev: #2d1d16;
+  --clr-text: #ece4d2;
+  --clr-text-muted: #9c8e7a;
+  --clr-accent: #d8694a;
+  --clr-accent-light: #3a1c10;
+  --clr-accent-cool: #6b9098;
+  --clr-accent-cool-light: #1a2528;
+  --clr-border: #3a302a;
   --clr-house: #6dbe7e;
   --clr-house-bg: #1a2a1f;
-  --clr-example-bg: #232019;
-  --clr-example-border: #3d3830;
-  --clr-sidebar-bg: #1b1914;
+  --clr-example-bg: #2a1d15;
+  --clr-example-border: #4a3d30;
+  --clr-sidebar-bg: #1f140e;
   --clr-link: #7aa3df;
-  --clr-tooltip-bg: rgba(240, 235, 222, 0.96);
-  --clr-tooltip-fg: #1a1a1a;
+  --clr-tooltip-bg: rgba(240, 232, 218, 0.96);
+  --clr-tooltip-fg: #1f1611;
   --clr-shadow: rgba(0, 0, 0, 0.45);
   --clr-shadow-strong: rgba(0, 0, 0, 0.65);
   --clr-jump-bg: rgba(21, 20, 15, 0.9);
@@ -112,7 +119,7 @@
   --chip-caps-wrong-bg: #6b1f15;
   --chip-caps-wrong-fg: #ffe7df;
   --chip-pcc-win-bg:    linear-gradient(135deg, #f6d36b, #c98d1f);
-  --chip-pcc-win-fg:    #1a1a1a;
+  --chip-pcc-win-fg:    #1f1611;
   --chip-pcc-loss-bg:   #6b1f15;
   --chip-pcc-loss-fg:   #ffe7df;
   --chip-pn-bg:         #3a2e10;
@@ -122,30 +129,32 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --clr-bg: #15140f;
-    --clr-surface: #1f1d18;
-    --clr-surface-elev: #26241e;
-    --clr-text: #ece8de;
-    --clr-text-muted: #9c958a;
-    --clr-accent: #e08163;
-    --clr-accent-light: #2c1d18;
-    --clr-border: #34302a;
+    --clr-bg: #1a0f0a;
+    --clr-surface: #251812;
+    --clr-surface-elev: #2d1d16;
+    --clr-text: #ece4d2;
+    --clr-text-muted: #9c8e7a;
+    --clr-accent: #d8694a;
+    --clr-accent-light: #3a1c10;
+    --clr-accent-cool: #6b9098;
+    --clr-accent-cool-light: #1a2528;
+    --clr-border: #3a302a;
     --clr-house: #6dbe7e;
     --clr-house-bg: #1a2a1f;
-    --clr-example-bg: #232019;
-    --clr-example-border: #3d3830;
-    --clr-sidebar-bg: #1b1914;
+    --clr-example-bg: #2a1d15;
+    --clr-example-border: #4a3d30;
+    --clr-sidebar-bg: #1f140e;
     --clr-link: #7aa3df;
-    --clr-tooltip-bg: rgba(240, 235, 222, 0.96);
-    --clr-tooltip-fg: #1a1a1a;
-    --clr-shadow: rgba(0, 0, 0, 0.45);
-    --clr-shadow-strong: rgba(0, 0, 0, 0.65);
-    --clr-jump-bg: rgba(21, 20, 15, 0.9);
-    --clr-row-hover: rgba(255, 255, 255, 0.04);
-    --clr-table-head-bg: #2a2620;
-    --clr-table-head-fg: #f0ede5;
-    --clr-table-rowhead-bg: rgba(255, 255, 255, 0.04);
-    --clr-hero-first-bg: linear-gradient(180deg, #2c2418 0%, var(--clr-surface) 70%);
+    --clr-tooltip-bg: rgba(240, 232, 218, 0.96);
+    --clr-tooltip-fg: #1f1611;
+    --clr-shadow: rgba(0, 0, 0, 0.55);
+    --clr-shadow-strong: rgba(0, 0, 0, 0.7);
+    --clr-jump-bg: rgba(26, 15, 10, 0.9);
+    --clr-row-hover: rgba(255, 240, 220, 0.04);
+    --clr-table-head-bg: #2d1d16;
+    --clr-table-head-fg: #f0e6d2;
+    --clr-table-rowhead-bg: rgba(255, 240, 220, 0.04);
+    --clr-hero-first-bg: linear-gradient(180deg, #2a1d12 0%, var(--clr-surface) 70%);
     --clr-house-border: rgba(109, 190, 126, 0.35);
     --clr-note-bg: #1c2238;
     --clr-example-header-bg: rgba(255, 255, 255, 0.03);
@@ -162,7 +171,7 @@
     --chip-caps-wrong-bg: #6b1f15;
     --chip-caps-wrong-fg: #ffe7df;
     --chip-pcc-win-bg:    linear-gradient(135deg, #f6d36b, #c98d1f);
-    --chip-pcc-win-fg:    #1a1a1a;
+    --chip-pcc-win-fg:    #1f1611;
     --chip-pcc-loss-bg:   #6b1f15;
     --chip-pcc-loss-fg:   #ffe7df;
     --chip-pn-bg:         #3a2e10;
@@ -308,15 +317,15 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 2px 8px rgba(181, 67, 42, 0.18);
+  box-shadow: 0 2px 8px rgba(156, 47, 29, 0.18);
   transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
 }
 
 .site-nav-links a.site-nav-cta:hover {
-  background: #c95035;
+  background: #b0432a;
   color: #fff;
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(181, 67, 42, 0.32);
+  box-shadow: 0 4px 14px rgba(156, 47, 29, 0.32);
 }
 
 .site-nav-links a.site-nav-cta span {
@@ -329,7 +338,7 @@ body {
 
 .site-nav-links a.site-nav-cta.is-active {
   /* On play.html itself: keep the pill but tone it down a touch. */
-  box-shadow: inset 0 0 0 2px var(--clr-accent), 0 2px 8px rgba(181, 67, 42, 0.18);
+  box-shadow: inset 0 0 0 2px var(--clr-accent), 0 2px 8px rgba(156, 47, 29, 0.18);
   background: var(--clr-accent);
 }
 
@@ -1862,11 +1871,13 @@ details[open] > summary .tree-chevron {
 }
 
 .hero-mantra {
+  position: relative;
   min-height: min(900px, calc(100vh - var(--nav-height)));
   display: flex;
   align-items: center;
   padding: 96px 48px;
   background: var(--clr-bg);
+  overflow: hidden;
 }
 
 .hero-mantra-inner {
@@ -1891,6 +1902,7 @@ details[open] > summary .tree-chevron {
 
 .hero-mantra-text a {
   color: var(--clr-accent);
+  font-style: italic;
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 8px;
@@ -1900,6 +1912,84 @@ details[open] > summary .tree-chevron {
 .hero-mantra-text a:hover {
   color: var(--clr-text);
   text-decoration-thickness: 2px;
+}
+
+/* Bidding marginalia: italic snippets of the conversational layer of 304,
+   floating in the mantra section's whitespace like overheard calls. They
+   never overlap the headline; positioning is hand-tuned, not algorithmic. */
+.hero-marginalia {
+  position: absolute;
+  font-family: var(--font-body);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--clr-text-muted);
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  animation: hero-marginalia-in 0.8s ease-out forwards;
+}
+
+.hero-marginalia--1 {
+  top: 12%;
+  left: 4%;
+  font-size: 1.15rem;
+  transform: rotate(-3deg);
+  animation-delay: 2.8s;
+}
+
+.hero-marginalia--2 {
+  top: 18%;
+  right: 6%;
+  font-size: 0.95rem;
+  transform: rotate(2deg);
+  animation-delay: 3.0s;
+}
+
+.hero-marginalia--3 {
+  bottom: 14%;
+  left: 2%;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-style: normal;
+  font-weight: 600;
+  animation-delay: 3.2s;
+}
+
+.hero-marginalia--4 {
+  top: 8%;
+  left: 38%;
+  font-size: 1.05rem;
+  transform: rotate(-1deg);
+  animation-delay: 3.4s;
+}
+
+.hero-marginalia--5 {
+  bottom: 18%;
+  right: 3%;
+  font-size: 1rem;
+  transform: rotate(4deg);
+  animation-delay: 3.6s;
+}
+
+@keyframes hero-marginalia-in {
+  from { opacity: 0; transform: translateY(-4px) rotate(var(--mar-rot, 0deg)); }
+  to   { opacity: 0.55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-marginalia {
+    opacity: 0.55;
+    animation: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .hero-marginalia {
+    display: none;
+  }
 }
 
 /* ----- Partnership-table figure (replaces house-edition meta) ----- */
@@ -1920,7 +2010,6 @@ details[open] > summary .tree-chevron {
 
 .hero-table .card-body {
   fill: var(--clr-surface);
-  stroke: var(--clr-text);
   stroke-width: 1.4;
 }
 
@@ -1928,57 +2017,195 @@ details[open] > summary .tree-chevron {
   font-family: 'Segoe UI Symbol', 'Apple Symbols', sans-serif;
   font-size: 14px;
   font-weight: 600;
-  fill: var(--clr-text);
 }
 
-.hero-table .hero-card-n .card-pip,
-.hero-table .hero-card-s .card-pip { fill: var(--clr-text); }
+/* Partnership colour: N-S = cool (teal), W-E = warm (cinnabar).
+   The colour itself encodes which two players are partners. */
+.hero-table .hero-card-n .card-body,
+.hero-table .hero-card-s .card-body { stroke: var(--clr-accent-cool); }
 
-.hero-table .hero-card-w .card-pip,
-.hero-table .hero-card-e .card-pip { fill: var(--clr-accent); }
+.hero-table .hero-card-n .card-pip,
+.hero-table .hero-card-s .card-pip { fill: var(--clr-accent-cool); }
 
 .hero-table .hero-card-w .card-body,
 .hero-table .hero-card-e .card-body { stroke: var(--clr-accent); }
 
+.hero-table .hero-card-w .card-pip,
+.hero-table .hero-card-e .card-pip { fill: var(--clr-accent); }
+
+/* Partnership ties take the same colour as their pair. */
 .hero-table .tie {
-  stroke: var(--clr-accent);
   stroke-width: 1.5;
   stroke-linecap: round;
   stroke-dasharray: 3 6;
-  /* Animated draw-in on first paint. */
-  stroke-dashoffset: 240;
-  animation: hero-tie-draw 1.6s ease-out 0.4s forwards;
+  stroke-dashoffset: 200;
+  animation: hero-tie-draw 1.4s ease-out forwards;
 }
 
-.hero-table .tie-we { animation-delay: 0.7s; }
+.hero-table .tie-ns {
+  stroke: var(--clr-accent-cool);
+  animation-delay: 1.7s;
+}
+
+.hero-table .tie-we {
+  stroke: var(--clr-accent);
+  animation-delay: 1.85s;
+}
 
 @keyframes hero-tie-draw {
   to { stroke-dashoffset: 0; }
 }
 
-.hero-table .pile-card {
+/* Stone piles: 10 per team, deal in bottom-up on first paint. */
+.hero-table .stone {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hero-stone-in 0.4s ease-out forwards;
+  animation-delay: calc(0.5s + var(--stone-i, 0) * 35ms);
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.18));
+}
+
+.hero-table .hero-stones-r .stone {
+  animation-delay: calc(0.55s + var(--stone-i, 0) * 35ms);
+}
+
+@keyframes hero-stone-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Folded cuts beside the trump. */
+.hero-table .folded-body {
   fill: var(--clr-surface);
   stroke: var(--clr-text-muted);
-  stroke-width: 1.2;
-  opacity: 0.95;
+  stroke-width: 1;
+  opacity: 0.85;
 }
 
-.hero-table .pile-card:nth-child(3) {
-  fill: var(--clr-accent-light);
-  stroke: var(--clr-accent);
+.hero-table .folded-pattern {
+  color: var(--clr-text-muted);
+  opacity: 0.75;
 }
 
-.hero-table .hero-card,
-.hero-table .hero-pile {
+.hero-table .hero-folded {
   opacity: 0;
-  animation: hero-card-in 0.6s ease-out forwards;
+  animation: hero-card-in 0.4s ease-out 2.2s forwards;
 }
 
-.hero-table .hero-card-n    { animation-delay: 0.05s; }
-.hero-table .hero-card-e    { animation-delay: 0.18s; }
-.hero-table .hero-card-s    { animation-delay: 0.31s; }
-.hero-table .hero-card-w    { animation-delay: 0.44s; }
-.hero-table .hero-pile      { animation-delay: 1.4s; }
+/* Sealed trump card. */
+.hero-table .trump-shadow {
+  fill: rgba(0, 0, 0, 0.22);
+}
+
+.hero-table .trump-body {
+  fill: var(--clr-surface);
+  stroke: var(--clr-text);
+  stroke-width: 1.4;
+}
+
+.hero-table .trump-body-up {
+  fill: var(--clr-surface-elev, #ffffff);
+  stroke: var(--clr-accent);
+  stroke-width: 1.6;
+}
+
+.hero-table .trump-seal {
+  fill: var(--clr-accent);
+  filter: drop-shadow(0 0 2px rgba(156, 47, 29, 0.45));
+}
+
+.hero-table .trump-rank-corner {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  fill: var(--clr-text);
+  letter-spacing: -0.04em;
+}
+
+.hero-table .trump-suit-corner {
+  font-family: 'Segoe UI Symbol', 'Apple Symbols', sans-serif;
+  font-size: 10px;
+  fill: var(--clr-text);
+}
+
+.hero-table .trump-rank-big {
+  font-family: 'Segoe UI Symbol', 'Apple Symbols', sans-serif;
+  font-size: 30px;
+  fill: var(--clr-text);
+}
+
+.hero-table .trump-corner-br {
+  /* The bottom-right corner is rotated 180° to mimic real card faces. */
+}
+
+.hero-table .hero-trump {
+  opacity: 0;
+  animation: hero-card-in 0.5s ease-out 2.0s forwards;
+}
+
+/* The flip moment: at 2.6s, the sealed trump briefly opens face-up to
+   reveal a J♠ — the highest prize card — then re-seals. The single
+   dramatic beat the page earns. */
+.hero-table .hero-trump-flipper {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: trump-flip 1.4s ease-in-out 2.6s 1 both;
+}
+
+@keyframes trump-flip {
+  0%   { transform: scaleX(1); }
+  18%  { transform: scaleX(0.05); }
+  20%  { transform: scaleX(0); }
+  50%  { transform: scaleX(0); }
+  52%  { transform: scaleX(0.05); }
+  70%  { transform: scaleX(1); }
+  100% { transform: scaleX(1); }
+}
+
+.hero-table .trump-face-down {
+  opacity: 1;
+  animation: trump-face-down-cycle 1.4s ease-in-out 2.6s 1 both;
+}
+
+@keyframes trump-face-down-cycle {
+  0%, 18%   { opacity: 1; }
+  20%, 50%  { opacity: 0; }
+  52%, 100% { opacity: 1; }
+}
+
+.hero-table .trump-face-up {
+  opacity: 0;
+  animation: trump-face-up-cycle 1.4s ease-in-out 2.6s 1 both;
+}
+
+@keyframes trump-face-up-cycle {
+  0%, 18%   { opacity: 0; }
+  20%, 50%  { opacity: 1; }
+  52%, 100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-table .hero-trump-flipper,
+  .hero-table .trump-face-down,
+  .hero-table .trump-face-up {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .hero-table .trump-face-up { opacity: 0; }
+}
+
+/* Cards: anticlockwise deal order N → W → S → E. */
+.hero-table .hero-card {
+  opacity: 0;
+  animation: hero-card-in 0.5s ease-out forwards;
+}
+
+.hero-table .hero-card-n { animation-delay: 1.10s; }
+.hero-table .hero-card-w { animation-delay: 1.21s; }
+.hero-table .hero-card-s { animation-delay: 1.32s; }
+.hero-table .hero-card-e { animation-delay: 1.43s; }
 
 @keyframes hero-card-in {
   from { opacity: 0; }
@@ -1990,9 +2217,19 @@ details[open] > summary .tree-chevron {
     stroke-dashoffset: 0;
     animation: none;
   }
+  /* Cards/trump/folded use the SVG transform attribute for positioning;
+     only the animation can be suppressed — CSS transform: none would
+     override the attribute and collapse them to (0,0). */
   .hero-table .hero-card,
-  .hero-table .hero-pile {
+  .hero-table .hero-trump,
+  .hero-table .hero-folded {
     opacity: 1;
+    animation: none;
+  }
+  /* Stones use CSS translateY in the animation, so a reset is safe. */
+  .hero-table .stone {
+    opacity: 1;
+    transform: none;
     animation: none;
   }
 }
@@ -2006,8 +2243,12 @@ details[open] > summary .tree-chevron {
   align-items: center;
   justify-content: center;
   padding: 120px 24px;
-  background: #0c0b09;
-  color: #ece8de;
+  background: #120a05;
+  color: #ece4d2;
+  /* In dark mode the mantra and panel are similarly warm-black, so a
+     hairline keeps the transition legible. */
+  border-top: 1px solid rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 12px 24px -12px rgba(0, 0, 0, 0.5);
   /* Scroll-driven growth: panel starts inset like a card, expands to full
      bleed as it scrolls into view. Falls back to static full-bleed when
      scroll-driven animations aren't supported. */
@@ -2042,30 +2283,62 @@ details[open] > summary .tree-chevron {
   pointer-events: none;
 }
 
-.hero-lattice text {
+.hero-lattice .lattice-rank {
+  font-family: var(--font-body);
+  font-size: 22px;
+  font-weight: 600;
+  fill: rgba(240, 230, 210, 0.28);
+  letter-spacing: -0.04em;
+  transition: fill 0.2s;
+}
+
+.hero-lattice .lattice-suit {
   font-family: 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans Symbols', system-ui, sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  fill: rgba(236, 232, 222, 0.28);
+  font-size: 11px;
+  fill: rgba(240, 230, 210, 0.22);
   transition: fill 0.2s;
 }
 
 .hero-lattice .lattice-cell {
   opacity: 0;
   animation: lattice-fade-in 0.6s ease-out var(--cell-delay, 0ms) forwards;
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
 @keyframes lattice-fade-in {
   to { opacity: 1; }
 }
 
+/* Prize cards (J, 9) — the cards the visual prose says "glint" — get
+   their suit pip in the accent palette, soft Gaussian glow, and a slow
+   infinite pulse. The pulse is offset per cell so they don't beat in
+   unison; reads as candlelight playing across the deck. */
 .hero-lattice .is-accent {
   filter: url(#accent-glow);
+  animation:
+    lattice-fade-in 0.6s ease-out var(--cell-delay, 0ms) forwards,
+    prize-pulse 4.2s ease-in-out calc(var(--cell-delay, 0ms) + 900ms) infinite;
 }
 
-.hero-lattice .is-accent text {
-  fill: #e08163;
-  font-size: 17px;
+.hero-lattice .is-accent-9 {
+  animation-duration: 0.6s, 5.4s;
+}
+
+@keyframes prize-pulse {
+  0%, 100% { opacity: 0.72; }
+  50%      { opacity: 1; }
+}
+
+.hero-lattice .is-accent-j .lattice-rank,
+.hero-lattice .is-accent-j .lattice-suit {
+  fill: #d8694a;
+  font-weight: 700;
+}
+
+.hero-lattice .is-accent-9 .lattice-rank,
+.hero-lattice .is-accent-9 .lattice-suit {
+  fill: #c98d5b;
   font-weight: 700;
 }
 
@@ -2082,7 +2355,7 @@ details[open] > summary .tree-chevron {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse 70% 90% at center, rgba(12, 11, 9, 0) 0%, rgba(12, 11, 9, 0.35) 60%, rgba(12, 11, 9, 0.6) 100%);
+  background: radial-gradient(ellipse 70% 90% at center, rgba(18, 10, 5, 0) 0%, rgba(18, 10, 5, 0.35) 60%, rgba(18, 10, 5, 0.6) 100%);
   pointer-events: none;
   z-index: 1;
 }
@@ -2111,7 +2384,7 @@ details[open] > summary .tree-chevron {
   font-weight: 400;
   letter-spacing: -0.02em;
   margin: 0 0 44px;
-  color: #f5f0e3;
+  color: #f0e6d2;
   border: none;
   padding: 0;
 }
@@ -2130,14 +2403,14 @@ details[open] > summary .tree-chevron {
   color: #fff;
   text-decoration: none;
   transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
-  box-shadow: 0 6px 20px rgba(181, 67, 42, 0.25);
+  box-shadow: 0 6px 20px rgba(156, 47, 29, 0.25);
 }
 
 .hero-cta:hover {
-  background: #c95035;
+  background: #b0432a;
   color: #fff;
   transform: translateY(-1px);
-  box-shadow: 0 10px 28px rgba(181, 67, 42, 0.35);
+  box-shadow: 0 10px 28px rgba(156, 47, 29, 0.35);
 }
 
 @media (max-width: 900px) {

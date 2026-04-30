@@ -37,9 +37,17 @@
 <main class="hero">
 
   <section class="hero-mantra">
+    <!-- Bidding marginalia: the conversational layer of 304, set as
+         overheard speech floating in the whitespace. Decorative only. -->
+    <span class="hero-marginalia hero-marginalia--1" aria-hidden="true">"60"</span>
+    <span class="hero-marginalia hero-marginalia--2" aria-hidden="true">Honest</span>
+    <span class="hero-marginalia hero-marginalia--3" aria-hidden="true">PCC</span>
+    <span class="hero-marginalia hero-marginalia--4" aria-hidden="true">"65"</span>
+    <span class="hero-marginalia hero-marginalia--5" aria-hidden="true">Open</span>
+
     <div class="hero-mantra-inner">
       <p class="hero-mantra-text">
-        A four-player partnership trick-taking game from Sri Lanka. Learn the <a href="rules.html">rules</a>, check the <a href="stats.html">leaderboard</a>, or <a href="play.html">play</a> a hand.
+        A slow-burn duel of nerve and deduction&thinsp;&mdash;&thinsp;four players, two partners, eight rounds. Learn the <a href="rules.html">rules</a>, check the <a href="stats.html">leaderboard</a>, or <a href="play.html">play</a> a hand.
       </p>
 
       <figure class="hero-table-figure" aria-hidden="true">
@@ -48,49 +56,105 @@
             <pattern id="card-back" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
               <line x1="0" y1="0" x2="0" y2="6" stroke="currentColor" stroke-width="0.6" opacity="0.18" />
             </pattern>
+            <pattern id="card-back-fine" patternUnits="userSpaceOnUse" width="4" height="4" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="4" stroke="currentColor" stroke-width="0.4" opacity="0.22" />
+            </pattern>
           </defs>
 
-          <!-- Partnership ties: dashed lines linking N-S and W-E.
-               Drawn first so cards sit on top. -->
-          <g class="hero-table-ties">
-            <line class="tie tie-ns" x1="180" y1="68" x2="180" y2="292" />
-            <line class="tie tie-we" x1="68"  y1="180" x2="292" y2="180" />
+          <!-- Stone piles: 10 per team, the visible scoreboard.
+               Left = warm clay (Team A), Right = mossy green (Team B). -->
+          <g class="hero-stones hero-stones-l">
+            <rect class="stone" style="--stone-i:0" x="10" y="146" width="32" height="6" rx="2" fill="#b09275" />
+            <rect class="stone" style="--stone-i:1" x="10" y="155" width="32" height="6" rx="2" fill="#a8855e" />
+            <rect class="stone" style="--stone-i:2" x="10" y="164" width="32" height="6" rx="2" fill="#9c7d4f" />
+            <rect class="stone" style="--stone-i:3" x="10" y="173" width="32" height="6" rx="2" fill="#b09275" />
+            <rect class="stone" style="--stone-i:4" x="10" y="182" width="32" height="6" rx="2" fill="#a8855e" />
+            <rect class="stone" style="--stone-i:5" x="10" y="191" width="32" height="6" rx="2" fill="#b39972" />
+            <rect class="stone" style="--stone-i:6" x="10" y="200" width="32" height="6" rx="2" fill="#a08245" />
+            <rect class="stone" style="--stone-i:7" x="10" y="209" width="32" height="6" rx="2" fill="#b09275" />
+            <rect class="stone" style="--stone-i:8" x="10" y="218" width="32" height="6" rx="2" fill="#a08850" />
+            <rect class="stone" style="--stone-i:9" x="10" y="227" width="32" height="6" rx="2" fill="#b39972" />
           </g>
 
-          <!-- Four hands at compass positions, one suit each. -->
-          <g class="hero-card hero-card-n" transform="translate(150 10)">
+          <g class="hero-stones hero-stones-r">
+            <rect class="stone" style="--stone-i:0" x="318" y="146" width="32" height="6" rx="2" fill="#5d7565" />
+            <rect class="stone" style="--stone-i:1" x="318" y="155" width="32" height="6" rx="2" fill="#6a8275" />
+            <rect class="stone" style="--stone-i:2" x="318" y="164" width="32" height="6" rx="2" fill="#4f6a5b" />
+            <rect class="stone" style="--stone-i:3" x="318" y="173" width="32" height="6" rx="2" fill="#728a7d" />
+            <rect class="stone" style="--stone-i:4" x="318" y="182" width="32" height="6" rx="2" fill="#5d7565" />
+            <rect class="stone" style="--stone-i:5" x="318" y="191" width="32" height="6" rx="2" fill="#6a8275" />
+            <rect class="stone" style="--stone-i:6" x="318" y="200" width="32" height="6" rx="2" fill="#5b7868" />
+            <rect class="stone" style="--stone-i:7" x="318" y="209" width="32" height="6" rx="2" fill="#4f6a5b" />
+            <rect class="stone" style="--stone-i:8" x="318" y="218" width="32" height="6" rx="2" fill="#6f8478" />
+            <rect class="stone" style="--stone-i:9" x="318" y="227" width="32" height="6" rx="2" fill="#5d7565" />
+          </g>
+
+          <!-- Partnership ties: N-S in cool teal, W-E in warm cinnabar.
+               Each tie's colour also matches its pair's card stroke. -->
+          <g class="hero-table-ties">
+            <line class="tie tie-ns" x1="180" y1="120" x2="180" y2="240" />
+            <line class="tie tie-we" x1="110" y1="180" x2="250" y2="180" />
+          </g>
+
+          <!-- Four hands at compass positions, partnership-coloured. -->
+          <g class="hero-card hero-card-n" transform="translate(150 30)">
             <rect class="card-body" width="60" height="84" rx="7" />
             <rect class="card-pattern" x="6" y="6" width="48" height="72" rx="3" fill="url(#card-back)" />
             <text class="card-pip card-pip-tl" x="9" y="20">♠</text>
             <text class="card-pip card-pip-br" x="51" y="76" text-anchor="end">♠</text>
           </g>
 
-          <g class="hero-card hero-card-s" transform="translate(150 266)">
+          <g class="hero-card hero-card-s" transform="translate(150 246)">
             <rect class="card-body" width="60" height="84" rx="7" />
             <rect class="card-pattern" x="6" y="6" width="48" height="72" rx="3" fill="url(#card-back)" />
             <text class="card-pip card-pip-tl" x="9" y="20">♣</text>
             <text class="card-pip card-pip-br" x="51" y="76" text-anchor="end">♣</text>
           </g>
 
-          <g class="hero-card hero-card-w" transform="translate(10 150)">
+          <g class="hero-card hero-card-w" transform="translate(50 138)">
             <rect class="card-body" width="60" height="84" rx="7" />
             <rect class="card-pattern" x="6" y="6" width="48" height="72" rx="3" fill="url(#card-back)" />
             <text class="card-pip card-pip-tl" x="9" y="20">♥</text>
             <text class="card-pip card-pip-br" x="51" y="76" text-anchor="end">♥</text>
           </g>
 
-          <g class="hero-card hero-card-e" transform="translate(290 150)">
+          <g class="hero-card hero-card-e" transform="translate(250 138)">
             <rect class="card-body" width="60" height="84" rx="7" />
             <rect class="card-pattern" x="6" y="6" width="48" height="72" rx="3" fill="url(#card-back)" />
             <text class="card-pip card-pip-tl" x="9" y="20">♦</text>
             <text class="card-pip card-pip-br" x="51" y="76" text-anchor="end">♦</text>
           </g>
 
-          <!-- The trick pile: three cards laid down at slight angles. -->
-          <g class="hero-pile" transform="translate(180 180)">
-            <rect class="pile-card" x="-30" y="-21" width="60" height="42" rx="4" transform="rotate(-14)" />
-            <rect class="pile-card" x="-30" y="-21" width="60" height="42" rx="4" transform="rotate(6)" />
-            <rect class="pile-card" x="-30" y="-21" width="60" height="42" rx="4" transform="rotate(-2)" />
+          <!-- Folded cuts: small face-down cards beside the trump,
+               drawn before the trump so the trump sits on top. -->
+          <g class="hero-folded hero-folded-l" transform="translate(135 175) rotate(-14)">
+            <rect class="folded-body" x="-12" y="-17" width="24" height="34" rx="2.5" />
+            <rect class="folded-pattern" x="-9" y="-14" width="18" height="28" rx="1" fill="url(#card-back-fine)" />
+          </g>
+          <g class="hero-folded hero-folded-r" transform="translate(225 187) rotate(10)">
+            <rect class="folded-body" x="-12" y="-17" width="24" height="34" rx="2.5" />
+            <rect class="folded-pattern" x="-9" y="-14" width="18" height="28" rx="1" fill="url(#card-back-fine)" />
+          </g>
+
+          <!-- The sealed trump: face-down at centre with a wax-seal hint.
+               The .trump-face-up sibling is revealed during the flip moment. -->
+          <g class="hero-trump" transform="translate(180 180)">
+            <g class="hero-trump-flipper">
+              <g class="trump-face-down" transform="rotate(-4)">
+                <rect class="trump-shadow" x="-28" y="-39" width="60" height="84" rx="7" />
+                <rect class="trump-body" x="-30" y="-42" width="60" height="84" rx="7" />
+                <rect class="trump-pattern" x="-24" y="-36" width="48" height="72" rx="3" fill="url(#card-back)" />
+                <circle class="trump-seal" cx="0" cy="0" r="3.5" />
+              </g>
+              <g class="trump-face-up" transform="rotate(-4)">
+                <rect class="trump-body-up" x="-30" y="-42" width="60" height="84" rx="7" />
+                <text class="trump-rank-corner" x="-23" y="-26">J</text>
+                <text class="trump-suit-corner" x="-23" y="-13">♠</text>
+                <text class="trump-rank-big" x="0" y="6" text-anchor="middle">♠</text>
+                <text class="trump-rank-corner trump-corner-br" x="23" y="32" text-anchor="end">J</text>
+                <text class="trump-suit-corner trump-corner-br" x="23" y="19" text-anchor="end">♠</text>
+              </g>
+            </g>
           </g>
         </svg>
       </figure>
@@ -98,10 +162,10 @@
   </section>
 
   <section class="hero-panel" aria-labelledby="hero-panel-title">
-    <svg class="hero-lattice" viewBox="0 0 392 292" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <svg class="hero-lattice" viewBox="0 0 720 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
       <defs>
         <filter id="accent-glow" x="-100%" y="-100%" width="300%" height="300%">
-          <feGaussianBlur stdDeviation="3" result="blur" />
+          <feGaussianBlur stdDeviation="3.5" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
             <feMergeNode in="SourceGraphic" />
@@ -113,7 +177,7 @@
     <div class="hero-panel-inner">
       <p class="hero-panel-eyebrow">304</p>
       <h2 id="hero-panel-title" class="hero-panel-title">
-        Three hundred and four points.<br>Eight tricks. One partner.
+        Part arithmetic.<br>Part bluff. Part argument.
       </h2>
       <a href="play.html" class="hero-cta">Play a hand <span aria-hidden="true">→</span></a>
     </div>
@@ -123,37 +187,56 @@
 
 <script>
   (function () {
+    /* The 304 deck, laid out as it lives in the rules:
+       4 rows = suits ♠ ♥ ♦ ♣,  8 cols = ranks 7 8 9 10 J Q K A.
+       The four Jacks (highest, 30 pts) and the four 9s (20 pts) are
+       the "prize" cards described in the visual prose — they're
+       rendered as accents and gently glow on scroll. */
     var host = document.querySelector('.hero-lattice-cells');
     if (!host) return;
     var SVG = 'http://www.w3.org/2000/svg';
     var suits = ['♠︎', '♥︎', '♦︎', '♣︎'];
-    var sx = 30, sy = 26, pad = 16;
-    var rows = 11;
-    // Accents in the central visible band (cols 3-9), framing the title
-    // without crossing rows 4-6 where the headline lives.
-    var accent = {
-      '2-4': 1, '2-8': 1,
-      '3-3': 1, '3-9': 1,
-      '7-2': 1, '7-8': 1,
-      '8-4': 1, '8-7': 1
-    };
-    for (var row = 0; row < rows; row++) {
-      var odd = row % 2;
-      var cols = odd ? 12 : 13;
-      var offset = odd ? sx / 2 : 0;
-      for (var col = 0; col < cols; col++) {
-        var x = pad + offset + col * sx;
-        var y = pad + row * sy;
-        var isAccent = accent[row + '-' + col];
+    var ranks = ['7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+    var cellW = 84;
+    var cellH = 60;
+    var padX = 30;
+    /* The lattice is centred vertically in a tall viewBox so that on
+       portrait-aspect panels the slice doesn't crop columns away. */
+    var padY = 330;
+
+    for (var row = 0; row < 4; row++) {
+      for (var col = 0; col < 8; col++) {
+        var x = padX + col * cellW + cellW / 2;
+        var y = padY + row * cellH + cellH / 2;
+        var rank = ranks[col];
+        var suit = suits[row];
+
+        // Accent rule: J (col 4, highest) → terracotta, 9 (col 2) → cool.
+        var accentClass = '';
+        if (col === 4) accentClass = ' is-accent is-accent-j';
+        else if (col === 2) accentClass = ' is-accent is-accent-9';
+
         var g = document.createElementNS(SVG, 'g');
-        g.setAttribute('class', 'lattice-cell' + (isAccent ? ' is-accent' : ''));
-        g.setAttribute('style', '--cell-delay: ' + ((row + col) * 18) + 'ms');
+        g.setAttribute('class', 'lattice-cell' + accentClass);
+        g.setAttribute('style', '--cell-delay: ' + ((row * 8 + col) * 30) + 'ms');
         g.setAttribute('transform', 'translate(' + x + ' ' + y + ')');
-        var t = document.createElementNS(SVG, 'text');
-        t.setAttribute('text-anchor', 'middle');
-        t.setAttribute('dominant-baseline', 'central');
-        t.textContent = suits[(col + row) % 4];
-        g.appendChild(t);
+
+        var rankText = document.createElementNS(SVG, 'text');
+        rankText.setAttribute('class', 'lattice-rank');
+        rankText.setAttribute('text-anchor', 'middle');
+        rankText.setAttribute('dominant-baseline', 'central');
+        rankText.setAttribute('y', '-6');
+        rankText.textContent = rank;
+        g.appendChild(rankText);
+
+        var suitText = document.createElementNS(SVG, 'text');
+        suitText.setAttribute('class', 'lattice-suit');
+        suitText.setAttribute('text-anchor', 'middle');
+        suitText.setAttribute('dominant-baseline', 'central');
+        suitText.setAttribute('y', '14');
+        suitText.textContent = suit;
+        g.appendChild(suitText);
+
         host.appendChild(g);
       }
     }
