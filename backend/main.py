@@ -19,6 +19,8 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from game304 import (
@@ -39,6 +41,7 @@ from game304.errors import (
 )
 from game304.types import Phase
 
+from lobby import LobbyError, LobbyStore, new_player_id
 from serializers import serialize_game_view
 
 app = FastAPI(title="304 Card Game API")
@@ -51,10 +54,22 @@ app.add_middleware(
 )
 
 # ---------------------------------------------------------------------------
-# In-memory session storage
+# In-memory storage
 # ---------------------------------------------------------------------------
 
 sessions: dict[str, Match] = {}
+lobby_store: LobbyStore = LobbyStore()
+
+
+def _lobby_error_to_http(exc: LobbyError) -> HTTPException:
+    """Map a LobbyError to an appropriate HTTP status."""
+    msg = str(exc)
+    lower = msg.lower()
+    if "not found" in lower:
+        return HTTPException(404, detail={"error": msg, "errorType": "LobbyError"})
+    if "full" in lower or "already" in lower or "taken" in lower:
+        return HTTPException(409, detail={"error": msg, "errorType": "LobbyError"})
+    return HTTPException(400, detail={"error": msg, "errorType": "LobbyError"})
 
 
 def _get_match(match_id: str) -> Match:
@@ -358,3 +373,180 @@ def get_hand(match_id: str, seat_str: str) -> dict[str, Any]:
     from serializers import serialize
     cards = [serialize(c) for c in game.get_hand(seat)]
     return {"cards": cards}
+
+
+# ---------------------------------------------------------------------------
+# Lobby endpoints
+# ---------------------------------------------------------------------------
+
+
+class LobbyHostRequest(BaseModel):
+    playerId: str
+
+
+class LobbyJoinRequest(BaseModel):
+    playerId: str
+
+
+class LobbyTeamRequest(BaseModel):
+    playerId: str
+    targetSeat: str
+    newTeam: str
+
+
+class LobbyProfileRequest(BaseModel):
+    playerId: str
+    name: str | None = None
+    avatar: str | None = None
+
+
+class LobbyKickRequest(BaseModel):
+    playerId: str
+    targetSeat: str
+
+
+class LobbyPlayerRequest(BaseModel):
+    playerId: str
+
+
+def _lobby_response(code: str) -> dict[str, Any]:
+    """Refresh staleness flags then serialize the lobby."""
+    lobby_store.reap_stale()
+    lobby = lobby_store.get(code)
+    return lobby.to_view()
+
+
+@app.post("/api/lobby/identity")
+def lobby_identity() -> dict[str, str]:
+    """Mint a fresh player ID for first-time clients.
+
+    The client should persist the returned id in localStorage and
+    pass it as ``playerId`` in subsequent requests.
+    """
+    return {"playerId": new_player_id()}
+
+
+@app.post("/api/lobby/host")
+def lobby_host(req: LobbyHostRequest) -> dict[str, Any]:
+    try:
+        lobby = lobby_store.create(req.playerId)
+    except LobbyError as exc:
+        raise _lobby_error_to_http(exc)
+    return {"code": lobby.code, "seat": "north", "lobby": lobby.to_view()}
+
+
+@app.post("/api/lobby/{code}/join")
+def lobby_join(code: str, req: LobbyJoinRequest) -> dict[str, Any]:
+    try:
+        lobby, seat = lobby_store.join(code, req.playerId)
+    except LobbyError as exc:
+        raise _lobby_error_to_http(exc)
+    return {"code": lobby.code, "seat": seat, "lobby": lobby.to_view()}
+
+
+@app.post("/api/lobby/{code}/leave")
+def lobby_leave(code: str, req: LobbyPlayerRequest) -> dict[str, Any]:
+    try:
+        result = lobby_store.leave(code, req.playerId)
+    except LobbyError as exc:
+        raise _lobby_error_to_http(exc)
+    return {"deleted": result is None, "lobby": result.to_view() if result else None}
+
+
+@app.post("/api/lobby/{code}/team")
+def lobby_team(code: str, req: LobbyTeamRequest) -> dict[str, Any]:
+    try:
+        lobby = lobby_store.update_team(code, req.playerId, req.targetSeat, req.newTeam)
+    except LobbyError as exc:
+        raise _lobby_error_to_http(exc)
+    return {"lobby": lobby.to_view()}
+
+
+@app.post("/api/lobby/{code}/profile")
+def lobby_profile(code: str, req: LobbyProfileRequest) -> dict[str, Any]:
+    try:
+        lobby = lobby_store.update_profile(
+            code, req.playerId, name=req.name, avatar=req.avatar,
+        )
+    except LobbyError as exc:
+        raise _lobby_error_to_http(exc)
+    return {"lobby": lobby.to_view()}
+
+
+@app.post("/api/lobby/{code}/kick")
+def lobby_kick(code: str, req: LobbyKickRequest) -> dict[str, Any]:
+    try:
+        lobby = lobby_store.kick(code, req.playerId, req.targetSeat)
+    except LobbyError as exc:
+        raise _lobby_error_to_http(exc)
+    return {"lobby": lobby.to_view()}
+
+
+@app.post("/api/lobby/{code}/heartbeat")
+def lobby_heartbeat(code: str, req: LobbyPlayerRequest) -> dict[str, Any]:
+    try:
+        lobby = lobby_store.heartbeat(code, req.playerId)
+    except LobbyError as exc:
+        raise _lobby_error_to_http(exc)
+    return {"lobby": lobby.to_view()}
+
+
+@app.post("/api/lobby/{code}/reconnect")
+def lobby_reconnect(code: str, req: LobbyPlayerRequest) -> dict[str, Any]:
+    try:
+        lobby, seat = lobby_store.reconnect(code, req.playerId)
+    except LobbyError as exc:
+        raise _lobby_error_to_http(exc)
+    return {"code": lobby.code, "seat": seat, "lobby": lobby.to_view()}
+
+
+@app.post("/api/lobby/{code}/start")
+def lobby_start(code: str, req: LobbyPlayerRequest) -> dict[str, Any]:
+    """Lock the lobby and create the underlying engine match.
+
+    Returns the matchId so the client can switch to the game view.
+    """
+    try:
+        lobby, seats = lobby_store.start_game(code, req.playerId)
+    except LobbyError as exc:
+        raise _lobby_error_to_http(exc)
+
+    # Create a Match and prime the first game.
+    match = Match(first_dealer=Seat.NORTH)
+    match_id = str(uuid.uuid4())
+    sessions[match_id] = match
+    match.new_game()
+
+    lobby_store.set_match_id(lobby.code, match_id)
+    return {"matchId": match_id, "lobby": lobby.to_view()}
+
+
+@app.get("/api/lobby/{code}")
+def lobby_get(code: str) -> dict[str, Any]:
+    try:
+        return _lobby_response(code)
+    except LobbyError as exc:
+        raise _lobby_error_to_http(exc)
+
+
+# ---------------------------------------------------------------------------
+# Static file serving
+# ---------------------------------------------------------------------------
+#
+# In production, ``frontend/dist`` is the built site (run ``npm run build``
+# in ``frontend/`` first). It contains play.html (with the bundled React
+# app), the other static pages (index/rules/stats), and hashed assets.
+#
+# This mount must come **after** every ``/api/...`` route so the API
+# routes win the path match. ``StaticFiles(html=True)`` serves
+# ``index.html`` for the bare ``/`` request.
+#
+# In dev, run ``npm run dev`` from ``frontend/`` instead — the Vite dev
+# server has its own static-serving and proxies ``/api`` here. This
+# mount is then unused.
+
+_DIST_DIR = os.path.normpath(
+    os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+)
+if os.path.isdir(_DIST_DIR):
+    app.mount("/", StaticFiles(directory=_DIST_DIR, html=True), name="static")

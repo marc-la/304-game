@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <style>
+    .bg { fill: #f4ecd8; }
+    .fg { fill: #9c2f1d; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #1a0f0a; }
+      .fg { fill: #d8694a; }
+    }
+  </style>
+  <rect class="bg" width="64" height="64" rx="12"/>
+  <g font-family="Inter, -apple-system, system-ui, Segoe UI, Roboto, sans-serif" font-weight="800" font-size="34" text-anchor="middle">
+    <text class="fg" x="16" y="44">3</text>
+    <text class="fg" x="32" y="44">0</text>
+    <text class="fg" x="48" y="44">4</text>
+  </g>
+  <path class="bg" d="M32 28 l3.4 4 -3.4 4 -3.4 -4 z"/>
+</svg>

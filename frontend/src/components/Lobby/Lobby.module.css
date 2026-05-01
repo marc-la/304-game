@@ -1,0 +1,379 @@
+.container {
+  max-width: 600px;
+  margin: 4rem auto;
+  padding: 2rem;
+  text-align: center;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.title {
+  font-family: 'Crimson Pro', serif;
+  font-size: 2.5rem;
+  margin: 0 0 0.5rem;
+}
+
+.subtitle {
+  color: var(--muted, #888);
+  margin: 0 0 2rem;
+}
+
+.toast {
+  background: #ffe5e5;
+  color: #a00;
+  border: 1px solid #f0c0c0;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toastClose {
+  font-size: 1.25rem;
+  margin-left: 1rem;
+  opacity: 0.6;
+}
+
+/* Entry */
+.entry {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+.btnHost,
+.btnPrimary {
+  background: #2a5d34;
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 120ms;
+}
+
+.btnHost:hover:not(:disabled),
+.btnPrimary:hover:not(:disabled) {
+  background: #1f4426;
+}
+
+.btnHost:disabled,
+.btnPrimary:disabled {
+  background: #999;
+  cursor: not-allowed;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--muted, #888);
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.3;
+}
+
+.joinForm {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.codeInput {
+  flex: 1;
+  padding: 1rem;
+  font-size: 1.5rem;
+  text-align: center;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  border: 2px solid #ccc;
+  border-radius: 6px;
+  font-family: monospace;
+}
+
+.codeInput:focus {
+  outline: none;
+  border-color: #2a5d34;
+}
+
+.btnJoin {
+  padding: 0 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  background: white;
+  border: 2px solid #2a5d34;
+  color: #2a5d34;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btnJoin:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Room */
+.room {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.roomHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modeLabel {
+  font-weight: 600;
+  color: var(--muted, #888);
+  text-transform: uppercase;
+  font-size: 0.85rem;
+}
+
+.btnGhost {
+  background: transparent;
+  color: var(--muted, #888);
+  border: 1px solid #ccc;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btnGhost:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+.codeDisplay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 1.5rem;
+  background: var(--card-bg, #faf6ec);
+  border-radius: 8px;
+}
+
+.codeLabel {
+  font-size: 0.85rem;
+  color: var(--muted, #888);
+  text-transform: uppercase;
+}
+
+.code {
+  font-family: monospace;
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: 0.4em;
+}
+
+.btnCopy {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  margin-top: 0.5rem;
+}
+
+.teams {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.teamColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.teamHeading {
+  margin: 0;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted, #888);
+}
+
+.teamSlots {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.vs {
+  align-self: center;
+  font-style: italic;
+  color: var(--muted, #888);
+  padding-top: 2rem;
+}
+
+.playerSlot {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+}
+
+.playerSlot.empty {
+  border-style: dashed;
+  justify-content: center;
+}
+
+.placeholder {
+  color: #aaa;
+  font-style: italic;
+}
+
+.connDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.connected {
+  background: #4caf50;
+}
+
+.disconnected {
+  background: #ccc;
+}
+
+.avatar {
+  font-size: 1.4rem;
+  width: 1.5rem;
+  text-align: center;
+}
+
+.name {
+  flex: 1;
+  font-weight: 500;
+  text-align: left;
+}
+
+.badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.4rem;
+  background: #eee;
+  color: #666;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.actions button {
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 0.25rem 0.4rem;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #888;
+}
+
+.actions button:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+/* Edit panel */
+.editPanel {
+  background: var(--card-bg, #faf6ec);
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-align: left;
+}
+
+.editPanel h3 {
+  margin-top: 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.field input {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.avatarGrid {
+  border: none;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+
+.avatarGrid legend {
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.avatarBtn {
+  font-size: 1.5rem;
+  padding: 0.5rem;
+  border: 2px solid transparent;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.avatarBtn:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+.avatarBtn.selected {
+  border-color: #2a5d34;
+}
+
+.avatarBtn.taken {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.editActions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.hostControls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hint {
+  color: var(--muted, #888);
+  font-size: 0.9rem;
+  margin: 0;
+}
