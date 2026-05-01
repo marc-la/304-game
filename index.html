@@ -18,6 +18,9 @@
         if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
       } catch (e) {}
     })();
+    // Mark hero-reveal as JS-on so the unwrapped paragraph stays hidden
+    // until hero-reveal.js wraps each word and adds .is-revealing.
+    document.documentElement.classList.add('js-hero-anim');
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -159,5 +162,6 @@
 </main>
 
 <script type="module" src="js/theme.js"></script>
+<script src="js/hero-reveal.js"></script>
 </body>
 </html>

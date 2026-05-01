@@ -1,48 +1,70 @@
+/**
+ * React-side CSS variables.
+ *
+ * Where the site stylesheet (css/styles.css) already defines a variable
+ * with the same semantic role, we *alias* — never redefine. This means
+ * the React app inherits the site's palette and dark-mode overrides for
+ * free: when the user toggles dark mode (which sets data-theme="dark"
+ * on <html> and flips the --clr-* set), every --color-* var below
+ * follows automatically because it points at a --clr-* var.
+ *
+ * The fallback values to the right of the comma are only used when the
+ * React app is mounted in a context where css/styles.css has not loaded
+ * (storybook, isolated tests). On play.html the site stylesheet is
+ * always loaded first.
+ */
+
 :root {
-  /* Background & Surface */
-  --color-bg: #faf9f6;
-  --color-surface: #ffffff;
-  --color-border: #e0ddd8;
+  /* Background & Surface — alias to site --clr-* */
+  --color-bg: var(--clr-bg, #f4ecd8);
+  --color-surface: var(--clr-surface, #fbf6e8);
+  --color-surface-elev: var(--clr-surface-elev, #ffffff);
+  --color-border: var(--clr-border, #d8cfb6);
 
   /* Text */
-  --color-text: #1a1a1a;
-  --color-text-secondary: #555555;
+  --color-text: var(--clr-text, #1f1611);
+  --color-text-secondary: var(--clr-text-muted, #6a5d4d);
 
-  /* Accent */
-  --color-accent: #b5432a;
-  --color-accent-light: #fdf0ed;
+  /* Accent (cinnabar in light, warm coral in dark) */
+  --color-accent: var(--clr-accent, #9c2f1d);
+  --color-accent-light: var(--clr-accent-light, #f0dccb);
+  --color-accent-cool: var(--clr-accent-cool, #2d4a52);
 
-  /* Teams */
-  --color-team-a: #1a6fb5;
-  --color-team-b: #b5841a;
+  /* Teams — match the site's two-partnership warm/cool palette */
+  --color-team-a: var(--clr-accent, #9c2f1d);
+  --color-team-b: var(--clr-accent-cool, #2d4a52);
 
-  /* Table */
-  --color-table: #267342;
+  /* Table (used by GameTable component) */
+  --color-table: var(--clr-house, #2e6b3e);
   --color-table-center: #1e5c35;
   --color-table-border: #1a5c32;
 
   /* Cards */
-  --color-card-face-down: #bbc8bb;
-  --color-suit-red: #cc0000;
-  --color-suit-black: #1a1a1a;
+  --color-card-face-down: var(--clr-border, #bbc8bb);
+  --color-suit-red: var(--clr-accent, #cc0000);
+  --color-suit-black: var(--clr-text, #1a1a1a);
 
   /* State */
-  --color-active: #c8ecd0;
-  --color-danger: #cc0000;
-  --color-house-rule: #2e6b3e;
+  --color-active: var(--clr-house-bg, #c8ecd0);
+  --color-danger: var(--clr-accent, #cc0000);
+  --color-house-rule: var(--clr-house, #2e6b3e);
 
-  /* Typography */
-  --font-body: 'Crimson Pro', serif;
-  --font-ui: 'Inter', sans-serif;
+  /* Shadows */
+  --color-shadow: var(--clr-shadow, rgba(31, 22, 17, 0.07));
+  --color-shadow-strong: var(--clr-shadow-strong, rgba(31, 22, 17, 0.16));
+
+  /* Typography — alias to site fonts. Body matches the site's serif. */
+  --font-body: var(--font-body, 'Crimson Pro', Georgia, serif);
+  --font-ui: var(--font-heading, 'Inter', sans-serif);
   --font-card: 'JetBrains Mono', 'Courier New', monospace;
 
   /* Spacing */
   --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
 
-  /* Shadows */
-  --shadow-card: 0 2px 4px rgba(0, 0, 0, 0.1);
-  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.2);
-  --shadow-card-active: 0 6px 16px rgba(0, 0, 0, 0.25);
+  /* Shadows for use in React components */
+  --shadow-card: 0 2px 4px var(--color-shadow);
+  --shadow-card-hover: 0 4px 12px var(--color-shadow-strong);
+  --shadow-card-active: 0 6px 16px var(--color-shadow-strong);
 }

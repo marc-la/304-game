@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLobbyStore } from '../../store/lobbyStore';
 import type { LobbyView, Seat } from '../../api/lobbyApi';
 import styles from './Lobby.module.css';
@@ -19,15 +19,35 @@ interface EditPanelProps {
   onClose: () => void;
 }
 
+/**
+ * Profile editor.
+ *
+ * Uses the native ``<dialog>`` element so we get for free:
+ * - Esc to close (the browser fires "cancel" on the dialog)
+ * - focus trap inside the dialog while open
+ * - backdrop styling via ::backdrop
+ * - aria-modal / role="dialog" semantics
+ *
+ * Browser support: Chrome 37+, Firefox 98+, Safari 15.4+ — all the
+ * targets the rest of the app already requires.
+ */
 export default function EditPanel({ lobby, mySeat, onClose }: EditPanelProps) {
   const updateProfile = useLobbyStore((s) => s.updateProfile);
   const me = lobby.seats[mySeat]!;
   const [name, setName] = useState(me.name);
   const [avatar, setAvatar] = useState(me.avatar);
   const [busy, setBusy] = useState(false);
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
-  // Compute taken-by-others sets so we can grey them out (informational —
-  // server is the source of truth and will reject conflicts).
+  useEffect(() => {
+    const dlg = dialogRef.current;
+    if (!dlg) return;
+    if (!dlg.open) dlg.showModal();
+    return () => {
+      if (dlg.open) dlg.close();
+    };
+  }, []);
+
   const takenAvatars = new Set<string>();
   for (const seat of ['north', 'east', 'south', 'west'] as Seat[]) {
     const p = lobby.seats[seat];
@@ -42,8 +62,17 @@ export default function EditPanel({ lobby, mySeat, onClose }: EditPanelProps) {
   }
 
   return (
-    <div className={styles.editPanel}>
-      <h3>Edit profile</h3>
+    <dialog
+      ref={dialogRef}
+      className={styles.editPanel}
+      onCancel={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
+      aria-labelledby="edit-panel-title"
+    >
+      <h3 id="edit-panel-title">Edit profile</h3>
+
       <label className={styles.field}>
         Name
         <input
@@ -52,6 +81,7 @@ export default function EditPanel({ lobby, mySeat, onClose }: EditPanelProps) {
           maxLength={12}
           onChange={(e) => setName(e.target.value)}
           disabled={busy}
+          autoFocus
         />
       </label>
 
@@ -63,9 +93,12 @@ export default function EditPanel({ lobby, mySeat, onClose }: EditPanelProps) {
           return (
             <button
               key={a}
+              type="button"
               className={`${styles.avatarBtn} ${selected ? styles.selected : ''} ${taken ? styles.taken : ''}`}
               onClick={() => !taken && setAvatar(a)}
               disabled={busy || taken}
+              aria-pressed={selected}
+              aria-label={`${a}${taken ? ' (taken)' : ''}`}
               title={a}
             >
               {AVATAR_GLYPH[a]}
@@ -75,13 +108,23 @@ export default function EditPanel({ lobby, mySeat, onClose }: EditPanelProps) {
       </fieldset>
 
       <div className={styles.editActions}>
-        <button className={styles.btnGhost} onClick={onClose} disabled={busy}>
+        <button
+          type="button"
+          className={styles.btnGhost}
+          onClick={onClose}
+          disabled={busy}
+        >
           Cancel
         </button>
-        <button className={styles.btnPrimary} onClick={save} disabled={busy}>
+        <button
+          type="button"
+          className={styles.btnPrimary}
+          onClick={save}
+          disabled={busy || !name.trim()}
+        >
           Save
         </button>
       </div>
-    </div>
+    </dialog>
   );
 }

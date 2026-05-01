@@ -2,7 +2,43 @@
   "hash": "dc8ccac4",
   "configHash": "a30536fb",
   "lockfileHash": "e3b0c442",
-  "browserHash": "23ee2c47",
-  "optimized": {},
-  "chunks": {}
+  "browserHash": "6526cec3",
+  "optimized": {
+    "framer-motion": {
+      "src": "../../frontend/node_modules/framer-motion/dist/es/index.mjs",
+      "file": "framer-motion.js",
+      "fileHash": "4c9edc00",
+      "needsInterop": false
+    },
+    "react-dom/client": {
+      "src": "../../frontend/node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "30658f9b",
+      "needsInterop": true
+    },
+    "react": {
+      "src": "../../frontend/node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "c9468c0d",
+      "needsInterop": true
+    },
+    "react/jsx-dev-runtime": {
+      "src": "../../frontend/node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "0210e803",
+      "needsInterop": true
+    },
+    "zustand": {
+      "src": "../../frontend/node_modules/zustand/esm/index.mjs",
+      "file": "zustand.js",
+      "fileHash": "3c38f8fa",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "react-B6J-hxuQ": {
+      "file": "react-B6J-hxuQ.js",
+      "isDynamicEntry": false
+    }
+  }
 }

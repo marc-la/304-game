@@ -39,7 +39,10 @@ export default function LobbyRoom({ lobby, mySeat }: LobbyRoomProps) {
   const canStart = isHost && totalPlayers === 4 && teamsBalanced;
 
   function copyCode() {
-    void navigator.clipboard.writeText(lobby.code);
+    // Copy the join URL so recipients can click straight in.
+    const url = new URL(window.location.href);
+    url.searchParams.set('code', lobby.code);
+    void navigator.clipboard.writeText(url.toString());
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   }
@@ -91,9 +94,11 @@ export default function LobbyRoom({ lobby, mySeat }: LobbyRoomProps) {
         <span className={styles.codeLabel}>Game Code</span>
         <span className={styles.code}>{lobby.code}</span>
         <button
+          type="button"
           className={styles.btnCopy}
           onClick={copyCode}
-          title="Copy code"
+          aria-label={copied ? 'Link copied' : 'Copy join link'}
+          title={copied ? 'Link copied!' : 'Copy join link'}
         >
           {copied ? '✓' : '📋'}
         </button>
@@ -149,31 +154,49 @@ interface PlayerSlotProps {
 
 function PlayerSlot({ player, isHost, isMe, hostId, onSwitch, onKick, onEdit }: PlayerSlotProps) {
   const isPlayerHost = player.playerId === hostId;
+  const connStatus = player.connected ? 'Connected' : 'Disconnected';
   return (
     <div className={styles.playerSlot}>
       <span
         className={`${styles.connDot} ${
           player.connected ? styles.connected : styles.disconnected
         }`}
-        title={player.connected ? 'Connected' : 'Disconnected'}
+        role="status"
+        aria-label={connStatus}
+        title={connStatus}
       />
-      <span className={styles.avatar}>{AVATAR_GLYPH[player.avatar] ?? '♠'}</span>
+      <span className={styles.avatar} aria-hidden="true">{AVATAR_GLYPH[player.avatar] ?? '♠'}</span>
       <span className={styles.name}>{player.name}</span>
       {isPlayerHost && <span className={styles.badge}>Host</span>}
       {isMe && <span className={styles.badge}>You</span>}
       <span className={styles.actions}>
         {isMe && (
-          <button title="Edit profile" onClick={onEdit}>
+          <button
+            type="button"
+            aria-label="Edit profile"
+            title="Edit profile"
+            onClick={onEdit}
+          >
             ✎
           </button>
         )}
         {(isMe || isHost) && (
-          <button title="Switch team" onClick={onSwitch}>
+          <button
+            type="button"
+            aria-label={isMe ? 'Switch your team' : `Switch ${player.name}'s team`}
+            title="Switch team"
+            onClick={onSwitch}
+          >
             ⇄
           </button>
         )}
         {isHost && !isMe && (
-          <button title="Remove player" onClick={onKick}>
+          <button
+            type="button"
+            aria-label={`Remove ${player.name}`}
+            title="Remove player"
+            onClick={onKick}
+          >
             ✕
           </button>
         )}

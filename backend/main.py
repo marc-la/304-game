@@ -62,14 +62,36 @@ lobby_store: LobbyStore = LobbyStore()
 
 
 def _lobby_error_to_http(exc: LobbyError) -> HTTPException:
-    """Map a LobbyError to an appropriate HTTP status."""
+    """Map a LobbyError to an appropriate HTTP status.
+
+    - 404: resource not found
+    - 403: permission / authorisation failures (host-only actions, self-kick)
+    - 409: resource state conflict (full lobby, already started, taken
+      name/avatar, unbalanced teams, seats not filled)
+    - 400: malformed or invalid input (bad seat name, bad avatar, etc.)
+    """
     msg = str(exc)
     lower = msg.lower()
     if "not found" in lower:
-        return HTTPException(404, detail={"error": msg, "errorType": "LobbyError"})
-    if "full" in lower or "already" in lower or "taken" in lower:
-        return HTTPException(409, detail={"error": msg, "errorType": "LobbyError"})
-    return HTTPException(400, detail={"error": msg, "errorType": "LobbyError"})
+        status = 404
+    elif (
+        "only the host" in lower
+        or "kick yourself" in lower
+        or "not in this lobby" in lower
+    ):
+        status = 403
+    elif (
+        "full" in lower
+        or "already" in lower
+        or "taken" in lower
+        or "2 vs 2" in lower
+        or "seats are filled" in lower
+        or "started" in lower
+    ):
+        status = 409
+    else:
+        status = 400
+    return HTTPException(status_code=status, detail={"error": msg, "errorType": "LobbyError"})
 
 
 def _get_match(match_id: str) -> Match:
