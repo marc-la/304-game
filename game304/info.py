@@ -222,10 +222,14 @@ def build_info_set(state: GameState, viewer: Seat) -> InformationSet:
     known_played: set[Card] = set()
     hidden_slots: list[HiddenSlot] = []
 
-    def absorb_round(round_number: int, cards: list[RoundEntry]) -> None:
+    def absorb_round(
+        round_number: int, cards: list[RoundEntry], in_completed: bool
+    ) -> None:
         led = _entry_led_suit(cards)
         for entry in cards:
-            if _viewer_knows_identity(entry, viewer, is_viewer_trumper):
+            if _viewer_knows_identity(
+                entry, viewer, is_viewer_trumper, in_completed
+            ):
                 known_played.add(entry.card)
             else:
                 # Face-down, identity unknown to V. We require the led
@@ -243,9 +247,9 @@ def build_info_set(state: GameState, viewer: Seat) -> InformationSet:
                 )
 
     for r in play.completed_rounds:
-        absorb_round(r.round_number, r.cards)
+        absorb_round(r.round_number, r.cards, in_completed=True)
     if play.current_round:
-        absorb_round(play.round_number, play.current_round)
+        absorb_round(play.round_number, play.current_round, in_completed=False)
 
     # Did V's team win every completed round so far?
     my_team = team_of(viewer)
@@ -603,7 +607,10 @@ def _is_off_led_suit(entry: RoundEntry, led_suit: Suit) -> bool:
 
 
 def _viewer_knows_identity(
-    entry: RoundEntry, viewer: Seat, viewer_is_trumper: bool
+    entry: RoundEntry,
+    viewer: Seat,
+    viewer_is_trumper: bool,
+    in_completed_round: bool,
 ) -> bool:
     """Whether the viewer can identify this round entry.
 
@@ -612,8 +619,10 @@ def _viewer_knows_identity(
     - the entry was face-up (everyone sees it);
     - the entry was face-down but later revealed (everyone sees it);
     - the viewer played the entry themselves;
-    - the viewer is the trumper (who inspects every face-down at
-      end-of-round resolution).
+    - the viewer is the trumper **and** the entry sits in a completed
+      round (the trumper inspects face-downs at end-of-round
+      resolution — not before; so in-progress face-downs remain hidden
+      to the trumper too, per ``docs/caps_formalism.md`` §3 clause 6).
     """
     if not entry.face_down:
         return True
@@ -621,6 +630,6 @@ def _viewer_knows_identity(
         return True
     if entry.seat == viewer:
         return True
-    if viewer_is_trumper:
+    if viewer_is_trumper and in_completed_round:
         return True
     return False

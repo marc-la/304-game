@@ -85,10 +85,13 @@ def calculate_result(state: GameState) -> GameResult:
             )
 
     # 3. Check for late caps (player was obligated but never called caps).
-    #    A player obligated mid-game whose team did go on to win every
-    #    remaining round is treated as Late Caps: the betting team's win
-    #    flips to a loss + 1 stone (or the opposition's win to a loss + 1
-    #    in the external case).
+    #    Two distinct branches per ``rules.html`` §C-3 (trumper team)
+    #    and §C-15 (external team):
+    #      - Trumper-team late caps: betting team's win flips to a
+    #        ``loss + 1`` stone outcome (betting team receives stone).
+    #      - External-team late caps: external team's win flips to a
+    #        ``win + 1`` stone outcome for the betting team (betting
+    #        team gives ``win + 1`` stone TO the external team).
     if play.caps_obligations:
         for seat_key, obligation in play.caps_obligations.items():
             obligated_team = team_of(seat_key)
@@ -108,15 +111,33 @@ def calculate_result(state: GameState) -> GameResult:
             )
             if all_won and won_everything:
                 scoring = _get_scoring(bidding)
+                if obligated_team == trumper_team:
+                    # §C-3: Late Caps for the trumping team.
+                    return GameResult(
+                        reason="caps_late",
+                        stone_exchanged=scoring.loss + 1,
+                        stone_direction="receive",
+                        winner_team=opposition_team,
+                        caps_by=seat_key,
+                        description=(
+                            f"Late Caps detected for {seat_key.value}. "
+                            f"{scoring.loss + 1} stone penalty."
+                        ),
+                    )
+                # §C-15: Late External Caps. External team won all 8
+                # rounds but missed their first opportunity. The game
+                # flips: betting team takes a ``win + 1`` outcome,
+                # giving stone to the external team.
                 return GameResult(
                     reason="caps_late",
-                    stone_exchanged=scoring.loss + 1,
-                    stone_direction="receive",
-                    winner_team=_other_team(obligated_team),
+                    stone_exchanged=scoring.win + 1,
+                    stone_direction="give",
+                    winner_team=trumper_team,
                     caps_by=seat_key,
                     description=(
-                        f"Late Caps detected for {seat_key.value}. "
-                        f"{scoring.loss + 1} stone penalty."
+                        f"Late External Caps detected for "
+                        f"{seat_key.value}. Betting team gives "
+                        f"{scoring.win + 1} stone to the external team."
                     ),
                 )
 
@@ -227,7 +248,7 @@ def calculate_caps_result(
             ),
         )
 
-    # Valid caps — check timing
+    # Valid caps — check timing.
     is_late = False
     play = state.play
     if play is not None:
@@ -235,7 +256,19 @@ def calculate_caps_result(
 
         is_late = is_caps_late(state, seat)
 
-    is_before_round_7 = play is not None and play.round_number < 7
+    # Bonus eligibility (§C-1, §C-13): determined by the round in
+    # which the caller's *first obligation* arose (``r(S*_V) < 7`` per
+    # formalism §8.4), not the round in which the call was placed.
+    # Falls back to the call round if no obligation was tracked.
+    obligation = (
+        play.caps_obligations.get(seat) if play is not None else None
+    )
+    obligation_round = (
+        obligation.obligated_at_round
+        if obligation is not None
+        else (play.round_number if play is not None else 0)
+    )
+    is_before_round_7 = obligation_round < 7
     scoring = _get_scoring(state.bidding)
 
     if is_late:

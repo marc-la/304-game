@@ -187,13 +187,30 @@ class CapsObligation:
     Used for detecting late caps — if a player was obligated at an
     earlier point but only called later (or never called).
 
+    The timing fields capture two views of the obligation moment so
+    both **strict** and **lenient** timing policies can be evaluated
+    (per ``docs/caps_formalism.md`` §8.3):
+
+    - *Strict*: any subsequent observation event (any seat plays a
+      card, any reveal) makes a later call late.
+    - *Lenient*: the call is on-time up to and including ``V``'s next
+      own-play turn — late only when ``V`` has played a card since
+      obligation arose.
+
     Attributes:
         obligated_at_round: The round number when obligation arose.
-        obligated_at_card: The card index within that round (0-based).
+        obligated_at_card: Number of cards played in the in-progress
+            round at the obligation moment (any seat). Used by strict
+            policy.
+        v_plays_at_obligation: Total cards the obligated seat itself
+            had played at the obligation moment (= completed rounds
+            in which they played + 1 if they had already played in
+            the current round). Used by lenient policy.
     """
 
     obligated_at_round: int
     obligated_at_card: int
+    v_plays_at_obligation: int = 0
 
 
 @dataclass

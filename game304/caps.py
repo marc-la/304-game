@@ -1,78 +1,128 @@
 """Caps obligation algorithm for the 304 card game.
 
-Caps is the most complex component of 304. A player is caps-obligated
-when there exists *some* committed sequence of plays from their hand
-that guarantees winning all remaining rounds, irrespective of how any
-other player chooses to play.
+Implements the outer single-dummy quantifiers of §5 of
+``docs/caps_formalism.md``. The decomposition matches §11:
 
-The algorithm is full minimax against the rest of the table:
-- The caller commits to a fixed play order for their cards.
-- Every other player (including the caller's partner) is treated as
-  adversarial: for caps to hold, *every* legal sequence of opposing /
-  partner plays must result in the caller's team winning every round.
-- "Forced plays" (e.g. partner having only one card of the led suit)
-  collapse out of the recursion naturally — there is only one branch
-  to explore.
+- :mod:`game304.info` builds the candidate caller's information set
+  ``I_V(S)`` and enumerates every world ``W`` consistent with it.
+- :mod:`game304.dd` solves a single world: does a fixed caller play
+  order ``O`` win every remaining round (or, for Claim Balance,
+  reach a points threshold) against any legal continuation by the
+  other three seats?
+- This module composes them: a player is caps-obligated iff there
+  **exists** an order ``O`` such that for **every** world ``W``,
+  ``O`` wins in ``W``.
 
-Rules:
-- Caps must be called at the first opportunity where certainty is
-  achieved.
-- Correct Caps before Round 7: +1 stone bonus.
-- Correct Caps in/after Round 7: normal scoring, no bonus.
-- Late Caps: loss + 1 stone penalty (game flipped to loss).
-- Wrong/Early Caps: 5 stone penalty.
-- External Caps (from opposition): same correctness test, more lenient
-  in practice but the algorithm is identical.
+Using ``state.hands`` directly here would be **double-dummy**
+analysis — the implementation gap that the formalism §1 names as
+the wrong test. The correct test consumes ``info.py``'s information
+set and quantifies over the consistent worlds.
+
+Two timing policies are exposed for Late-Caps detection (§8.3):
+
+- **Lenient** (default; rules engine default per §C-3): ``V`` may
+  call up to and including their next own-play turn. Late iff
+  ``V`` has played a card since obligation arose.
+- **Strict**: any subsequent observation event makes the call late.
+
+The bonus eligibility window (§C-1, §C-13) is determined by the
+round of *first* obligation — ``r(S*_V) < 7`` per formalism §8.4 —
+not the round in which the call was placed.
 """
 
 from __future__ import annotations
 
 import itertools
+from typing import Iterable
 
 from game304.card import Card
-from game304.seating import next_seat, partner_seat, team_of
-from game304.state import CapsCall, CapsObligation, GameState
-from game304.types import Seat, Suit, Team
+from game304.dd import (
+    InProgressEntry,
+    PlaySnapshot,
+    order_min_points_in_world,
+    order_sweeps_world,
+)
+from game304.info import (
+    InformationSet,
+    World,
+    build_info_set,
+    enumerate_worlds,
+)
+from game304.seating import team_of
+from game304.state import CapsObligation, GameState
+from game304.types import Seat, Suit
 
 
 # ---------------------------------------------------------------------------
-# Public API
+# Configuration
+# ---------------------------------------------------------------------------
+
+
+#: Max consistent worlds enumerated per obligation check. If the cap
+#: is reached we abort and treat obligation as undetermined (False) —
+#: a caller who cannot bound their own world set cannot reasonably
+#: deduce obligation either, so refusing to flag is the safe choice.
+#: Late-game (the regime in which caps actually fires) the world set
+#: is well under this bound; early-game the set explodes and we abort.
+MAX_WORLDS = 5000
+
+#: Max permutations of the caller's hand explored when searching for
+#: a witness order. With ``H`` cards there are ``H!`` orderings; for
+#: ``H ≤ 6`` we always exhaust them, beyond that we cap. Practical
+#: caps situations typically have ``H ≤ 4``.
+MAX_PERMUTATIONS = 5040  # 7!
+
+
+# ---------------------------------------------------------------------------
+# Public API — caps
 # ---------------------------------------------------------------------------
 
 
 def check_caps_obligation(state: GameState, seat: Seat) -> bool:
-    """Return ``True`` if ``seat`` is currently caps-obligated.
+    """Return ``True`` iff ``seat`` is currently caps-obligated.
 
-    A player is caps-obligated when there exists at least one ordering
-    of their remaining cards that guarantees winning every remaining
-    round, irrespective of how all other players (including their
-    partner) might play.
+    Per formalism §5: there exists an order ``O`` of ``seat``'s
+    remaining cards such that for every world ``W`` consistent with
+    ``seat``'s information, and every legal adversary strategy, the
+    caller's team wins every remaining round.
 
-    Used to detect the moment caps obligation first arises (for Late
-    Caps detection).
+    Uses ``info.build_info_set`` to construct ``I_V(S)`` and
+    ``info.enumerate_worlds`` to iterate consistent worlds, with a
+    safety cap (:data:`MAX_WORLDS`) to handle pathologically large
+    early-game world sets.
     """
     play = state.play
     if play is None:
         return False
-
-    my_team = team_of(seat)
-
-    # Cannot be obligated if the caller's team has already lost a round
-    if any(team_of(r.winner) != my_team for r in play.completed_rounds):
+    if state.pcc_partner_out == seat:
+        return False
+    try:
+        info = build_info_set(state, seat)
+    except ValueError:
         return False
 
-    my_cards = list(state.hands.get(seat, []))
-    if not my_cards:
+    # Precondition: caller's team has won every completed round (§5).
+    if not info.team_won_all_completed:
+        return False
+    if not info.own_hand:
         return False
 
-    # The caller may not be the leader of the current round if some cards
-    # have already been played. Build "to play" plays for in-progress
-    # players using simulation; the caller's order is what we vary.
-    for play_order in itertools.permutations(my_cards):
-        if _caps_holds(state, seat, list(play_order)):
-            return True
+    rounds_remaining = 8 - len(play.completed_rounds)
+    if rounds_remaining <= 0:
+        return False
 
-    return False
+    worlds = _enumerate_or_abort(info)
+    if worlds is None:
+        return False
+
+    return _has_witness_order(
+        info=info,
+        seat=seat,
+        play_state=play,
+        worlds=worlds,
+        rounds_remaining=rounds_remaining,
+        pcc_partner_out=state.pcc_partner_out,
+    )
 
 
 def validate_caps_call(
@@ -80,36 +130,67 @@ def validate_caps_call(
     seat: Seat,
     play_order: list[Card],
 ) -> bool:
-    """Return ``True`` if ``play_order`` guarantees all remaining rounds.
+    """Return ``True`` iff ``play_order`` is a valid caps witness.
 
-    The play order must contain exactly the caller's remaining cards
-    (caller is the seat that called caps). Validation assumes the
-    declared order is followed strictly; partner and opponents are
-    adversarial.
+    Per formalism §5: ``play_order`` must win every remaining round
+    in **every** world consistent with the caller's information.
+    Differs from ``check_caps_obligation`` only in fixing the order
+    rather than searching for one.
     """
-    return _caps_holds(state, seat, list(play_order))
+    play = state.play
+    if play is None:
+        return False
+    if state.pcc_partner_out == seat:
+        return False
+    try:
+        info = build_info_set(state, seat)
+    except ValueError:
+        return False
+    if not info.team_won_all_completed:
+        return False
+    if sorted(play_order, key=str) != sorted(info.own_hand, key=str):
+        return False
+
+    rounds_remaining = 8 - len(play.completed_rounds)
+    if rounds_remaining <= 0:
+        return False
+
+    worlds = _enumerate_or_abort(info)
+    if worlds is None:
+        return False
+
+    return _order_wins_all_worlds(
+        info=info,
+        seat=seat,
+        play_state=play,
+        worlds=worlds,
+        order=list(play_order),
+        rounds_remaining=rounds_remaining,
+        pcc_partner_out=state.pcc_partner_out,
+    )
 
 
 def track_caps_obligation(state: GameState) -> None:
-    """Record when each player first became caps-obligated.
+    """Stamp first-obligation moments for every eligible seat.
 
-    Should be called after every card play and after each round
-    resolution. Only seats not already tracked are checked. Each new
-    obligation is stamped with the current round number and the number
-    of cards already played in the current round at the time of
-    detection.
+    Invoked by the play loop after every card play and after every
+    round resolution (where folded trumps may be revealed). Each
+    seat's first-obligation event is recorded once and never
+    overwritten — late-caps detection compares against this stamp.
 
-    Per the rules: "Caps cannot be called after the final card of round
-    8 is played." Once the game has reached that point the call window
-    is closed, so we do not record new obligations there.
+    The call window closes at the final card of round 8; obligations
+    arising precisely at that final state are never recorded
+    (§rules: "Caps cannot be called after the final card of round 8
+    is played"), but earlier stamps remain.
     """
     play = state.play
     if play is None:
         return
 
-    expected = 3 if state.pcc_partner_out is not None else 4
+    expected_round_size = 3 if state.pcc_partner_out is not None else 4
     call_window_closed = (
-        play.round_number == 8 and len(play.current_round) >= expected
+        play.round_number == 8
+        and len(play.current_round) >= expected_round_size
     )
     if call_window_closed:
         return
@@ -120,50 +201,77 @@ def track_caps_obligation(state: GameState) -> None:
         if state.pcc_partner_out == seat:
             continue
         try:
-            if check_caps_obligation(state, seat):
-                play.caps_obligations[seat] = CapsObligation(
-                    obligated_at_round=play.round_number,
-                    obligated_at_card=len(play.current_round),
-                )
+            obligated = check_caps_obligation(state, seat)
         except Exception:
-            # Tracking is best-effort; never let an obligation check
-            # crash the game loop.
+            # Obligation tracking is best-effort; never crash the loop.
             continue
+        if not obligated:
+            continue
+        v_played_in_current = any(
+            entry.seat == seat for entry in play.current_round
+        )
+        v_plays_at_obligation = (play.round_number - 1) + (
+            1 if v_played_in_current else 0
+        )
+        play.caps_obligations[seat] = CapsObligation(
+            obligated_at_round=play.round_number,
+            obligated_at_card=len(play.current_round),
+            v_plays_at_obligation=v_plays_at_obligation,
+        )
 
 
-def is_caps_late(state: GameState, seat: Seat) -> bool:
-    """Return ``True`` if a caps call by ``seat`` would be late.
+def is_caps_late(
+    state: GameState, seat: Seat, *, policy: str = "lenient"
+) -> bool:
+    """Return ``True`` iff a caps call by ``seat`` would be late.
 
-    A call is late if obligation was tracked at an earlier point than
-    the current state — earlier round, or same round but earlier card
-    index.
+    Per formalism §8.3, three policies are recognised; this engine
+    supports two:
+
+    - ``'lenient'`` (rules engine default per §C-3 / rules.html
+      §Caps): late iff ``seat`` has played a card since obligation
+      first arose. Up to and including ``seat``'s next own-play turn
+      the call is on-time.
+    - ``'strict'``: late iff any observation event has occurred
+      since obligation first arose (any seat played a card, any
+      reveal happened, or a new round started).
+
+    The default is lenient because that matches the rules' practical
+    grace period.
     """
     play = state.play
     if play is None:
         return False
-
     obligation = play.caps_obligations.get(seat)
     if obligation is None:
         return False
 
-    if obligation.obligated_at_round < play.round_number:
-        return True
-    if (
-        obligation.obligated_at_round == play.round_number
-        and obligation.obligated_at_card < len(play.current_round)
-    ):
-        return True
-    return False
+    if policy == "strict":
+        if obligation.obligated_at_round < play.round_number:
+            return True
+        if (
+            obligation.obligated_at_round == play.round_number
+            and obligation.obligated_at_card < len(play.current_round)
+        ):
+            return True
+        return False
+
+    # Lenient (default).
+    v_played_in_current = any(
+        entry.seat == seat for entry in play.current_round
+    )
+    v_plays_now = (play.round_number - 1) + (
+        1 if v_played_in_current else 0
+    )
+    return v_plays_now > obligation.v_plays_at_obligation
 
 
 def deduce_exhausted_suits(state: GameState) -> dict[Seat, set[Suit]]:
     """Deduce which suits each player is publicly known to be out of.
 
-    A player is exhausted of a suit if they failed to follow it in a
-    completed round (played a different suit face-up, or played a card
-    face-down that was either revealed or remained hidden but was
-    nonetheless an off-suit play). Used as a heuristic — the simulation
-    itself uses actual remaining hands, which is more precise.
+    Retained as a convenience for downstream code (e.g. UI hinting).
+    The caps engine itself routes suit-exhaustion through
+    :func:`game304.info.build_info_set` and does not call this.
     """
     exhausted: dict[Seat, set[Suit]] = {s: set() for s in Seat}
     play = state.play
@@ -181,237 +289,275 @@ def deduce_exhausted_suits(state: GameState) -> dict[Seat, set[Suit]]:
         if led_suit is None:
             continue
         for entry in r.cards:
-            if entry.card.suit != led_suit:
+            if entry.face_down or entry.card.suit != led_suit:
                 exhausted[entry.seat].add(led_suit)
     return exhausted
 
 
 # ---------------------------------------------------------------------------
-# Internal: minimax simulation
+# Public API — claim balance (analogous mechanic; §6, §penalties).
 # ---------------------------------------------------------------------------
 
 
-def _caps_holds(
-    state: GameState,
-    caller_seat: Seat,
-    caller_play_order: list[Card],
+def check_claim_balance(
+    state: GameState, seat: Seat, threshold: int
 ) -> bool:
-    """Return ``True`` if the caller's play order forces an all-rounds win.
+    """Return ``True`` iff ``seat`` can guarantee reaching ``threshold``.
 
-    Treats the caller's partner and both opponents as adversarial: caps
-    holds iff for *every* legal sequence of plays by the other three
-    players, the caller's team wins every remaining round.
+    Single-dummy claim adjudication on the points threshold (§6 of
+    the formalism). The team's currently-won points contribute; the
+    test is whether some announced order brings the worst-case
+    minimum-points-from-here above the gap.
+
+    Used to validate Claim Balance calls. Wrong claim is punished by
+    the severe penalty per ``rules.html#penalties``.
     """
     play = state.play
     if play is None:
         return False
+    if state.pcc_partner_out == seat:
+        return False
+    try:
+        info = build_info_set(state, seat)
+    except ValueError:
+        return False
+    if not info.own_hand:
+        return False
 
-    remaining_rounds = 8 - len(play.completed_rounds)
-    if remaining_rounds <= 0:
+    rounds_remaining = 8 - len(play.completed_rounds)
+    my_team = team_of(seat)
+    points_so_far = play.points_won.get(my_team, 0)
+    if points_so_far >= threshold:
         return True
-    if len(caller_play_order) < remaining_rounds:
+    if rounds_remaining <= 0:
         return False
 
-    # Build the live simulation hands for everyone (excluding PCC out seat).
-    sim_hands: dict[Seat, list[Card]] = {}
-    for s in Seat:
-        if state.pcc_partner_out == s:
-            continue
-        sim_hands[s] = list(state.hands.get(s, []))
-
-    # The caller's remaining cards must equal the play_order multiset.
-    if sorted(caller_play_order, key=str) != sorted(sim_hands.get(caller_seat, []), key=str):
+    worlds = _enumerate_or_abort(info)
+    if worlds is None:
         return False
 
-    # Mid-round: cards already played in the in-progress round count
-    # toward the round outcome but do not affect remaining hands (already
-    # removed from sim_hands at this point). Re-attach them.
-    in_progress: list[tuple[Seat, Card, bool]] = [
-        (e.seat, e.card, e.face_down) for e in play.current_round
-    ]
-
-    leader = play.priority if play.priority is not None else caller_seat
-    trump_suit = state.trump.trump_suit
-    my_team = team_of(caller_seat)
-
-    return _simulate(
-        sim_hands=sim_hands,
-        caller_seat=caller_seat,
-        caller_play_order=list(caller_play_order),
-        caller_play_index=0,
-        leader=leader,
-        in_progress=in_progress,
-        remaining_rounds=remaining_rounds,
-        trump_suit=trump_suit,
-        my_team=my_team,
+    gap = threshold - points_so_far
+    return _has_balance_witness(
+        info=info,
+        seat=seat,
+        play_state=play,
+        worlds=worlds,
+        rounds_remaining=rounds_remaining,
         pcc_partner_out=state.pcc_partner_out,
+        gap=gap,
     )
 
 
-def _simulate(
-    *,
-    sim_hands: dict[Seat, list[Card]],
-    caller_seat: Seat,
-    caller_play_order: list[Card],
-    caller_play_index: int,
-    leader: Seat,
-    in_progress: list[tuple[Seat, Card, bool]],
-    remaining_rounds: int,
-    trump_suit: Suit | None,
-    my_team: Team,
-    pcc_partner_out: Seat | None,
+def validate_claim_balance(
+    state: GameState,
+    seat: Seat,
+    play_order: list[Card],
+    threshold: int,
 ) -> bool:
-    """Minimax simulator. Recurses round-by-round, play-by-play."""
-    # Determine who has played in the current round and who is next.
-    turn_order = _round_turn_order(leader, pcc_partner_out)
-    played_seats = [s for s, _, _ in in_progress]
+    """Return ``True`` iff the announced order guarantees ``threshold``.
 
-    # Find the next seat to play
-    next_idx = len(played_seats)
-
-    if next_idx >= len(turn_order):
-        # Round is complete — resolve and recurse.
-        winner = _round_winner(in_progress, trump_suit)
-        if team_of(winner) != my_team:
-            return False
-        if remaining_rounds == 1:
-            return True
-        return _simulate(
-            sim_hands=sim_hands,
-            caller_seat=caller_seat,
-            caller_play_order=caller_play_order,
-            caller_play_index=caller_play_index,
-            leader=winner,
-            in_progress=[],
-            remaining_rounds=remaining_rounds - 1,
-            trump_suit=trump_suit,
-            my_team=my_team,
-            pcc_partner_out=pcc_partner_out,
-        )
-
-    next_seat_to_play = turn_order[next_idx]
-    led_suit: Suit | None = in_progress[0][1].suit if in_progress else None
-
-    if next_seat_to_play == caller_seat:
-        # Caller plays their next committed card.
-        if caller_play_index >= len(caller_play_order):
-            return False
-        card = caller_play_order[caller_play_index]
-        hand = sim_hands.get(caller_seat, [])
-        if card not in hand:
-            return False
-        # Must follow suit if able
-        if led_suit is not None and any(c.suit == led_suit for c in hand) and card.suit != led_suit:
-            return False
-        # Apply the play
-        new_hands = _hand_remove(sim_hands, caller_seat, card)
-        new_in_progress = in_progress + [(caller_seat, card, False)]
-        return _simulate(
-            sim_hands=new_hands,
-            caller_seat=caller_seat,
-            caller_play_order=caller_play_order,
-            caller_play_index=caller_play_index + 1,
-            leader=leader,
-            in_progress=new_in_progress,
-            remaining_rounds=remaining_rounds,
-            trump_suit=trump_suit,
-            my_team=my_team,
-            pcc_partner_out=pcc_partner_out,
-        )
-
-    # Other player (partner or opponent) — adversarial.
-    other_hand = sim_hands.get(next_seat_to_play, [])
-    if not other_hand:
-        # No cards left — should not happen if remaining_rounds is consistent
+    Fixed-order analogue of :func:`check_claim_balance`.
+    """
+    play = state.play
+    if play is None:
+        return False
+    if state.pcc_partner_out == seat:
+        return False
+    try:
+        info = build_info_set(state, seat)
+    except ValueError:
+        return False
+    if sorted(play_order, key=str) != sorted(info.own_hand, key=str):
         return False
 
-    valid = _valid_plays_for(other_hand, led_suit)
-    if not valid:
+    rounds_remaining = 8 - len(play.completed_rounds)
+    my_team = team_of(seat)
+    points_so_far = play.points_won.get(my_team, 0)
+    if points_so_far >= threshold:
+        return True
+    if rounds_remaining <= 0:
         return False
 
-    # For caps to hold, every choice this player could make must still
-    # result in the caller's team winning all remaining rounds.
-    for chosen in valid:
-        new_hands = _hand_remove(sim_hands, next_seat_to_play, chosen)
-        new_in_progress = in_progress + [(next_seat_to_play, chosen, False)]
-        ok = _simulate(
-            sim_hands=new_hands,
-            caller_seat=caller_seat,
-            caller_play_order=caller_play_order,
-            caller_play_index=caller_play_index,
-            leader=leader,
-            in_progress=new_in_progress,
-            remaining_rounds=remaining_rounds,
-            trump_suit=trump_suit,
-            my_team=my_team,
-            pcc_partner_out=pcc_partner_out,
+    worlds = _enumerate_or_abort(info)
+    if worlds is None:
+        return False
+
+    gap = threshold - points_so_far
+    for world in worlds:
+        snapshot = _resolve_snapshot(play, info, world, seat)
+        if snapshot is None:
+            return False
+        min_pts = order_min_points_in_world(
+            world=world,
+            caller_seat=seat,
+            caller_order=list(play_order),
+            snapshot=snapshot,
+            pcc_partner_out=state.pcc_partner_out,
+            rounds_remaining=rounds_remaining,
         )
-        if not ok:
+        if min_pts < gap:
             return False
     return True
 
 
-def _valid_plays_for(hand: list[Card], led_suit: Suit | None) -> list[Card]:
-    """Return all legal cards from ``hand`` given the led suit.
+# ---------------------------------------------------------------------------
+# Internal: world enumeration with safety cap
+# ---------------------------------------------------------------------------
 
-    If the player has any card of the led suit, only those are legal
-    (must follow suit). Otherwise any card is legal.
+
+def _enumerate_or_abort(info: InformationSet) -> list[World] | None:
+    """Materialise consistent worlds, or ``None`` if the cap is hit.
+
+    Hitting the cap is treated as "obligation cannot be proved" — the
+    safe answer when the world set is too large to enumerate.
     """
-    if led_suit is None:
-        return list(hand)
-    suited = [c for c in hand if c.suit == led_suit]
-    return suited if suited else list(hand)
+    worlds: list[World] = []
+    for w in enumerate_worlds(info, max_worlds=MAX_WORLDS + 1):
+        worlds.append(w)
+        if len(worlds) > MAX_WORLDS:
+            return None
+    if not worlds:
+        return None
+    return worlds
 
 
-def _hand_remove(
-    sim_hands: dict[Seat, list[Card]], seat: Seat, card: Card
-) -> dict[Seat, list[Card]]:
-    """Return a copy of ``sim_hands`` with ``card`` removed from ``seat``."""
-    new = {s: list(cs) for s, cs in sim_hands.items()}
-    new[seat].remove(card)
-    return new
+# ---------------------------------------------------------------------------
+# Internal: in-progress round snapshot resolution per world
+# ---------------------------------------------------------------------------
 
 
-def _round_turn_order(
-    leader: Seat, pcc_partner_out: Seat | None
-) -> list[Seat]:
-    """Anticlockwise turn order for one round, skipping the PCC partner."""
-    order: list[Seat] = [leader]
-    cur = leader
-    while len(order) < 4:
-        cur = next_seat(cur)
-        if cur == leader:
-            break
-        if cur == pcc_partner_out:
-            continue
-        order.append(cur)
-    return order
+def _resolve_snapshot(
+    play_state, info: InformationSet, world: World, viewer: Seat
+) -> PlaySnapshot | None:
+    """Build a per-world :class:`PlaySnapshot` for the in-progress round.
 
-
-def _round_winner(
-    plays: list[tuple[Seat, Card, bool]],
-    trump_suit: Suit | None,
-) -> Seat:
-    """Return the winning seat of a completed round.
-
-    The first card played is the led suit. Trump cards beat non-trump.
-    Among cards of the same suit (trump or led suit), the one with the
-    lowest power index (J=0, 9=1, A=2, ...) wins.
+    Face-down identities hidden from ``viewer`` are resolved through
+    the world's ``hidden_slot_assignments`` mapping.
     """
-    if not plays:
-        raise ValueError("No plays to resolve")
+    leader = play_state.priority if play_state.priority is not None else viewer
+    entries: list[InProgressEntry] = []
+    for entry in play_state.current_round:
+        if entry.face_down and not entry.revealed and entry.seat != viewer:
+            # Resolve via hidden-slot assignment for this in-progress round.
+            key = (entry.seat, play_state.round_number)
+            card = world.hidden_slot_assignments.get(key)
+            if card is None:
+                return None
+            entries.append(InProgressEntry(seat=entry.seat, card=card))
+        else:
+            entries.append(InProgressEntry(seat=entry.seat, card=entry.card))
+    return PlaySnapshot(leader=leader, entries=tuple(entries))
 
-    led_suit = plays[0][1].suit
 
-    # Identify candidates: any trump card outranks any non-trump.
-    trumps = [(s, c) for s, c, _ in plays if trump_suit is not None and c.suit == trump_suit]
-    if trumps:
-        winner = min(trumps, key=lambda sc: sc[1].power)
-        return winner[0]
-    # No trumps — highest card of led suit wins
-    led = [(s, c) for s, c, _ in plays if c.suit == led_suit]
-    if not led:
-        # Should not happen — the leader played led_suit
-        return plays[0][0]
-    winner = min(led, key=lambda sc: sc[1].power)
-    return winner[0]
+# ---------------------------------------------------------------------------
+# Internal: outer-quantifier search
+# ---------------------------------------------------------------------------
+
+
+def _has_witness_order(
+    *,
+    info: InformationSet,
+    seat: Seat,
+    play_state,
+    worlds: list[World],
+    rounds_remaining: int,
+    pcc_partner_out: Seat | None,
+) -> bool:
+    """Return ``True`` iff some order of own_hand sweeps every world.
+
+    Iterates orderings, short-circuiting on the first ordering whose
+    sweep holds in every world. World-failure within an ordering
+    short-circuits to the next ordering.
+    """
+    cards = list(info.own_hand)
+    permutations: Iterable[tuple[Card, ...]] = itertools.permutations(cards)
+
+    n_perms = 1
+    for k in range(1, len(cards) + 1):
+        n_perms *= k
+    if n_perms > MAX_PERMUTATIONS:
+        # Hand is too large to brute-force orderings; refuse to flag
+        # rather than falsely concluding obligation. In practice this
+        # only matters early-game where the world set is also blown
+        # past the cap, so we already returned False.
+        return False
+
+    for ordering in permutations:
+        if _order_wins_all_worlds(
+            info=info,
+            seat=seat,
+            play_state=play_state,
+            worlds=worlds,
+            order=list(ordering),
+            rounds_remaining=rounds_remaining,
+            pcc_partner_out=pcc_partner_out,
+        ):
+            return True
+    return False
+
+
+def _order_wins_all_worlds(
+    *,
+    info: InformationSet,
+    seat: Seat,
+    play_state,
+    worlds: list[World],
+    order: list[Card],
+    rounds_remaining: int,
+    pcc_partner_out: Seat | None,
+) -> bool:
+    """``order`` wins every remaining round in every world, or False."""
+    for world in worlds:
+        snapshot = _resolve_snapshot(play_state, info, world, seat)
+        if snapshot is None:
+            return False
+        if not order_sweeps_world(
+            world=world,
+            caller_seat=seat,
+            caller_order=order,
+            snapshot=snapshot,
+            pcc_partner_out=pcc_partner_out,
+            rounds_remaining=rounds_remaining,
+        ):
+            return False
+    return True
+
+
+def _has_balance_witness(
+    *,
+    info: InformationSet,
+    seat: Seat,
+    play_state,
+    worlds: list[World],
+    rounds_remaining: int,
+    pcc_partner_out: Seat | None,
+    gap: int,
+) -> bool:
+    cards = list(info.own_hand)
+    n_perms = 1
+    for k in range(1, len(cards) + 1):
+        n_perms *= k
+    if n_perms > MAX_PERMUTATIONS:
+        return False
+
+    for ordering in itertools.permutations(cards):
+        ok = True
+        for world in worlds:
+            snapshot = _resolve_snapshot(play_state, info, world, seat)
+            if snapshot is None:
+                ok = False
+                break
+            min_pts = order_min_points_in_world(
+                world=world,
+                caller_seat=seat,
+                caller_order=list(ordering),
+                snapshot=snapshot,
+                pcc_partner_out=pcc_partner_out,
+                rounds_remaining=rounds_remaining,
+            )
+            if min_pts < gap:
+                ok = False
+                break
+        if ok:
+            return True
+    return False

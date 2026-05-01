@@ -88,6 +88,7 @@ export interface CompletedRound {
 export interface CapsObligation {
   obligated_at_round: number;
   obligated_at_card: number;
+  v_plays_at_obligation: number;
 }
 
 export interface CapsCall {
