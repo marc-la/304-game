@@ -597,26 +597,77 @@ def policy_random(rng: random.Random) -> Policy:
 
 
 def _ptk_select(seat: Seat, valid: list[Card], trump_suit: Suit | None) -> Card:
-    """Click-or-arrow-key selection of a card via prompt_toolkit.
+    """Inline click-or-arrow-key selection of a card via prompt_toolkit.
 
-    Mouse clicks select the card. Arrow keys + Enter also work. Esc
-    cancels and returns the first valid card (the default). The card
-    list is rendered with ANSI color via ``prompt_toolkit.ANSI``, so the
-    same suit colors as the rest of the walker show up in the dialog.
+    Renders a small inline list (one card per line) directly below the
+    walker's "Valid plays" line, leaving the rest of the game state
+    visible above. Mouse hover moves the cursor; mouse click selects.
+    Arrow keys + Enter also work. Esc / Ctrl-C return the first valid
+    card (default).
     """
-    from prompt_toolkit.shortcuts import radiolist_dialog
-    from prompt_toolkit.formatted_text import ANSI
+    from prompt_toolkit import Application
+    from prompt_toolkit.application.current import get_app
+    from prompt_toolkit.formatted_text import ANSI, to_formatted_text
+    from prompt_toolkit.key_binding import KeyBindings
+    from prompt_toolkit.layout import Layout
+    from prompt_toolkit.layout.containers import Window
+    from prompt_toolkit.layout.controls import FormattedTextControl
+    from prompt_toolkit.mouse_events import MouseEventType
 
-    values = [
-        (card, ANSI(_fmt_card(card, trump_suit=trump_suit)))
-        for card in valid
-    ]
-    result = radiolist_dialog(
-        title=f"{seat.value}'s turn",
-        text="Pick a card  (click, or ↑↓ + Enter — Esc = default)",
-        values=values,
-        default=valid[0],
-    ).run()
+    state = {"idx": 0}
+
+    def _make_handler(idx: int):
+        def handler(mouse_event):
+            evt = mouse_event.event_type
+            if evt == MouseEventType.MOUSE_UP:
+                get_app().exit(result=valid[idx])
+            elif evt == MouseEventType.MOUSE_MOVE:
+                state["idx"] = idx
+        return handler
+
+    def get_text():
+        parts: list[tuple] = []
+        for i, card in enumerate(valid):
+            is_sel = i == state["idx"]
+            cursor = "▶ " if is_sel else "  "
+            parts.append(("", "    " + cursor))
+            ansi_card = _fmt_card(card, trump_suit=trump_suit, width=3)
+            handler = _make_handler(i)
+            for style, text in to_formatted_text(ANSI(ansi_card)):
+                # Attach mouse handler to each rendered run of the card.
+                parts.append((style, text, handler))
+            parts.append(("", "\n"))
+        return parts
+
+    kb = KeyBindings()
+
+    @kb.add("up")
+    def _(event):
+        state["idx"] = (state["idx"] - 1) % len(valid)
+
+    @kb.add("down")
+    def _(event):
+        state["idx"] = (state["idx"] + 1) % len(valid)
+
+    @kb.add("enter")
+    def _(event):
+        event.app.exit(result=valid[state["idx"]])
+
+    @kb.add("escape", eager=True)
+    @kb.add("c-c")
+    def _(event):
+        event.app.exit(result=valid[0])
+
+    control = FormattedTextControl(get_text, focusable=True, show_cursor=False)
+    window = Window(content=control, height=len(valid), always_hide_cursor=True)
+    app = Application(
+        layout=Layout(window),
+        key_bindings=kb,
+        mouse_support=True,
+        full_screen=False,
+        erase_when_done=True,
+    )
+    result = app.run()
     return result if result is not None else valid[0]
 
 
@@ -630,12 +681,14 @@ def policy_interactive(g: Game, seat: Seat, valid: list[Card]) -> Card:
         f"\n{_bold('>>>')} {_bold(seat.value)}'s turn. Valid plays: "
         f"{_fmt_cards(valid, trump_suit=trump_suit)}"
     )
-    try:
-        chosen = _ptk_select(seat, valid, trump_suit)
-        print(_dim(f"    chose {_fmt_card(chosen, trump_suit=trump_suit)}"))
-        return chosen
-    except (ImportError, ModuleNotFoundError):
-        pass
+    if sys.stdin.isatty() and sys.stdout.isatty():
+        print(_dim("    (click, or ↑↓ + Enter — Esc = default)"))
+        try:
+            chosen = _ptk_select(seat, valid, trump_suit)
+            print(_dim(f"    chose {_fmt_card(chosen, trump_suit=trump_suit)}"))
+            return chosen
+        except (ImportError, ModuleNotFoundError):
+            pass
 
     # Fallback: text entry
     while True:
