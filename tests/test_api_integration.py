@@ -191,22 +191,34 @@ class TestStartGame:
 class TestEndToEndGameFlow:
     """Lobby starts → match exists → game endpoints respond."""
 
-    def _start(self, client: TestClient) -> str:
+    def _start(self, client: TestClient) -> tuple[str, dict[str, str]]:
+        """Start a lobby-spawned match. Returns (match_id, seat→playerId)."""
         host, code, _ = _populate_full_lobby(client)
         r = client.post(f"/api/lobby/{code}/start", json={"playerId": host})
-        return r.json()["matchId"]
+        match_id = r.json()["matchId"]
+        seats = {
+            seat: player["playerId"]
+            for seat, player in r.json()["lobby"]["seats"].items()
+        }
+        return match_id, seats
 
     def test_match_state_endpoint_works_after_start(self, client):
-        match_id = self._start(client)
-        r = client.get(f"/api/game/{match_id}/state")
+        match_id, seats = self._start(client)
+        r = client.get(
+            f"/api/game/{match_id}/state",
+            params={"playerId": seats["north"]},
+        )
         assert r.status_code == 200
         # Initial phase before deal
         assert r.json()["phase"] in ("dealing_4", "betting_4")
 
     def test_deal_then_bid_and_full_round(self, client):
-        match_id = self._start(client)
+        match_id, seats = self._start(client)
         # Deal 4
-        r = client.post(f"/api/game/{match_id}/deal")
+        r = client.post(
+            f"/api/game/{match_id}/deal",
+            json={"playerId": seats["north"]},
+        )
         assert r.status_code == 200
         assert r.json()["phase"] == "betting_4"
 
@@ -215,23 +227,67 @@ class TestEndToEndGameFlow:
         for seat in seats_in_order:
             r = client.post(
                 f"/api/game/{match_id}/bid",
-                json={"seat": seat, "action": "pass"},
+                json={"playerId": seats[seat], "action": "pass"},
             )
             assert r.status_code == 200, r.text
         # After 4 passes, phase resets to DEALING_4 with rotated dealer
         assert r.json()["phase"] == "dealing_4"
 
     def test_invalid_bid_returns_4xx(self, client):
-        match_id = self._start(client)
-        client.post(f"/api/game/{match_id}/deal")
-        # Illegal bid step
+        match_id, seats = self._start(client)
+        client.post(
+            f"/api/game/{match_id}/deal",
+            json={"playerId": seats["north"]},
+        )
+        # Illegal bid step (west is first to bid — dealer is north)
         r = client.post(
             f"/api/game/{match_id}/bid",
-            json={"seat": "west", "action": "bet", "value": 165},
+            json={"playerId": seats["west"], "action": "bet", "value": 165},
         )
         assert r.status_code == 400
         body = r.json()
         assert "not a legal bid" in body["detail"]["error"].lower()
+
+    def test_player_cannot_act_for_another_seat(self, client):
+        """Auth gate: a player can only send actions for their own seat."""
+        match_id, seats = self._start(client)
+        client.post(
+            f"/api/game/{match_id}/deal",
+            json={"playerId": seats["north"]},
+        )
+        # West is first to bid; north tries to bid for west.
+        r = client.post(
+            f"/api/game/{match_id}/bid",
+            json={"playerId": seats["north"], "action": "pass"},
+        )
+        # The engine raises NotYourTurnError → 409.
+        assert r.status_code == 409
+        body = r.json()
+        assert "not your turn" in body["detail"]["error"].lower()
+
+    def test_other_player_hand_is_redacted(self, client):
+        """Per-viewer projection: a player cannot read another's hand."""
+        match_id, seats = self._start(client)
+        client.post(
+            f"/api/game/{match_id}/deal",
+            json={"playerId": seats["north"]},
+        )
+        r = client.get(
+            f"/api/game/{match_id}/state",
+            params={"playerId": seats["north"]},
+        )
+        body = r.json()
+        # North sees their own hand
+        assert len(body["hands"]["north"]) == 4
+        # Other seats are redacted to empty arrays
+        assert body["hands"]["west"] == []
+        assert body["hands"]["south"] == []
+        assert body["hands"]["east"] == []
+        # But card counts are visible (for face-down stack rendering)
+        assert body["handCounts"]["west"] == 4
+        assert body["handCounts"]["south"] == 4
+        assert body["handCounts"]["east"] == 4
+        assert body["viewerSeat"] == "north"
 
 
 # ---------------------------------------------------------------------------

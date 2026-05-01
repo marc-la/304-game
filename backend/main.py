@@ -42,7 +42,7 @@ from game304.errors import (
 from game304.types import Phase
 
 from lobby import LobbyError, LobbyStore, new_player_id
-from serializers import serialize_game_view
+from serializers import serialize_completed_round, serialize_game_view
 
 app = FastAPI(title="304 Card Game API")
 
@@ -59,6 +59,57 @@ app.add_middleware(
 
 sessions: dict[str, Match] = {}
 lobby_store: LobbyStore = LobbyStore()
+
+# matchId → {seat: playerId}. Populated when a lobby starts a match.
+# When absent (solo/test path), endpoints fall back to reading ``seat``
+# from the request body — no auth, but tests and solo dev keep working.
+match_rosters: dict[str, dict[Seat, str]] = {}
+
+
+def _resolve_seat(
+    match_id: str,
+    player_id: str | None,
+    fallback_seat: str | None = None,
+) -> Seat:
+    """Resolve the acting seat for a request.
+
+    If a roster exists for ``match_id``, ``player_id`` must be present
+    and map to a seat — this is the lobby-authenticated path. Otherwise
+    (solo/dev), fall back to ``fallback_seat`` from the request body.
+    """
+    roster = match_rosters.get(match_id)
+    if roster is not None:
+        if not player_id:
+            raise HTTPException(
+                403,
+                detail={"error": "playerId required.", "errorType": "AuthError"},
+            )
+        for seat, pid in roster.items():
+            if pid == player_id:
+                return seat
+        raise HTTPException(
+            403,
+            detail={
+                "error": "You are not seated in this match.",
+                "errorType": "AuthError",
+            },
+        )
+    if fallback_seat is None:
+        raise HTTPException(
+            400, detail="seat or playerId required for this match"
+        )
+    return _seat(fallback_seat)
+
+
+def _viewer_for(match_id: str, player_id: str | None) -> Seat | None:
+    """Best-effort viewer lookup for redaction. None for solo path."""
+    roster = match_rosters.get(match_id)
+    if roster is None or not player_id:
+        return None
+    for seat, pid in roster.items():
+        if pid == player_id:
+            return seat
+    return None
 
 
 def _lobby_error_to_http(exc: LobbyError) -> HTTPException:
@@ -145,9 +196,11 @@ def _bid_action(value: str) -> BidAction:
         raise HTTPException(400, detail=f"Invalid bid action: {value}")
 
 
-def _respond(match_id: str, game: Game) -> dict[str, Any]:
-    """Build the standard response: session ID + game view."""
-    view = serialize_game_view(game)
+def _respond(
+    match_id: str, game: Game, viewer: Seat | None = None
+) -> dict[str, Any]:
+    """Build the standard response: session ID + per-viewer game view."""
+    view = serialize_game_view(game, viewer)
     view["matchId"] = match_id
     # Include match-level info
     match = sessions.get(match_id)
@@ -171,6 +224,7 @@ class NewMatchRequest(BaseModel):
 
 @app.post("/api/match/new")
 def new_match(req: NewMatchRequest) -> dict[str, Any]:
+    """Create a solo/test match (no roster, no auth)."""
     rng = random.Random(req.seed) if req.seed is not None else None
     dealer = _seat(req.dealer)
     match_id = str(uuid.uuid4())
@@ -183,13 +237,15 @@ def new_match(req: NewMatchRequest) -> dict[str, Any]:
 
 
 @app.post("/api/match/{match_id}/game/new")
-def new_game(match_id: str) -> dict[str, Any]:
+def new_game(
+    match_id: str, playerId: str | None = None
+) -> dict[str, Any]:
     match = _get_match(match_id)
     try:
         game = match.new_game()
     except GameError as exc:
         raise _game_error_to_http(exc)
-    return _respond(match_id, game)
+    return _respond(match_id, game, _viewer_for(match_id, playerId))
 
 
 # ---------------------------------------------------------------------------
@@ -197,18 +253,24 @@ def new_game(match_id: str) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
+class DealRequest(BaseModel):
+    playerId: str | None = None
+
+
 @app.post("/api/game/{match_id}/deal")
-def deal(match_id: str) -> dict[str, Any]:
+def deal(match_id: str, req: DealRequest | None = None) -> dict[str, Any]:
     game = _get_game(match_id)
     try:
         game.deal_four()
     except GameError as exc:
         raise _game_error_to_http(exc)
-    return _respond(match_id, game)
+    pid = req.playerId if req else None
+    return _respond(match_id, game, _viewer_for(match_id, pid))
 
 
 class BidRequest(BaseModel):
-    seat: str
+    playerId: str | None = None
+    seat: str | None = None
     action: str
     value: int | None = None
 
@@ -216,7 +278,7 @@ class BidRequest(BaseModel):
 @app.post("/api/game/{match_id}/bid")
 def bid(match_id: str, req: BidRequest) -> dict[str, Any]:
     game = _get_game(match_id)
-    seat = _seat(req.seat)
+    seat = _resolve_seat(match_id, req.playerId, req.seat)
     action = _bid_action(req.action)
     value = req.value or 0
     try:
@@ -229,46 +291,51 @@ def bid(match_id: str, req: BidRequest) -> dict[str, Any]:
     if game.phase == Phase.DEALING_8:
         game.deal_eight()
 
-    return _respond(match_id, game)
+    viewer = _viewer_for(match_id, req.playerId) or seat
+    return _respond(match_id, game, viewer)
 
 
 class SeatRequest(BaseModel):
-    seat: str
+    playerId: str | None = None
+    seat: str | None = None
 
 
 @app.post("/api/game/{match_id}/reshuffle")
 def reshuffle(match_id: str, req: SeatRequest) -> dict[str, Any]:
     game = _get_game(match_id)
-    seat = _seat(req.seat)
+    seat = _resolve_seat(match_id, req.playerId, req.seat)
     try:
         game.call_reshuffle(seat)
         game.deal_four()
     except GameError as exc:
         raise _game_error_to_http(exc)
-    return _respond(match_id, game)
+    viewer = _viewer_for(match_id, req.playerId) or seat
+    return _respond(match_id, game, viewer)
 
 
 @app.post("/api/game/{match_id}/redeal8")
 def redeal8(match_id: str, req: SeatRequest) -> dict[str, Any]:
     game = _get_game(match_id)
-    seat = _seat(req.seat)
+    seat = _resolve_seat(match_id, req.playerId, req.seat)
     try:
         game.call_redeal_8(seat)
         game.deal_four()
     except GameError as exc:
         raise _game_error_to_http(exc)
-    return _respond(match_id, game)
+    viewer = _viewer_for(match_id, req.playerId) or seat
+    return _respond(match_id, game, viewer)
 
 
 class TrumpRequest(BaseModel):
-    seat: str
+    playerId: str | None = None
+    seat: str | None = None
     card: str
 
 
 @app.post("/api/game/{match_id}/trump")
 def select_trump(match_id: str, req: TrumpRequest) -> dict[str, Any]:
     game = _get_game(match_id)
-    seat = _seat(req.seat)
+    seat = _resolve_seat(match_id, req.playerId, req.seat)
     card = _card(req.card)
     try:
         game.select_trump(seat, card)
@@ -276,96 +343,107 @@ def select_trump(match_id: str, req: TrumpRequest) -> dict[str, Any]:
         # transitions to BETTING_8 internally
     except GameError as exc:
         raise _game_error_to_http(exc)
-    return _respond(match_id, game)
+    viewer = _viewer_for(match_id, req.playerId) or seat
+    return _respond(match_id, game, viewer)
 
 
 class OpenTrumpRequest(BaseModel):
-    seat: str
+    playerId: str | None = None
+    seat: str | None = None
     revealCard: str | None = None
 
 
 @app.post("/api/game/{match_id}/open-trump")
 def open_trump(match_id: str, req: OpenTrumpRequest) -> dict[str, Any]:
     game = _get_game(match_id)
-    seat = _seat(req.seat)
+    seat = _resolve_seat(match_id, req.playerId, req.seat)
     reveal_card = _card(req.revealCard) if req.revealCard else None
     try:
         game.declare_open_trump(seat, reveal_card)
     except GameError as exc:
         raise _game_error_to_http(exc)
-    return _respond(match_id, game)
+    viewer = _viewer_for(match_id, req.playerId) or seat
+    return _respond(match_id, game, viewer)
 
 
 @app.post("/api/game/{match_id}/closed-trump")
 def closed_trump(match_id: str, req: SeatRequest) -> dict[str, Any]:
     game = _get_game(match_id)
-    seat = _seat(req.seat)
+    seat = _resolve_seat(match_id, req.playerId, req.seat)
     try:
         game.proceed_closed_trump(seat)
     except GameError as exc:
         raise _game_error_to_http(exc)
-    return _respond(match_id, game)
+    viewer = _viewer_for(match_id, req.playerId) or seat
+    return _respond(match_id, game, viewer)
 
 
 class PlayRequest(BaseModel):
-    seat: str
+    playerId: str | None = None
+    seat: str | None = None
     card: str
 
 
 @app.post("/api/game/{match_id}/play")
 def play_card(match_id: str, req: PlayRequest) -> dict[str, Any]:
     game = _get_game(match_id)
-    seat = _seat(req.seat)
+    seat = _resolve_seat(match_id, req.playerId, req.seat)
     card = _card(req.card)
     try:
         completed_round = game.play_card(seat, card)
     except GameError as exc:
         raise _game_error_to_http(exc)
 
-    response = _respond(match_id, game)
+    viewer = _viewer_for(match_id, req.playerId) or seat
+    response = _respond(match_id, game, viewer)
     if completed_round:
-        from serializers import serialize
-        response["completedRound"] = serialize(completed_round)
+        response["completedRound"] = serialize_completed_round(
+            completed_round, viewer
+        )
     return response
 
 
 class CapsRequest(BaseModel):
-    seat: str
+    playerId: str | None = None
+    seat: str | None = None
     playOrder: list[str]
 
 
 @app.post("/api/game/{match_id}/caps")
 def call_caps(match_id: str, req: CapsRequest) -> dict[str, Any]:
     game = _get_game(match_id)
-    seat = _seat(req.seat)
+    seat = _resolve_seat(match_id, req.playerId, req.seat)
     play_order = [_card(c) for c in req.playOrder]
     try:
         game.call_caps(seat, play_order)
     except GameError as exc:
         raise _game_error_to_http(exc)
-    return _respond(match_id, game)
+    viewer = _viewer_for(match_id, req.playerId) or seat
+    return _respond(match_id, game, viewer)
 
 
 @app.post("/api/game/{match_id}/spoilt")
 def spoilt_trumps(match_id: str, req: SeatRequest) -> dict[str, Any]:
     game = _get_game(match_id)
-    seat = _seat(req.seat)
+    seat = _resolve_seat(match_id, req.playerId, req.seat)
     try:
         game.call_spoilt_trumps(seat)
     except GameError as exc:
         raise _game_error_to_http(exc)
-    return _respond(match_id, game)
+    viewer = _viewer_for(match_id, req.playerId) or seat
+    return _respond(match_id, game, viewer)
 
 
 @app.post("/api/game/{match_id}/absolute")
 def absolute_hand(match_id: str, req: SeatRequest) -> dict[str, Any]:
     game = _get_game(match_id)
-    seat = _seat(req.seat)
+    seat = _resolve_seat(match_id, req.playerId, req.seat)
     try:
         game.call_absolute_hand(seat)
     except GameError as exc:
         raise _game_error_to_http(exc)
-    return _respond(match_id, game)
+    viewer = _viewer_for(match_id, req.playerId) or seat
+    return _respond(match_id, game, viewer)
 
 
 # ---------------------------------------------------------------------------
@@ -374,24 +452,67 @@ def absolute_hand(match_id: str, req: SeatRequest) -> dict[str, Any]:
 
 
 @app.get("/api/game/{match_id}/state")
-def get_state(match_id: str) -> dict[str, Any]:
+def get_state(
+    match_id: str,
+    playerId: str | None = None,
+    seat: str | None = None,
+) -> dict[str, Any]:
+    """Return the per-viewer game view.
+
+    Lobby-spawned matches require ``playerId``; solo matches accept the
+    legacy ``seat`` query parameter (or no parameter — full omniscient
+    view, used by tests).
+    """
     game = _get_game(match_id)
-    return _respond(match_id, game)
+    viewer = _viewer_for(match_id, playerId)
+    if viewer is None and seat is not None:
+        viewer = _seat(seat)
+    return _respond(match_id, game, viewer)
 
 
 @app.get("/api/game/{match_id}/valid-plays/{seat_str}")
-def valid_plays(match_id: str, seat_str: str) -> dict[str, Any]:
+def valid_plays(
+    match_id: str, seat_str: str, playerId: str | None = None
+) -> dict[str, Any]:
+    """Return valid plays for a seat. Auth-gated: in a lobby match, the
+    requesting player can only query their own seat."""
     game = _get_game(match_id)
     seat = _seat(seat_str)
+    roster = match_rosters.get(match_id)
+    if roster is not None:
+        viewer = _viewer_for(match_id, playerId)
+        if viewer is None or viewer != seat:
+            raise HTTPException(
+                403,
+                detail={
+                    "error": "You may only query your own seat.",
+                    "errorType": "AuthError",
+                },
+            )
     from serializers import serialize
     cards = [serialize(c) for c in game.valid_plays(seat)]
     return {"cards": cards}
 
 
 @app.get("/api/game/{match_id}/hand/{seat_str}")
-def get_hand(match_id: str, seat_str: str) -> dict[str, Any]:
+def get_hand(
+    match_id: str, seat_str: str, playerId: str | None = None
+) -> dict[str, Any]:
+    """Return a hand. In a lobby match, only the player at that seat
+    may request it (or anyone, once the game is COMPLETE)."""
     game = _get_game(match_id)
     seat = _seat(seat_str)
+    roster = match_rosters.get(match_id)
+    if roster is not None and game.phase != Phase.COMPLETE:
+        viewer = _viewer_for(match_id, playerId)
+        if viewer is None or viewer != seat:
+            raise HTTPException(
+                403,
+                detail={
+                    "error": "You may only request your own hand.",
+                    "errorType": "AuthError",
+                },
+            )
     from serializers import serialize
     cards = [serialize(c) for c in game.get_hand(seat)]
     return {"cards": cards}
@@ -538,6 +659,14 @@ def lobby_start(code: str, req: LobbyPlayerRequest) -> dict[str, Any]:
     match_id = str(uuid.uuid4())
     sessions[match_id] = match
     match.new_game()
+
+    # Register seat → playerId so per-player auth and projection work.
+    # ``seats`` is the rearranged mapping returned by start_game (teamA
+    # = north/south, teamB = east/west).
+    match_rosters[match_id] = {
+        Seat(seat_str): player.player_id
+        for seat_str, player in seats.items()
+    }
 
     lobby_store.set_match_id(lobby.code, match_id)
     return {"matchId": match_id, "lobby": lobby.to_view()}

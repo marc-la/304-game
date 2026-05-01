@@ -42,3 +42,11 @@
   opacity: 0.6;
   pointer-events: none;
 }
+
+.waitingMessage {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-style: italic;
+  padding: 8px 4px;
+}

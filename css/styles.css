@@ -708,6 +708,14 @@ tbody tr:hover {
   margin-bottom: 32px;
 }
 
+/* ===== Article meta line (e.g. date under article heading) ===== */
+.article-meta {
+  font-size: 0.9rem;
+  color: var(--clr-text-muted);
+  margin-top: -8px;
+  margin-bottom: 16px;
+}
+
 /* ===== Note callout ===== */
 .note {
   background: var(--clr-note-bg);
@@ -740,80 +748,80 @@ dd {
   color: var(--clr-text-muted);
 }
 
-/* ===== Phase Timeline ===== */
-/* Horizontal ribbon of seven phase chips at the top of the rules page.
-   Acts as a navigation spine — each chip is an in-page anchor to the
-   section that governs that phase. Wraps to two rows on narrow screens. */
+/* ===== Phase Timeline (SVG flow diagram) ===== */
+/* Visualises the seven phases of a game as a connected flow. Each node
+   is clickable for jump-nav. Reads as a diagram, not a second TOC —
+   section-level navigation is the sidebar's job. */
 .phase-timeline {
-  margin: 8px 0 28px;
-  padding: 16px 20px;
+  margin: 8px 0 24px;
+  padding: 14px 18px 8px;
   background: var(--clr-surface);
   border: 1px solid var(--clr-border);
   border-radius: 10px;
 }
 
-.phase-timeline-track {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  list-style: none;
-  padding: 0;
-  margin: 0 0 12px;
-  counter-reset: none;
+.phase-timeline-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 110px;
 }
 
-.phase-timeline-track li {
-  flex: 1 1 110px;
-  min-width: 0;
+.phase-line {
+  stroke: var(--clr-border);
+  stroke-width: 2;
 }
 
-.phase-timeline-track a {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: var(--clr-bg);
-  border: 1px solid var(--clr-border);
-  border-radius: 6px;
+.phase-node circle {
+  fill: var(--clr-accent);
+  stroke: var(--clr-accent);
+  stroke-width: 2;
+  transition: fill 0.15s, stroke 0.15s;
+}
+
+.phase-node a:hover circle {
+  fill: var(--clr-bg);
+}
+
+.phase-node a:hover .phase-num-text {
+  fill: var(--clr-accent);
+}
+
+.phase-node a:hover .phase-label-text {
+  fill: var(--clr-accent);
+  font-weight: 700;
+}
+
+.phase-node a {
   text-decoration: none;
-  color: var(--clr-text);
-  font-size: 0.85rem;
-  line-height: 1.2;
-  transition: background 0.15s, border-color 0.15s;
-  height: 100%;
 }
 
-.phase-timeline-track a:hover {
-  background: var(--clr-accent-light);
-  border-color: var(--clr-accent);
-}
-
-.phase-num {
-  flex-shrink: 0;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--clr-accent);
-  color: var(--clr-surface);
+.phase-num-text {
+  fill: var(--clr-surface);
   font-family: var(--font-heading);
   font-weight: 700;
-  font-size: 0.78rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 14px;
+  text-anchor: middle;
+  pointer-events: none;
+  text-decoration: none;
 }
 
-.phase-label {
+.phase-label-text {
+  fill: var(--clr-text);
+  font-family: var(--font-body);
   font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 13px;
+  text-anchor: middle;
+  pointer-events: none;
+  text-decoration: none;
 }
 
 .phase-timeline figcaption {
   font-size: 0.85rem;
   color: var(--clr-text-muted);
   font-style: italic;
+  text-align: center;
+  margin-top: 4px;
 }
 
 .cheatsheet-link {
@@ -858,8 +866,8 @@ dd {
   opacity: 0.55;
 }
 
-.tie-team-a { stroke: var(--clr-accent-cool); }
-.tie-team-b { stroke: var(--clr-accent); }
+.tie-team-ac { stroke: var(--clr-accent-cool); }
+.tie-team-bd { stroke: var(--clr-accent); }
 
 .seating-arrow {
   stroke: var(--clr-text-muted);

@@ -6,6 +6,10 @@ import styles from './CardHand.module.css';
 
 interface Props {
   cards: CardData[];
+  /** Card count for face-down rendering. Defaults to cards.length.
+   *  In lobby mode, opponents send empty cards arrays — use ``count``
+   *  (from handCounts) to render the right number of card backs. */
+  count?: number;
   validPlays?: CardData[];
   faceUp?: boolean;
   small?: boolean;
@@ -16,6 +20,7 @@ interface Props {
 
 export default function CardHand({
   cards,
+  count,
   validPlays = [],
   faceUp = true,
   small = false,
@@ -27,16 +32,21 @@ export default function CardHand({
   const total = handPoints(cards);
 
   if (!faceUp) {
+    const n = count ?? cards.length;
     return (
       <div className={styles.hand}>
         <div className={styles.cards}>
-          {sorted.map((_, i) => (
-            <div key={i} className={styles.cardSlot} style={{ marginLeft: i > 0 ? (small ? -30 : -40) : 0 }}>
+          {Array.from({ length: n }).map((_, i) => (
+            <div
+              key={i}
+              className={styles.cardSlot}
+              style={{ marginLeft: i > 0 ? (small ? -30 : -40) : 0 }}
+            >
               <CardBack small={small} />
             </div>
           ))}
         </div>
-        {cards.length > 0 && <div className={styles.count}>{cards.length}</div>}
+        {n > 0 && <div className={styles.count}>{n}</div>}
       </div>
     );
   }

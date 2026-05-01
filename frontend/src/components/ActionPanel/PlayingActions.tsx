@@ -26,8 +26,11 @@ export default function PlayingActions() {
   const trumperPts = trumperTeam && play ? play.points_won[trumperTeam] : 0;
   const oppPts = oppTeam && play ? play.points_won[oppTeam] : 0;
 
-  // Caps mode UI
-  const myHand = whoseTurn ? (hands[whoseTurn] || []) : [];
+  // Caps mode UI — use mySeat when available (lobby mode), fall back
+  // to whoseTurn for solo dev.
+  const mySeat = useGameStore(s => s.mySeat);
+  const handSeat = mySeat ?? whoseTurn;
+  const myHand = handSeat ? hands[handSeat] || [] : [];
 
   const handleCapsCardClick = (card: CardData) => {
     if (capsOrder.includes(card.str)) {

@@ -15,10 +15,12 @@ const POSITION_OFFSETS: Record<string, { x: number; y: number }> = {
 };
 
 export default function TrickArea() {
-  const activeSeat = useGameStore(s => s.activeSeat);
+  const mySeat = useGameStore(s => s.mySeat);
   const gameState = useGameStore(s => s.gameState);
   const play = gameState?.play;
   const lastCompletedRound = useGameStore(s => s.lastCompletedRound);
+
+  const orient = mySeat ?? 'south';
 
   const currentRound = play?.current_round ?? [];
   const roundNumber = play?.round_number ?? 0;
@@ -38,12 +40,17 @@ export default function TrickArea() {
       )}
       <div className={styles.cards}>
         <AnimatePresence>
-          {displayEntries.map((entry) => {
-            const pos = getVisualPosition(entry.seat, activeSeat);
+          {displayEntries.map((entry, idx) => {
+            const pos = getVisualPosition(entry.seat, orient);
             const offset = POSITION_OFFSETS[pos];
+            // entry.card is null for redacted face-down minuses (we know
+            // someone played a card but not which one).
+            const showFaceDown =
+              entry.face_down && !entry.revealed;
+            const cardKey = entry.card?.str ?? `hidden-${idx}`;
             return (
               <motion.div
-                key={`${entry.seat}-${entry.card.str}`}
+                key={`${entry.seat}-${cardKey}`}
                 className={styles.trickCard}
                 initial={{ opacity: 0, scale: 0.5 }}
                 animate={{
@@ -55,7 +62,7 @@ export default function TrickArea() {
                 exit={{ opacity: 0, scale: 0.5 }}
                 transition={{ duration: 0.2 }}
               >
-                {entry.face_down && !entry.revealed ? (
+                {showFaceDown || entry.card === null ? (
                   <CardBack small label="?" />
                 ) : (
                   <PlayingCard card={entry.card} small showPoints={false} />

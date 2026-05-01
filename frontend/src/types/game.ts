@@ -70,7 +70,9 @@ export interface TrumpState {
 
 export interface RoundEntry {
   seat: Seat;
-  card: CardData;
+  // null when the card has been redacted (face-down, unrevealed, and
+  // not played by the viewer).
+  card: CardData | null;
   face_down: boolean;
   revealed: boolean;
 }
@@ -138,8 +140,10 @@ export interface GameView {
   matchId: string;
   phase: Phase;
   whoseTurn: Seat | null;
+  viewerSeat: Seat | null;
   state: GameState;
   hands: Record<Seat, CardData[]>;
+  handCounts: Record<Seat, number>;
   validPlays: Record<Seat, CardData[]>;
   matchComplete: boolean;
   matchWinner: Team | null;

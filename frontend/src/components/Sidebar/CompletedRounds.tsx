@@ -26,22 +26,35 @@ export default function CompletedRounds() {
           </button>
           {expanded === round.round_number && (
             <div className={styles.cards}>
-              {round.cards.map(entry => (
-                <div key={entry.seat} className={styles.cardEntry}>
-                  <span className={styles.cardSeat}>{SEAT_NAMES[entry.seat]}</span>
-                  <span
-                    className={styles.cardValue}
-                    style={{
-                      color: entry.card.suit === 'h' || entry.card.suit === 'd'
-                        ? 'var(--color-suit-red)' : 'var(--color-suit-black)'
-                    }}
-                  >
-                    {entry.card.rank}{SUIT_SYMBOLS[entry.card.suit]}
-                  </span>
-                  {entry.face_down && <span className={styles.faceDown}>(was face-down)</span>}
-                  {entry.seat === round.winner && <span className={styles.winnerMark}>★</span>}
-                </div>
-              ))}
+              {round.cards.map(entry => {
+                // Redacted face-down minus — we know someone played but
+                // can't see what.
+                if (entry.card === null) {
+                  return (
+                    <div key={entry.seat} className={styles.cardEntry}>
+                      <span className={styles.cardSeat}>{SEAT_NAMES[entry.seat]}</span>
+                      <span className={styles.cardValue}>??</span>
+                      <span className={styles.faceDown}>(face-down minus)</span>
+                    </div>
+                  );
+                }
+                return (
+                  <div key={entry.seat} className={styles.cardEntry}>
+                    <span className={styles.cardSeat}>{SEAT_NAMES[entry.seat]}</span>
+                    <span
+                      className={styles.cardValue}
+                      style={{
+                        color: entry.card.suit === 'h' || entry.card.suit === 'd'
+                          ? 'var(--color-suit-red)' : 'var(--color-suit-black)'
+                      }}
+                    >
+                      {entry.card.rank}{SUIT_SYMBOLS[entry.card.suit]}
+                    </span>
+                    {entry.face_down && <span className={styles.faceDown}>(was face-down)</span>}
+                    {entry.seat === round.winner && <span className={styles.winnerMark}>★</span>}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

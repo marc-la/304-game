@@ -51,7 +51,6 @@
         <li><a href="#objective">Objective</a>
           <ul>
             <li><a href="#units-of-play">Units of Play</a></li>
-            <li><a href="#phases">Phases of a Game</a></li>
           </ul>
         </li>
         <li><a href="#players-and-cards">Players &amp; Cards</a></li>
@@ -78,7 +77,11 @@
             <li><a href="#spoilt-trumps">Spoilt Trumps</a></li>
           </ul>
         </li>
-        <li><a href="#caps">Caps</a></li>
+        <li><a href="#caps">Caps</a>
+          <ul>
+            <li><a href="#caps-formalism">Formalism (Advanced)</a></li>
+          </ul>
+        </li>
         <li><a href="#scoring">Scoring</a></li>
         <li><a href="#penalties">Penalties</a></li>
         <li><a href="#house-rules-diff">House Rules vs Standard</a></li>
@@ -93,19 +96,63 @@
 
     <h1>304 — House Rules</h1>
 
-    <!-- Phase timeline: visual spine of a single game. Each chip is an
-         in-page anchor to the section that governs that phase. -->
+    <!-- Phase timeline: visual flow diagram of a single game. Connected
+         numbered nodes (clickable for jump-nav). The sidebar handles
+         section-level navigation; this is a diagram, not a second TOC. -->
     <figure class="phase-timeline" aria-label="Phases of a single game">
-      <ol class="phase-timeline-track">
-        <li><a href="#dealing"><span class="phase-num">1</span><span class="phase-label">Shuffle &amp; Deal 4</span></a></li>
-        <li><a href="#betting-4-cards"><span class="phase-num">2</span><span class="phase-label">Bet on 4</span></a></li>
-        <li><a href="#choosing-trump"><span class="phase-num">3</span><span class="phase-label">Choose Trump</span></a></li>
-        <li><a href="#betting-8-cards"><span class="phase-num">4</span><span class="phase-label">Deal 4 more</span></a></li>
-        <li><a href="#betting-8-cards"><span class="phase-num">5</span><span class="phase-label">Bet on 8</span></a></li>
-        <li><a href="#play"><span class="phase-num">6</span><span class="phase-label">Play 8 rounds</span></a></li>
-        <li><a href="#scoring"><span class="phase-num">7</span><span class="phase-label">Scrutiny</span></a></li>
-      </ol>
-      <figcaption>The seven phases of a single game. Click any chip to jump to the rules that govern it.</figcaption>
+      <svg viewBox="0 0 700 96" role="img" class="phase-timeline-svg" preserveAspectRatio="xMidYMid meet">
+        <line x1="50" y1="30" x2="650" y2="30" class="phase-line" />
+        <g class="phase-node">
+          <a href="#dealing">
+            <circle cx="50" cy="30" r="18"/>
+            <text x="50" y="35" class="phase-num-text">1</text>
+            <text x="50" y="74" class="phase-label-text">Shuffle</text>
+          </a>
+        </g>
+        <g class="phase-node">
+          <a href="#betting-4-cards">
+            <circle cx="150" cy="30" r="18"/>
+            <text x="150" y="35" class="phase-num-text">2</text>
+            <text x="150" y="74" class="phase-label-text">Bet 4</text>
+          </a>
+        </g>
+        <g class="phase-node">
+          <a href="#choosing-trump">
+            <circle cx="250" cy="30" r="18"/>
+            <text x="250" y="35" class="phase-num-text">3</text>
+            <text x="250" y="74" class="phase-label-text">Trump</text>
+          </a>
+        </g>
+        <g class="phase-node">
+          <a href="#betting-8-cards">
+            <circle cx="350" cy="30" r="18"/>
+            <text x="350" y="35" class="phase-num-text">4</text>
+            <text x="350" y="74" class="phase-label-text">Deal 4</text>
+          </a>
+        </g>
+        <g class="phase-node">
+          <a href="#betting-8-cards">
+            <circle cx="450" cy="30" r="18"/>
+            <text x="450" y="35" class="phase-num-text">5</text>
+            <text x="450" y="74" class="phase-label-text">Bet 8</text>
+          </a>
+        </g>
+        <g class="phase-node">
+          <a href="#play">
+            <circle cx="550" cy="30" r="18"/>
+            <text x="550" y="35" class="phase-num-text">6</text>
+            <text x="550" y="74" class="phase-label-text">Play</text>
+          </a>
+        </g>
+        <g class="phase-node">
+          <a href="#scoring">
+            <circle cx="650" cy="30" r="18"/>
+            <text x="650" y="35" class="phase-num-text">7</text>
+            <text x="650" y="74" class="phase-label-text">Score</text>
+          </a>
+        </g>
+      </svg>
+      <figcaption>How a single game flows. Each node is clickable.</figcaption>
     </figure>
 
     <p class="cheatsheet-link"><a href="#cheatsheet">Jump to the one-page cheat sheet &rarr;</a> &middot; <a href="#house-rules-diff">See house-rule differences from standard 304 &rarr;</a></p>
@@ -154,43 +201,47 @@
           <!-- Table -->
           <ellipse cx="180" cy="180" rx="115" ry="80" class="seating-table" />
 
-          <!-- Partnership tie lines: A↔C and B↔D -->
-          <line x1="180" y1="60" x2="180" y2="300" class="seating-tie tie-team-a" />
-          <line x1="60" y1="180" x2="300" y2="180" class="seating-tie tie-team-b" />
+          <!-- Partnership tie lines: A↔C (cool) and B↔D (warm) -->
+          <line x1="180" y1="60" x2="180" y2="300" class="seating-tie tie-team-bd" />
+          <line x1="60" y1="180" x2="300" y2="180" class="seating-tie tie-team-ac" />
 
-          <!-- Anticlockwise deal/play arrow (curved arc with arrowhead) -->
           <defs>
-            <marker id="seat-arrowhead" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <marker id="seat-arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
               <path d="M0,0 L10,5 L0,10 Z" class="seating-arrowhead" />
             </marker>
           </defs>
-          <path d="M 230 80 A 130 130 0 0 1 280 130" class="seating-arrow" marker-end="url(#seat-arrowhead)" />
-          <text x="265" y="75" class="seating-arrow-label">anticlockwise</text>
 
-          <!-- Four seats (labelled A/B/C/D, dealer = D, priority = A) -->
+          <!-- Anticlockwise arrow: curves from upper-left towards lower-left,
+               showing deal/play motion D → A → C → B → D (top→left→bottom→right→top). -->
+          <path d="M 130 80 A 130 130 0 0 0 80 130" class="seating-arrow" marker-end="url(#seat-arrowhead)" />
+          <text x="95" y="75" class="seating-arrow-label">anticlockwise</text>
+
+          <!-- Seating: anticlockwise around the table from D (top) is
+               A (left) → B (bottom) → C (right) → D. Partners sit opposite:
+               A↔C (left/right, cool), B↔D (bottom/top, warm). -->
           <g class="seat seat-d" transform="translate(180 38)">
             <circle r="32" />
             <text class="seat-label" y="-2">D</text>
             <text class="seat-role" y="14">Dealer</text>
           </g>
-          <g class="seat seat-a" transform="translate(322 180)">
+          <g class="seat seat-a" transform="translate(38 180)">
             <circle r="32" />
             <text class="seat-label" y="-2">A</text>
             <text class="seat-role" y="14">Priority</text>
           </g>
-          <g class="seat seat-c" transform="translate(180 322)">
+          <g class="seat seat-b" transform="translate(180 322)">
+            <circle r="32" />
+            <text class="seat-label" y="-2">B</text>
+            <text class="seat-role" y="14">D's partner</text>
+          </g>
+          <g class="seat seat-c" transform="translate(322 180)">
             <circle r="32" />
             <text class="seat-label" y="-2">C</text>
             <text class="seat-role" y="14">A's partner</text>
           </g>
-          <g class="seat seat-b" transform="translate(38 180)">
-            <circle r="32" />
-            <text class="seat-label" y="-2">B</text>
-            <text class="seat-role" y="14">Cuts the deck</text>
-          </g>
         </svg>
         <figcaption>
-          <strong>D</strong> is the dealer. <strong>B</strong> (to D's left) cuts the deck. <strong>A</strong> (to D's right) has priority — receives the first card and bids first. Deal proceeds anticlockwise: <strong>A → C → B → D</strong>. Partnerships: A &amp; C (cool), B &amp; D (warm). Between games, the dealer rotates one seat anticlockwise, so D's next game has C as dealer.
+          <strong>D</strong> is the dealer. <strong>A</strong> (to D&rsquo;s right, viewed from D&rsquo;s seat) has priority — receives the first card and bids first. <strong>C</strong> (to D&rsquo;s left) cuts the deck. Deal proceeds anticlockwise: <strong>A → B → C → D</strong>. Partnerships: A &amp; C (cool, opposite each other), B &amp; D (warm, opposite each other). Between games, the dealer rotates one seat anticlockwise, so D&rsquo;s next game has A as dealer.
         </figcaption>
       </figure>
 
@@ -628,14 +679,15 @@
             <text x="0" y="16">start of R7?</text>
           </g>
 
-          <!-- Sub-outcomes from "before R7" -->
-          <g class="caps-node caps-outcome caps-good" transform="translate(580 420)">
-            <rect x="-75" y="-22" width="150" height="44" rx="6"/>
+          <!-- Sub-outcomes from "before R7" — placed below the
+               "Call before R7?" decision, side by side with a clear gap. -->
+          <g class="caps-node caps-outcome caps-good" transform="translate(540 420)">
+            <rect x="-65" y="-22" width="130" height="44" rx="6"/>
             <text x="0" y="-2">Correct Caps</text>
-            <text x="0" y="14" class="caps-stone">win + 1 stone bonus</text>
+            <text x="0" y="14" class="caps-stone">+ 1 stone bonus</text>
           </g>
-          <g class="caps-node caps-outcome caps-neutral" transform="translate(700 420)">
-            <rect x="-60" y="-22" width="120" height="44" rx="6"/>
+          <g class="caps-node caps-outcome caps-neutral" transform="translate(670 420)">
+            <rect x="-50" y="-22" width="100" height="44" rx="6"/>
             <text x="0" y="-2">Correct Caps</text>
             <text x="0" y="14" class="caps-stone">no bonus</text>
           </g>
@@ -656,10 +708,10 @@
           <line x1="600" y1="180" x2="635" y2="248" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
           <text x="630" y="225" class="caps-arrow-label">Yes</text>
 
-          <line x1="610" y1="306" x2="585" y2="392" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
-          <text x="570" y="355" class="caps-arrow-label">Yes</text>
-          <line x1="675" y1="308" x2="700" y2="392" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
-          <text x="710" y="355" class="caps-arrow-label">No</text>
+          <line x1="615" y1="308" x2="555" y2="392" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
+          <text x="555" y="355" class="caps-arrow-label">Yes</text>
+          <line x1="665" y1="308" x2="665" y2="392" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
+          <text x="690" y="355" class="caps-arrow-label">No</text>
         </svg>
         <figcaption>Decision flow for Caps outcomes (regular Caps; PCC and External Caps follow analogous structures — see <a href="#pcc">PCC</a> and the External Caps section above). Late Caps applies only when scrutiny finds a missed first opportunity; otherwise, winning all 8 without calling is just a normal win at the bid level.</figcaption>
       </figure>
@@ -682,6 +734,115 @@
             <tr><td>PCC</td><td>Caps and External Caps mechanics do not apply</td></tr>
           </tbody>
         </table>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- Caps Formalism (Advanced) -->
+    <section id="caps-formalism">
+      <h2>Caps Formalism &mdash; What &ldquo;Deducible Certainty&rdquo; Actually Means</h2>
+      <p class="article-meta"><em>An advanced-player article. Last updated <time datetime="2026-05-01">2026-05-01</time>.</em></p>
+      <p>The Caps section above tells you <em>when</em> to call. This article tells you <em>why</em>. It is a precise account of the test scrutiny applies, written for intermediate and expert players who want to argue Caps from first principles. Beginners can ignore it: the headline rule (&ldquo;there exists an order of play that wins every remaining round, given everything I can deduce&rdquo;) does the work for normal play. The formalism only matters when a borderline situation goes to scrutiny, or when you want to step through possible worlds at the table to convince yourself a call holds.</p>
+
+      <div class="example">
+        <div class="example-header">
+          <span>Read the article &mdash; Caps Formalism</span>
+          <span class="chevron">&#9660;</span>
+        </div>
+        <div class="example-body">
+
+          <h3>Why Caps is hard, in one paragraph</h3>
+          <p>Caps is not a fact about the deal. It is a fact about your <strong>information set</strong> &mdash; what you, sitting in your seat, can deduce from your own hand plus the public record of play. Two players at the same table can become Caps-obligated at different moments, because they know different things. The Trumper, who has seen every folded card revealed at end of round, often knows more than their partner; the external team usually knows least. A naive test &mdash; &ldquo;given the actual deal, is there a winning order?&rdquo; &mdash; is the wrong test. That asks whether an omniscient observer sees a sweep, not whether <em>you</em> can deduce one. In bridge terminology that is <strong>double-dummy</strong> analysis, and it is too generous: it gives Caps to a player who, given what they actually know, could still lose. The correct test is <strong>single-dummy</strong>: does there exist a play order that wins against <em>every</em> deal consistent with what you know, and against <em>every</em> legal continuation by the other seats? Single-dummy is strictly stricter, and it is the only test that matches the rules&rsquo; phrase &ldquo;given all information available to them, irrespective of how any other player chooses to play.&rdquo;</p>
+
+          <h3>What you know</h3>
+          <p>Your <strong>information set</strong> at any moment is the union of:</p>
+          <ol>
+            <li><strong>Your own hand.</strong></li>
+            <li><strong>Your own play history</strong> &mdash; including face-down plays you made, since you know what you put down.</li>
+            <li><strong>The public face-up history</strong> &mdash; every face-up card played by anyone, in completed rounds and the in-progress round.</li>
+            <li><strong>Public face-down revelations</strong> &mdash; folded trumps revealed at end-of-round resolution become public the moment they are flipped.</li>
+            <li><strong>Public suit-exhaustion</strong> &mdash; every player who failed to follow a led suit is publicly known to be out of that suit from then on, because the closed-trump rule mandates folding only when one cannot follow.</li>
+            <li><strong>The Trumper&rsquo;s privileged observations</strong> &mdash; if you are the Trumper, you saw the identity of every face-down card at end of round, including opposition cuts, opposition minuses, and your partner&rsquo;s minuses. Your partner and the opposition did not.</li>
+          </ol>
+          <p>Note the asymmetry. The Trumper&rsquo;s information set is larger than anyone else&rsquo;s, which is exactly why the rules hold the Trumper to a stricter &ldquo;first opportunity&rdquo; standard (<a href="#caps">&sect;C-4</a>). The external team&rsquo;s information set excludes line 6, which is why scrutiny is more lenient on them (&sect;C-12). The same predicate, evaluated against a smaller information set, automatically becomes more lenient &mdash; there is no special case.</p>
+
+          <h3>The space of consistent worlds</h3>
+          <p>A <strong>world</strong> is a hypothesis about every card whose location is currently hidden from you. It assigns an identity to every card in every other seat&rsquo;s hand and to every face-down completed-round card whose value you don&rsquo;t already know. A world is <strong>consistent</strong> with your information if:</p>
+          <ul>
+            <li><strong>Cards conserve.</strong> Every card in the 32-card pack appears in exactly one place.</li>
+            <li><strong>Hand sizes are right.</strong> Each remaining seat has the right number of cards for the round number.</li>
+            <li><strong>Suit-exhaustion holds.</strong> No seat known to be out of suit <em>s</em> is given a card of suit <em>s</em>.</li>
+            <li><strong>Hidden minuses obey the rules.</strong> A folded card whose identity you don&rsquo;t know cannot be a card the player could have followed with &mdash; neither the led suit (they would have followed) nor, in most cases, trump (a trump fold would have been revealed at round end).</li>
+            <li><strong>Known cards stay put.</strong> Cards whose identity you have already seen appear where you saw them.</li>
+          </ul>
+          <p>The set of consistent worlds is finite. Early in a game it is large; mid-to-late game, suit-exhaustion typically prunes it heavily. The actual deal is always one of these worlds &mdash; but only one.</p>
+
+          <h3>The Caps obligation, formally</h3>
+          <p>You are <strong>Caps-obligated</strong> at the current state if and only if:</p>
+          <ol>
+            <li><strong>Precondition.</strong> Your team has won every round so far.</li>
+            <li><strong>Witness.</strong> There exists a fixed order <code>O</code> of your remaining cards such that&hellip;</li>
+            <li><strong>&hellip;for every world</strong> consistent with your information, and&hellip;</li>
+            <li><strong>&hellip;for every legal continuation</strong> by the other seats (including the worst conceivable play),</li>
+            <li>the playout from now &mdash; with you playing <code>O</code> in turn and the others playing freely &mdash; ends with your team winning every remaining round.</li>
+          </ol>
+          <p>Three subtleties matter at the table:</p>
+          <ul>
+            <li><strong>The order is fixed up front.</strong> When you call Caps, you expose your hand and announce an order. You do not get to react to opponents&rsquo; choices. So the obligation is the existence of a <em>committed</em> order that survives all worlds and all adversaries.</li>
+            <li><strong>No &ldquo;reasonable&rdquo; assumption.</strong> Opponents may play their absolute worst card every turn. The rules say &ldquo;irrespective of how any other player chooses to play,&rdquo; and the formal test takes that literally.</li>
+            <li><strong>Forced plays count.</strong> If a world or the rules force a unique legal play (your partner has only one card of the led suit, say), the universal quantifier over opponent strategies collapses to that single play. This is how &ldquo;deducible certainty via partner&rdquo; works &mdash; not a special case, just a consequence of quantifying over <em>legal</em> moves.</li>
+          </ul>
+
+          <h3>First opportunity and timing</h3>
+          <p>Your information only changes on observation events &mdash; when a card is played, when round resolution flips a folded trump, when (as Trumper) you inspect folded cards at end of round. Between events, your information set is static, so your Caps obligation cannot flip from false to true.</p>
+          <p>The <strong>first obligation state</strong> is the earliest such event at which the obligation predicate becomes true. The Late Caps judgement is then a function of when you actually called, relative to that first obligation state, under one of three timing policies:</p>
+          <ul>
+            <li><strong>Strict.</strong> The call must be placed at the first obligation state, before any further observation event.</li>
+            <li><strong>Lenient (rules default, &sect;C-3).</strong> The call may be placed at any moment up to and including your next own play. You may not let one of your own plays go by without calling.</li>
+            <li><strong>Unified-time.</strong> A configurable wall-clock window after the first obligation state &mdash; used in fast play, not in scrutiny.</li>
+          </ul>
+          <p>Scrutiny applies the lenient policy by default. The strict policy is the analytical ideal but rarely enforced in practice.</p>
+
+          <h3>One predicate, four mechanics</h3>
+          <p>The same machinery, with different parameters, expresses every related rule:</p>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr><th>Mechanic</th><th>Specialisation</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Caps</strong></td><td>Your team is the trumping team; if you are the Trumper, your information set includes folded-card observations.</td></tr>
+                <tr><td><strong>External Caps</strong></td><td>Your team is the non-trumping team; the information set excludes folded-card observations. Same predicate, smaller info set, automatically more lenient.</td></tr>
+                <tr><td><strong>Absolute Hand</strong></td><td>Caps obligation evaluated at the start of round 1, before any plays. Your information is your hand and the public bidding history.</td></tr>
+                <tr><td><strong>Claim Balance</strong></td><td>Replace &ldquo;win every remaining round&rdquo; with &ldquo;reach the points threshold.&rdquo; World enumeration is identical.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Absolute Hand is the round-1 case of Caps. Claim Balance is Caps with a different terminal predicate. One framework, four mechanics.</p>
+
+          <h3>Walking the worlds at the table</h3>
+          <p>You don&rsquo;t enumerate worlds explicitly in real play &mdash; you reason about the <em>structure</em> of the world set: &ldquo;all remaining tops are mine; opponents are out of the only suit I lack; my partner&rsquo;s last card is forced.&rdquo; The formalism is what scrutiny appeals to when an argument is contested. To rehearse the discipline, work the worked example in the <a href="#caps">Caps</a> section above through these steps:</p>
+          <ol>
+            <li><strong>Inventory.</strong> List the cards still unaccounted for &mdash; the cards in the pack minus your hand minus the public record (and, if you are the Trumper, minus what you saw face-down).</li>
+            <li><strong>Constrain.</strong> Apply suit-exhaustion. Drop any seat-suit pair that the public record forbids.</li>
+            <li><strong>Witness.</strong> Pick the order you would announce. For each card in that order, ask: &ldquo;in <em>every</em> remaining world, what could legally beat this play?&rdquo; If the answer is &ldquo;nothing&rdquo;, you have your witness for that round.</li>
+            <li><strong>Stress-test.</strong> If any step depends on a partner&rsquo;s <em>choice</em> rather than a <em>forced</em> play, you are not yet obligated. Wait for the next observation event and try again.</li>
+          </ol>
+          <p>If you can name the witness order and survive every &ldquo;but what if the opponent holds <em>X</em>&rdquo; challenge by pointing to a rule (suit-exhaustion, the closed-trump fold rule, hand size, or a deduction chain through forced follows), you have Caps. If you cannot, you don&rsquo;t yet.</p>
+
+          <h3>Two ways to lose a Caps argument under scrutiny</h3>
+          <p>In practice, contested Caps calls fail in one of two ways:</p>
+          <ul>
+            <li><strong>A consistent world breaks the witness.</strong> The opposition produces a card distribution that respects everything publicly known and in which the announced order loses a round. The call collapses. (This is most common when the caller has tacitly assumed the location of a key card &mdash; e.g. the last trump &mdash; that the public record does not pin down.)</li>
+            <li><strong>A legal opponent strategy breaks the witness.</strong> The world is fixed but the opponent demonstrates a legal play that beats a round &mdash; typically a discard or a fold the caller did not consider. (This is more common in External Caps, where the caller has less visibility and may have miscounted exhaustion.)</li>
+          </ul>
+          <p>Both failures point at the same root cause: the witness was a <em>plausible</em> sweep rather than a <em>guaranteed</em> one. The formal test is the difference.</p>
+
+          <h3>Further reading</h3>
+          <p>The internal companion document is <code>docs/caps_formalism.md</code> in the project repository, which gives the same predicate in mathematical notation along with the algorithmic decomposition used by the engine. In the broader literature, this is known as <strong>single-dummy claim adjudication</strong>: the contract-bridge analogue is Law 70 of the <em>Laws of Duplicate Bridge</em>, and the canonical algorithmic treatment is Frank, Basin &amp; Bundy, <em>&ldquo;Single-Dummy Solving&rdquo;</em> (AAAI 1992). 304 is stricter than bridge: bridge requires a claim to hold against any <em>reasonable</em> line; 304 requires it to hold against any line whatsoever.</p>
+
+        </div>
       </div>
     </section>
 

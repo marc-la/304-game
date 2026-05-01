@@ -13,6 +13,8 @@ export default function BiddingActions() {
   const whoseTurn = useGameStore(s => s.whoseTurn);
   const hands = useGameStore(s => s.hands);
 
+  const mySeat = useGameStore(s => s.mySeat);
+
   const bidding = gameState?.bidding;
   const isFourCard = bidding?.is_four_card ?? true;
   const currentBid = bidding?.highest_bid ?? 0;
@@ -21,8 +23,11 @@ export default function BiddingActions() {
   const validBids = getNextValidBids(currentBid, isFourCard);
   const [selectedBid, setSelectedBid] = useState(validBids[0] || 160);
 
-  // Hand points for reshuffle/redeal check
-  const turnHand = whoseTurn ? hands[whoseTurn] || [] : [];
+  // Hand points for reshuffle/redeal check. In lobby mode use my own
+  // hand (the only one with cards in hands[]). In solo mode fall back
+  // to whoseTurn so the legacy behaviour still works.
+  const handSeat = mySeat ?? whoseTurn;
+  const turnHand = handSeat ? hands[handSeat] || [] : [];
   const pts = handPoints(turnHand);
 
   const canReshuffle = isFourCard && pts < 15;

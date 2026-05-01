@@ -9,16 +9,24 @@ import { getVisualPosition } from '../../utils/seatUtils';
 import styles from './GameTable.module.css';
 
 export default function GameTable() {
-  const activeSeat = useGameStore(s => s.activeSeat);
+  const mySeat = useGameStore(s => s.mySeat);
   const gameState = useGameStore(s => s.gameState);
 
   if (!gameState) {
-    return <div className={styles.table}><div className={styles.emptyMessage}>Start a new match to begin</div></div>;
+    return (
+      <div className={styles.table}>
+        <div className={styles.emptyMessage}>Start a new match to begin</div>
+      </div>
+    );
   }
+
+  // Orient the table on the local player. In solo/dev mode (no mySeat),
+  // default to South so the layout still looks right.
+  const orient: Seat = mySeat ?? 'south';
 
   const seatsByPosition = {} as Record<string, Seat>;
   for (const seat of SEATS) {
-    seatsByPosition[getVisualPosition(seat, activeSeat)] = seat;
+    seatsByPosition[getVisualPosition(seat, orient)] = seat;
   }
 
   return (

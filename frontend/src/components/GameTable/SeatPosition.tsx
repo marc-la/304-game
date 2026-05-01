@@ -11,10 +11,12 @@ interface Props {
 
 export default function SeatPosition({ seat, position }: Props) {
   const hands = useGameStore(s => s.hands);
+  const handCounts = useGameStore(s => s.handCounts);
   const validPlays = useGameStore(s => s.validPlays);
   const whoseTurn = useGameStore(s => s.whoseTurn);
   const phase = useGameStore(s => s.phase);
   const peekMode = useGameStore(s => s.peekMode);
+  const mySeat = useGameStore(s => s.mySeat);
   const gameState = useGameStore(s => s.gameState);
   const pccOut = gameState?.pcc_partner_out;
 
@@ -24,19 +26,34 @@ export default function SeatPosition({ seat, position }: Props) {
   const cards = hands[seat] || [];
   const valid = validPlays[seat] || [];
   const isActive = whoseTurn === seat;
-  const isBottom = position === 'bottom';
+  const isMe = mySeat === seat;
   const isPccOut = pccOut === seat;
   const team = SEAT_TEAM[seat];
   const teamClass = team === 'team_a' ? styles.teamA : styles.teamB;
 
-  // Bottom seat always face-up; others only if peek mode
-  const faceUp = isBottom || peekMode;
-  const small = !isBottom;
+  // Card visibility:
+  // - Lobby mode (mySeat set): only my own seat is face-up; opponents are
+  //   face-down with a count from handCounts. After game completion, all
+  //   are face-up for scrutiny.
+  // - Solo/dev mode (mySeat null): bottom always face-up; others depend on
+  //   peekMode (legacy hot-seat behaviour).
+  const gameComplete = phase === 'complete';
+  const inLobbyMode = mySeat !== null;
+  const faceUp = inLobbyMode
+    ? isMe || gameComplete
+    : position === 'bottom' || peekMode;
 
-  // Interactive during trump selection and playing phases
+  const small = inLobbyMode ? !isMe : position !== 'bottom';
+
+  // Card count for face-down rendering (when we don't have the cards but
+  // we do know how many they hold).
+  const count = handCounts[seat] ?? cards.length;
+
+  // Only the local player can act on their own seat. In solo mode, fall
+  // back to whoseTurn-driven interactivity.
+  const canAct = inLobbyMode ? isMe : true;
   const interactive =
-    isActive &&
-    (phase === 'trump_selection' || phase === 'playing');
+    canAct && isActive && (phase === 'trump_selection' || phase === 'playing');
 
   const handleCardClick = (card: CardData) => {
     if (phase === 'trump_selection') {
@@ -50,9 +67,16 @@ export default function SeatPosition({ seat, position }: Props) {
   const isTrumper = gameState?.trump?.trumper_seat === seat;
 
   return (
-    <div className={`${styles.seat} ${styles[position]} ${isActive ? styles.active : ''} ${isPccOut ? styles.pccOut : ''}`}>
+    <div
+      className={`${styles.seat} ${styles[position]} ${
+        isActive ? styles.active : ''
+      } ${isPccOut ? styles.pccOut : ''}`}
+    >
       <div className={`${styles.label} ${teamClass}`}>
-        <span className={styles.name}>{SEAT_NAMES[seat]}</span>
+        <span className={styles.name}>
+          {SEAT_NAMES[seat]}
+          {isMe && ' (you)'}
+        </span>
         {isDealer && <span className={styles.badge}>D</span>}
         {isTrumper && <span className={styles.badgeTrump}>T</span>}
         {isPccOut && <span className={styles.badgePcc}>OUT</span>}
@@ -60,6 +84,7 @@ export default function SeatPosition({ seat, position }: Props) {
       </div>
       <CardHand
         cards={cards}
+        count={count}
         validPlays={valid}
         faceUp={faceUp}
         small={small}
