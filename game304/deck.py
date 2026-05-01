@@ -135,28 +135,23 @@ class Deck:
     # ------------------------------------------------------------------
 
     def deal(self, dealer: Seat, num_cards: int) -> dict[Seat, list[Card]]:
-        """Deal cards from the top of the deck to each player.
-
-        Cards are dealt one at a time in anticlockwise order, starting
-        with the player to the dealer's right. Each player receives
-        ``num_cards`` cards. Dealt cards are removed from the deck.
+        """Deal cards in batches per player, starting with dealer's right.
 
         Per the rules: "The dealer then deals the top 4 cards to the
-        player on their right, then 4 to the next player
-        (anticlockwise), and so on."
+        player on their right, then 4 to the next player (anticlockwise),
+        and so on, finishing with themselves."
 
-        Note: The JS implementation deals all ``num_cards`` to each
-        player before moving to the next. The rules say "the top 4
-        cards to the player on their right, then 4 to the next" which
-        means each player gets a batch, not interleaved. We follow the
-        JS implementation's batched dealing approach.
+        Each player receives a contiguous batch of ``num_cards`` cards
+        from the top of the deck before the next player's batch is
+        dealt. Dealt cards are removed from the deck.
 
         Args:
             dealer: The seat of the dealer.
             num_cards: Number of cards to deal to each player.
 
         Returns:
-            A dict mapping each ``Seat`` to their dealt cards.
+            A dict mapping each ``Seat`` to their dealt cards, in
+            dealing order (dealer's right first, dealer last).
 
         Raises:
             ValueError: If there aren't enough cards in the deck.
@@ -171,8 +166,10 @@ class Deck:
         order = deal_order(dealer)
         hands: dict[Seat, list[Card]] = {seat: [] for seat in order}
 
-        for _ in range(num_cards):
-            for seat in order:
+        # Batched dealing: each player receives all their cards before
+        # the next player's batch is dealt.
+        for seat in order:
+            for _ in range(num_cards):
                 hands[seat].append(self._cards.pop(0))
 
         return hands

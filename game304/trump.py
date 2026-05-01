@@ -26,15 +26,20 @@ from game304.types import Phase, Seat, Team
 
 
 def select_trump(state: GameState, seat: Seat, card: Card) -> None:
-    """Select a trump card from the trumper's 4-card hand.
+    """Select a trump card from the trumper's hand.
 
     The chosen card is placed face-down on the table. Its suit becomes
     the trump suit for the game. The card is removed from the trumper's
-    hand. The trumper must not look at their remaining 4 cards before
-    selecting (enforced by the UI, not here).
+    hand.
 
-    After selection, the remaining 4 cards are dealt to each player
-    from the deck, and the game transitions to 8-card betting.
+    Two cases:
+    - **First trump selection (after 4-card bid wins):** the trumper
+      has 4 cards. After selection, the remaining 4 cards are dealt
+      from the deck and the game transitions to 8-card betting.
+    - **Second trump selection (8-card bid supersedes 4-card bid):**
+      the trumper has 8 cards (the previous trump card has already
+      been returned to the prior trumper's hand by the orchestrator).
+      No further dealing — the game transitions directly to pre-play.
 
     Args:
         state: The game state (mutated in place).
@@ -58,21 +63,23 @@ def select_trump(state: GameState, seat: Seat, card: Card) -> None:
     if card not in hand:
         raise InvalidTrumpSelectionError("That card is not in your hand.")
 
-    # Set trump card and suit
+    is_first_selection = len(hand) == 4
+
+    # Set trump card and suit; remove from hand (placed face-down on table)
     state.trump.trump_card = card
     state.trump.trump_suit = card.suit
-
-    # Remove from hand (placed face-down on table)
     state.hands[seat] = [c for c in hand if c != card]
 
-    # Deal remaining 4 cards from the deck
-    if state.deck is not None:
-        second_deal = state.deck.deal(state.dealer, 4)
-        for s in second_deal:
-            state.hands.setdefault(s, []).extend(second_deal[s])
-
-    # Transition to 8-card betting
-    state.phase = Phase.BETTING_8
+    if is_first_selection:
+        # Deal remaining 4 cards from the deck and proceed to 8-card betting
+        if state.deck is not None:
+            second_deal = state.deck.deal(state.dealer, 4)
+            for s in second_deal:
+                state.hands.setdefault(s, []).extend(second_deal[s])
+        state.phase = Phase.BETTING_8
+    else:
+        # 8-card bid superseded the 4-card bid — proceed straight to pre-play
+        state.phase = Phase.PRE_PLAY
 
 
 def declare_open_trump(
@@ -169,16 +176,15 @@ def _init_play_state(state: GameState) -> None:
     """Initialise the play state for the first round.
 
     The player to the dealer's right has priority (leads the first
-    round). If PCC, the partner's turns are skipped.
+    round). For PCC, the trumper has priority for round 1, regardless
+    of seat — and the trumper's partner sits out for the entire game.
     """
-    order = deal_order(state.dealer)
-    priority = order[0]
-
-    # If PCC partner has priority, advance
-    if state.pcc_partner_out == priority:
-        from game304.seating import next_seat
-
-        priority = next_seat(priority)
+    if state.pcc_partner_out is not None and state.trump.trumper_seat is not None:
+        # PCC: trumper has priority for round 1
+        priority = state.trump.trumper_seat
+    else:
+        order = deal_order(state.dealer)
+        priority = order[0]
 
     state.play = PlayState(
         round_number=1,

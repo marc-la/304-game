@@ -147,10 +147,17 @@ def _validate_lead(
     """Validate a leading card play.
 
     Checks:
-    1. Trumper cannot lead with trump suit on round 1 in Closed Trump.
-    2. Exhausted Trumps enforcement (house rule: only when trump revealed).
+    1. Closed Trump: trumper cannot lead trump on round 1.
+    2. Open Trump (non-PCC), trumper has priority for round 1: must
+       lead with a card of the trump suit. (PCC trumper is exempt and
+       may lead any card on round 1.)
+    3. Exhausted Trumps: when the trumper holds all remaining trump
+       and has priority, they must lead trump before any other suit.
+       Applies in both Open and Closed Trump after trump is revealed;
+       does not apply in PCC.
     """
     trump = state.trump
+    is_pcc = state.pcc_partner_out is not None
 
     # Closed Trump: trumper cannot lead trump on round 1
     if (
@@ -164,8 +171,31 @@ def _validate_lead(
             "Trump. Declare Open Trump first."
         )
 
-    # Exhausted Trumps: only when trump is revealed, after round 1
-    if trump_is_open and is_trumper and play.round_number > 1:
+    # Open Trump (non-PCC), trumper has priority on round 1: must lead trump.
+    # PCC trumper is exempt and may lead any card.
+    if (
+        trump_is_open
+        and is_trumper
+        and play.round_number == 1
+        and not is_pcc
+        and played_suit != trump.trump_suit
+    ):
+        # Only enforce if the trumper actually holds a trump-suit card
+        hand = state.hands.get(seat, [])
+        has_trump_in_hand = any(c.suit == trump.trump_suit for c in hand)
+        if has_trump_in_hand:
+            raise InvalidPlayError(
+                "Open Trump: you must lead round 1 with a card of the "
+                "trump suit."
+            )
+
+    # Exhausted Trumps: does not apply in PCC
+    if (
+        trump_is_open
+        and is_trumper
+        and play.round_number > 1
+        and not is_pcc
+    ):
         if _check_exhausted_trumps(state, seat) and played_suit != trump.trump_suit:
             raise InvalidPlayError(
                 "Exhausted Trumps: you must lead all remaining trump "
@@ -185,66 +215,78 @@ def _validate_follow(
 ) -> bool:
     """Validate a following card play and determine if it's face-down.
 
+    Trumper-specific rules in Closed Trump (when unable to follow suit):
+    - May **cut** with the folded trump card (face-down), or
+    - May **minus** a non-led, non-trump-suit card (face-down).
+    - May NOT fold an in-hand trump-suit card. In-hand trump-suit cards
+      may only be played face up.
+    - If the led suit is the trump suit and the trumper has no in-hand
+      trump (the folded trump card stays as the indicator), they must
+      minus a non-trump-suit card.
+    - If the trumper holds only trump-suit cards in hand plus the
+      folded trump card and the led suit is non-trump, they must cut
+      with the folded trump card.
+
     Returns:
         ``True`` if the card should be played face-down.
     """
     trump = state.trump
     face_down = False
 
-    if led_suit is not None:
-        has_led_suit = any(c.suit == led_suit for c in hand)
+    if led_suit is None:
+        return False
 
-        if has_led_suit:
-            # Must follow suit
-            if played_suit != led_suit:
-                raise InvalidPlayError(
-                    f"You must follow suit ({led_suit.value}). You have "
-                    f"cards of that suit."
-                )
-        else:
-            # Cannot follow suit — may play any card
-            if not trump_is_open:
-                # Closed Trump: card goes face-down
-                face_down = True
+    has_led_suit = any(c.suit == led_suit for c in hand)
 
-                # Trumper: if led suit IS the trump suit and trumper has
-                # no playable trump except the face-down trump card
-                if is_trumper and led_suit == trump.trump_suit:
-                    trump_cards_in_hand = [
-                        c
-                        for c in hand
-                        if c.suit == trump.trump_suit and c != trump.trump_card
-                    ]
-                    if not trump_cards_in_hand:
-                        # No playable trump — must minus (non-trump card).
-                        # Exception: in round 8 with no other cards, the
-                        # trump card is the only option and must be played.
-                        non_trump_cards = [
-                            c for c in hand if c.suit != trump.trump_suit
-                        ]
-                        has_only_trump_card = (
-                            len(hand) == 0
-                            and card == trump.trump_card
-                        )
-                        if has_only_trump_card:
-                            # Round 8, trump card is the only card left —
-                            # must be played face-down
-                            pass
-                        elif (
-                            played_suit == trump.trump_suit
-                            and card != trump.trump_card
-                        ):
-                            raise InvalidPlayError(
-                                "You have no trump to follow with. "
-                                "Play a non-trump card."
-                            )
-                        elif card == trump.trump_card:
-                            raise InvalidPlayError(
-                                "The trump card cannot be played face up "
-                                "to follow the trump suit while it "
-                                "remains the indicator."
-                            )
+    if has_led_suit:
+        # Must follow suit
+        if played_suit != led_suit:
+            raise InvalidPlayError(
+                f"You must follow suit ({led_suit.value}). You have "
+                f"cards of that suit."
+            )
+        return False
 
+    # Cannot follow suit — may play any card
+    if trump_is_open:
+        # Open trump: any card, face-up
+        return False
+
+    # Closed trump: card goes face-down (cut or minus)
+    face_down = True
+
+    if not is_trumper:
+        # Non-trumper: any card may be folded. No further restrictions.
+        return face_down
+
+    # ----- Trumper-specific face-down restrictions -----
+    is_folded_trump_card = (card == trump.trump_card)
+    is_in_hand_trump = (
+        card.suit == trump.trump_suit and not is_folded_trump_card
+    )
+
+    # The trumper may never fold an in-hand trump-suit card.
+    if is_in_hand_trump:
+        raise InvalidPlayError(
+            "The trumper cannot fold an in-hand trump-suit card. "
+            "Cut with the folded trump card or minus a non-trump card."
+        )
+
+    if led_suit == trump.trump_suit:
+        # Led suit is trump and the trumper has no trump in hand.
+        # The folded trump card cannot follow trump face-up while it
+        # remains the indicator. Must minus a non-trump card.
+        if is_folded_trump_card:
+            raise InvalidPlayError(
+                "The trump card cannot follow the trump suit while it "
+                "remains the indicator. Minus a non-trump card."
+            )
+        # Non-trump card → minus, face-down. Allowed.
+        return face_down
+
+    # Led suit is non-trump and trumper cannot follow.
+    # Allowed face-down plays: folded trump card (cut) or non-trump card (minus).
+    # is_in_hand_trump already rejected above.
     return face_down
 
 
@@ -585,7 +627,9 @@ def get_valid_plays(state: GameState, seat: Seat) -> list[Card]:
 def _validate_play_only(state: GameState, seat: Seat, card: Card) -> None:
     """Validate a card play without modifying state.
 
-    A lighter version of validate_and_play that only checks validity.
+    A lighter version of ``validate_and_play`` that only checks validity.
+    Mirrors the rules implemented in ``_validate_lead`` and
+    ``_validate_follow``.
     """
     play = state.play
     trump = state.trump
@@ -593,8 +637,8 @@ def _validate_play_only(state: GameState, seat: Seat, card: Card) -> None:
     trump_is_open = trump.is_revealed or trump.is_open
     is_leading = len(play.current_round) == 0
     hand = state.hands.get(seat, [])
+    is_pcc = state.pcc_partner_out is not None
 
-    # Check if this is the trump card from the table
     is_trump_card_play = (
         is_trumper
         and not trump.trump_card_in_hand
@@ -603,6 +647,7 @@ def _validate_play_only(state: GameState, seat: Seat, card: Card) -> None:
     )
 
     played_suit = card.suit
+    face_down = False
 
     if is_leading:
         # Closed Trump: trumper cannot lead trump on round 1
@@ -614,8 +659,26 @@ def _validate_play_only(state: GameState, seat: Seat, card: Card) -> None:
         ):
             raise InvalidPlayError("Cannot lead with trump on round 1.")
 
-        # Exhausted Trumps
-        if trump_is_open and is_trumper and play.round_number > 1:
+        # Open Trump (non-PCC), trumper has priority on round 1: must lead trump
+        if (
+            trump_is_open
+            and is_trumper
+            and play.round_number == 1
+            and not is_pcc
+            and played_suit != trump.trump_suit
+        ):
+            if any(c.suit == trump.trump_suit for c in hand):
+                raise InvalidPlayError(
+                    "Open Trump: must lead round 1 with the trump suit."
+                )
+
+        # Exhausted Trumps (does not apply in PCC)
+        if (
+            trump_is_open
+            and is_trumper
+            and play.round_number > 1
+            and not is_pcc
+        ):
             if _check_exhausted_trumps(state, seat) and played_suit != trump.trump_suit:
                 raise InvalidPlayError("Exhausted Trumps.")
     else:
@@ -626,34 +689,27 @@ def _validate_play_only(state: GameState, seat: Seat, card: Card) -> None:
                 raise InvalidPlayError("Must follow suit.")
 
             if not has_led_suit and not trump_is_open:
-                # Trumper constraints when unable to follow trump suit
-                if is_trumper and led_suit == trump.trump_suit:
-                    trump_cards = [
-                        c for c in hand
-                        if c.suit == trump.trump_suit and c != trump.trump_card
-                    ]
-                    if not trump_cards:
-                        # Exception: trump card is the only card left
-                        has_only_trump_card = (
-                            len(hand) == 0
-                            and card == trump.trump_card
+                face_down = True
+                # Trumper face-down restrictions
+                if is_trumper:
+                    is_folded_trump = (card == trump.trump_card)
+                    is_in_hand_trump = (
+                        card.suit == trump.trump_suit and not is_folded_trump
+                    )
+                    if is_in_hand_trump:
+                        raise InvalidPlayError(
+                            "Trumper cannot fold an in-hand trump card."
                         )
-                        if has_only_trump_card:
-                            pass  # allowed
-                        elif played_suit == trump.trump_suit and card != trump.trump_card:
-                            raise InvalidPlayError("No trump to follow.")
-                        elif card == trump.trump_card:
-                            raise InvalidPlayError("Trump card cannot follow face up.")
+                    if led_suit == trump.trump_suit and is_folded_trump:
+                        raise InvalidPlayError(
+                            "Trump card cannot follow trump suit face-up "
+                            "while it is the indicator."
+                        )
 
-    # Trump card face-up restrictions
-    led_suit_val = get_led_suit(play.current_round) if not is_leading else None
-    face_down = (
-        not is_leading
-        and not trump_is_open
-        and led_suit_val is not None
-        and not any(c.suit == led_suit_val for c in hand)
-    ) if not is_leading else False
-
+    # Trump card face-up restriction: only in round 8 as the last card
     if is_trump_card_play and not face_down:
         if play.round_number < 8 or len(hand) > 0:
-            raise InvalidPlayError("Trump card restrictions.")
+            raise InvalidPlayError(
+                "Trump card may only be played face-up as the last card "
+                "in round 8."
+            )

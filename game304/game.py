@@ -360,12 +360,16 @@ class Game:
         """
         validate_and_play(self._state, seat, card)
 
-        # Track caps obligation (best-effort, non-fatal)
-        track_caps_obligation(self._state, seat)
+        # Track caps obligation for all eligible seats after this play.
+        track_caps_obligation(self._state)
 
         if is_round_complete(self._state):
             completed = resolve_current_round(self._state)
             game_over = advance_after_round(self._state, completed)
+
+            # Track again after round resolution: trump may have been
+            # revealed, exposing more information that triggers obligation.
+            track_caps_obligation(self._state)
 
             if game_over:
                 self._finalize_game()
@@ -453,17 +457,22 @@ class Game:
     def call_spoilt_trumps(self, seat: Seat) -> None:
         """Declare Spoilt Trumps — opposition holds zero trump cards.
 
-        The game is voided with no stone exchanged. Can be called by
-        any player who notices, at any time before the last card of
-        the last round is played.
+        If the call is correct, the game is voided with no stone
+        exchanged (a pass-on is triggered when the next game starts).
+
+        If the call is incorrect (the opposition did, or did, hold
+        trump cards), the call still consumes a "speech" — it
+        attracts a **1-stone penalty** to the caller's team.
+
+        May be called by any player at any time before the last card
+        of the last round is played.
 
         Args:
             seat: The seat calling Spoilt Trumps.
 
         Raises:
             InvalidPhaseError: If not during play or pre-play.
-            GameError: If the opposition actually holds/held trump,
-                or if it's too late to call.
+            GameError: If it's too late to call (final card played).
         """
         if self._state.phase not in (Phase.PLAYING, Phase.PRE_PLAY):
             raise InvalidPhaseError(
@@ -482,23 +491,43 @@ class Game:
                     "has been played."
                 )
 
-        if not check_spoilt_trumps(self._state):
-            raise GameError(
-                "Opposition holds (or held) trump cards. "
-                "Not Spoilt Trumps."
+        if check_spoilt_trumps(self._state):
+            # Correct call — pass-on, no stone exchanged
+            self._state.phase = Phase.COMPLETE
+            self._state.result = GameResult(
+                reason="spoilt_trumps",
+                stone_exchanged=0,
+                stone_direction="none",
+                winner_team=None,
+                description=(
+                    "Spoilt Trumps — opposition held zero trump cards "
+                    "from the deal."
+                ),
             )
+            return
 
-        self._state.phase = Phase.COMPLETE
-        self._state.result = GameResult(
-            reason="spoilt_trumps",
-            stone_exchanged=0,
-            stone_direction="none",
-            winner_team=None,
-            description=(
-                "Spoilt Trumps — opposition held zero trump cards "
-                "from the deal."
-            ),
-        )
+        # False call: 1-stone penalty to the caller's team. The game
+        # continues — this is an in-game penalty, not a game-ending event.
+        self.apply_penalty(team_of(seat), stones=1)
+
+    def apply_penalty(self, team: Team, stones: int = 1) -> None:
+        """Apply a stone penalty to ``team`` (they receive stones).
+
+        Used for the various 1-stone in-game penalties (revealing
+        information, signalling, false Spoilt Trumps call, etc.). The
+        offending team's stone count increases by ``stones``.
+
+        Penalties are sportsmanship-driven — the engine does not detect
+        most of them automatically. Frontends should call this when
+        consensus is reached.
+
+        Args:
+            team: The offending team.
+            stones: Number of stones the team receives (default 1).
+        """
+        if stones < 0:
+            raise GameError("Penalty stones must be non-negative.")
+        self._state.stone[team] = self._state.stone.get(team, 0) + stones
 
     def call_absolute_hand(self, seat: Seat) -> None:
         """Declare an Absolute Hand — guaranteed to win all 8 rounds.
@@ -583,7 +612,8 @@ class Game:
         Args:
             transition: The transition signal from bidding.
         """
-        if transition == "redeal":
+        if transition == "pass_on":
+            # No 4-card bid placed — pass-on (next dealer)
             self._reset_for_deal(same_dealer=False)
 
         elif transition == "trump_selection":
@@ -595,8 +625,8 @@ class Game:
             self._state.phase = Phase.PRE_PLAY
 
         elif transition == "new_8_card_trump":
-            # New 8-card bid supersedes 4-card bid
-            # Old trump card is returned if there was one
+            # New 8-card bid supersedes 4-card bid.
+            # Old trump card is returned to the previous trumper's hand.
             if self._state.trump.trump_card is not None:
                 old_trumper = self._state.trump.trumper_seat
                 if old_trumper is not None:
@@ -617,7 +647,7 @@ class Game:
             # Old trump card returned if there was one
             if self._state.trump.trump_card is not None:
                 old_trumper = self._state.trump.trumper_seat
-                if old_trumper is not None:
+                if old_trumper is not None and old_trumper != pcc_bidder:
                     self._state.hands.setdefault(old_trumper, []).append(
                         self._state.trump.trump_card
                     )

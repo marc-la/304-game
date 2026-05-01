@@ -57,39 +57,8 @@ def calculate_result(state: GameState) -> GameResult:
     if play.caps_call is not None and state.result is not None:
         return state.result
 
-    # 2. Check for late caps (player was obligated but never called)
-    if play.caps_obligations:
-        for seat_key, obligation in play.caps_obligations.items():
-            obligated_team = team_of(seat_key)
-
-            # Check if the team actually won all rounds from obligation onward
-            rounds_after = [
-                r
-                for r in play.completed_rounds
-                if r.round_number >= obligation.obligated_at_round
-            ]
-            all_won = all(
-                team_of(r.winner) == obligated_team for r in rounds_after
-            )
-
-            if all_won:
-                # Late caps — penalty
-                scoring = _get_scoring(bidding)
-                normal_loss = scoring.loss
-
-                return GameResult(
-                    reason="caps_late",
-                    stone_exchanged=normal_loss + 1,
-                    stone_direction="receive",
-                    winner_team=_other_team(obligated_team),
-                    caps_by=seat_key,
-                    description=(
-                        f"Late Caps detected for {seat_key.value}. "
-                        f"{normal_loss + 1} stone penalty."
-                    ),
-                )
-
-    # 3. PCC scoring
+    # 2. PCC scoring — caps and external caps mechanics do not apply.
+    #    Late-caps detection must be skipped before checking obligations.
     if bidding.is_pcc:
         all_won = all(
             team_of(r.winner) == trumper_team for r in play.completed_rounds
@@ -114,6 +83,42 @@ def calculate_result(state: GameState) -> GameResult:
                     f"PCC failed. {PCC_SCORING.loss} stone received."
                 ),
             )
+
+    # 3. Check for late caps (player was obligated but never called caps).
+    #    A player obligated mid-game whose team did go on to win every
+    #    remaining round is treated as Late Caps: the betting team's win
+    #    flips to a loss + 1 stone (or the opposition's win to a loss + 1
+    #    in the external case).
+    if play.caps_obligations:
+        for seat_key, obligation in play.caps_obligations.items():
+            obligated_team = team_of(seat_key)
+            rounds_after = [
+                r
+                for r in play.completed_rounds
+                if r.round_number >= obligation.obligated_at_round
+            ]
+            all_won = bool(rounds_after) and all(
+                team_of(r.winner) == obligated_team for r in rounds_after
+            )
+            # Also require: the obligated team won every round of the
+            # game (the precondition for caps in the first place).
+            won_everything = all(
+                team_of(r.winner) == obligated_team
+                for r in play.completed_rounds
+            )
+            if all_won and won_everything:
+                scoring = _get_scoring(bidding)
+                return GameResult(
+                    reason="caps_late",
+                    stone_exchanged=scoring.loss + 1,
+                    stone_direction="receive",
+                    winner_team=_other_team(obligated_team),
+                    caps_by=seat_key,
+                    description=(
+                        f"Late Caps detected for {seat_key.value}. "
+                        f"{scoring.loss + 1} stone penalty."
+                    ),
+                )
 
     # 4. Normal scoring
     bid = bidding.highest_bid

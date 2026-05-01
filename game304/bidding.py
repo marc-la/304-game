@@ -57,6 +57,22 @@ def get_increment(current_bid: int) -> int:
     return INCREMENT_200_PLUS if current_bid >= 200 else INCREMENT_BELOW_200
 
 
+def _is_valid_bid_step(value: int) -> bool:
+    """Check whether ``value`` lies on a legal bid step.
+
+    Legal numeric bids: 160, 170, 180, 190 (below 200) or
+    200, 205, 210, ..., 250 (200+). Higher than 250 is illegal as a
+    numeric bid — only PCC may exceed 250.
+    """
+    if value < MIN_BID_4_CARD:
+        return False
+    if value > 250:
+        return False
+    if value < THRESHOLD_4_CARD:
+        return value % INCREMENT_BELOW_200 == 0
+    return value % INCREMENT_200_PLUS == 0
+
+
 def validate_bid_value(
     bidding: BiddingState,
     value: int,
@@ -65,8 +81,9 @@ def validate_bid_value(
 ) -> None:
     """Validate a numeric bid against all bidding rules.
 
-    Checks minimum bid, increment validity, partner undercut
-    prevention, and first-speech constraints.
+    Checks legal step (160/170/.../190, then 200/205/.../250),
+    minimum bid, partner undercut prevention, and first-speech
+    constraints. Bids above 250 are illegal — only PCC may exceed 250.
 
     Args:
         bidding: The current bidding state.
@@ -77,6 +94,17 @@ def validate_bid_value(
     Raises:
         InvalidBidError: If the bid violates any rule.
     """
+    if value > 250:
+        raise InvalidBidError(
+            "Bids above 250 are illegal — only PCC may exceed 250."
+        )
+
+    if not _is_valid_bid_step(value):
+        raise InvalidBidError(
+            f"{value} is not a legal bid. Legal bids are 160-190 (step 10) "
+            f"and 200-250 (step 5)."
+        )
+
     is_four_card = bidding.is_four_card
     min_first = MIN_BID_4_CARD if is_four_card else MIN_BID_8_CARD
     threshold = THRESHOLD_4_CARD if is_four_card else THRESHOLD_8_CARD
@@ -86,7 +114,6 @@ def validate_bid_value(
 
     # Determine minimum bid
     if bidding.highest_bid == 0:
-        # No bids yet — minimum is the floor
         min_bid = min_first
     elif is_first_speech:
         min_bid = max(
@@ -100,7 +127,7 @@ def validate_bid_value(
             bidding.highest_bid + get_increment(bidding.highest_bid),
         )
 
-    # Cannot undercut partner
+    # Cannot undercut partner with a sub-threshold bid
     if partner_is_highest and value < threshold:
         raise InvalidBidError(
             f"Cannot undercut your partner. Minimum bid is {threshold}."
@@ -109,15 +136,11 @@ def validate_bid_value(
     if value < min_bid:
         raise InvalidBidError(f"Bid must be at least {min_bid}.")
 
-    # Validate increment
-    if value > min_first and bidding.highest_bid > 0:
-        required_increment = get_increment(max(bidding.highest_bid, value))
-        diff = value - bidding.highest_bid
-        if diff % required_increment != 0 or value <= bidding.highest_bid:
-            raise InvalidBidError(
-                f"Invalid bid increment. Must increase by multiples of "
-                f"{required_increment}."
-            )
+    # Must strictly exceed the current highest bid
+    if bidding.highest_bid > 0 and value <= bidding.highest_bid:
+        raise InvalidBidError(
+            f"Bid must exceed the current highest bid of {bidding.highest_bid}."
+        )
 
 
 def advance_bidder(bidding: BiddingState, pcc_partner_out: Seat | None = None) -> None:
@@ -233,7 +256,9 @@ def place_bid(
         )
 
     if action == BidAction.PARTNER:
-        return _handle_partner(bidding, seat, player_state, partner, partner_state)
+        return _handle_partner(
+            state, bidding, seat, player_state, partner, partner_state
+        )
 
     if action == BidAction.BET:
         return _handle_bet(state, bidding, seat, value, player_state)
@@ -248,6 +273,7 @@ def place_bid(
 
 
 def _handle_partner(
+    state: GameState,
     bidding: BiddingState,
     seat: Seat,
     player_state: PlayerBidState,
@@ -256,12 +282,36 @@ def _handle_partner(
 ) -> None:
     """Handle the PARTNER action — ask partner to bid on your behalf.
 
+    [House Rule] Partnering is restricted:
+    - 4-card betting only (never on 8 cards).
+    - Only the player to dealer's right or the player across from dealer.
+    - First speech only.
+    - The partnered player cannot partner-back.
+
     Both the caller and their partner consume a speech. The partner's
     normal turn will be skipped when it comes around.
-
-    Per the rules: "Both players have now used their first speech. The
-    partner's normal turn is skipped when bidding comes around to them."
     """
+    if not bidding.is_four_card:
+        raise InvalidBidError(
+            "Partnering is not allowed on 8-card betting."
+        )
+
+    if player_state.speech_count != 0:
+        raise InvalidBidError(
+            "Partnering is only allowed on your first speech."
+        )
+
+    # Eligible partnering seats: the player to dealer's right (priority),
+    # and the player across from dealer (partner of dealer).
+    order = deal_order(state.dealer)
+    priority_seat = order[0]
+    across_from_dealer = order[1]
+    if seat not in (priority_seat, across_from_dealer):
+        raise InvalidBidError(
+            "Only the player to dealer's right or the player across from "
+            "dealer may partner."
+        )
+
     if partner_state.skipped or partner_state.partner_used_by is not None:
         raise InvalidBidError(
             "Your partner has already been used via partnering."
@@ -401,13 +451,27 @@ def _handle_pcc(
 ) -> str | None:
     """Handle a PCC (Partner Closed Caps) bid.
 
-    PCC is only available on 8-card betting. It is the highest possible
-    bid — the trumper plays alone (partner sits out) and must win all
-    8 rounds playing Open Trump.
-    """
-    if bidding.is_four_card:
-        raise InvalidBidError("PCC is only available on 8-card betting.")
+    PCC is the highest possible bid — the trumper plays alone (partner
+    sits out) and must win all 8 rounds playing Open Trump.
 
+    Per the rules, any bid (including PCC) can theoretically be made on
+    4 cards on a subsequent speech, though it is virtually never done.
+    PCC requires a subsequent speech (it is "above 250").
+    """
+    # Cannot undercut your own partner
+    if bidding.highest_bidder == partner_seat(seat):
+        # PCC overtakes — fine to overbid partner
+        pass
+
+    # PCC is "above 250" — must be on a subsequent speech (not first).
+    # Partnering being available on 4-card first speech does not extend
+    # to PCC; PCC is always a subsequent-speech bid.
+    if player_state.speech_count == 0:
+        raise InvalidBidError(
+            "PCC is only available on a subsequent speech (above 250)."
+        )
+
+    # Must strictly exceed any existing bid (PCC sentinel always does).
     player_state.speech_count += 1
     bidding.highest_bid = PCC_BID_VALUE
     bidding.highest_bidder = seat
@@ -427,24 +491,37 @@ def _handle_pcc(
 
 
 def _check_bidding_end(state: GameState, bidding: BiddingState) -> str | None:
-    """Check if bidding has ended (3 consecutive passes) and return transition.
+    """Check if bidding has ended and return the transition signal.
+
+    Per the rules, bidding ends when **both**:
+    1. Every player has had a first speech (a bid, pass, or partner
+       action — including a partnered bid/pass which counts as the
+       partner's first speech).
+    2. Three consecutive passes have occurred since the last bid (or
+       since the start if no bid has been placed).
 
     Returns:
         Transition signal or ``None`` if bidding continues.
     """
-    # When a bid has been established, 3 consecutive passes end bidding.
-    # When no one has bid, all 4 players must pass for a redeal.
-    passes_needed = 3 if bidding.highest_bidder is not None else 4
-    if bidding.consecutive_passes < passes_needed:
+    if bidding.consecutive_passes < 3:
+        return None
+
+    # All 4 players must have had a first speech.
+    all_spoken = all(
+        bidding.player_state[s].speech_count > 0 for s in Seat
+    )
+    if not all_spoken:
         return None
 
     if bidding.is_four_card:
         if bidding.highest_bidder is None:
-            # All 4 players passed — redeal
-            return "redeal"
-        else:
-            # Bid established — move to trump selection
-            return "trump_selection"
+            # No bid placed — pass-on (deal moves to next dealer)
+            return "pass_on"
+        if bidding.is_pcc:
+            # PCC bid on 4 cards (rare but legal on subsequent speech)
+            return "pcc"
+        # Bid established — move to trump selection
+        return "trump_selection"
     else:
         # 8-card bidding ended
         if (
@@ -455,9 +532,8 @@ def _check_bidding_end(state: GameState, bidding: BiddingState) -> str | None:
             if bidding.is_pcc:
                 return "pcc"
             return "new_8_card_trump"
-        else:
-            # No 8-card bids — proceed with 4-card bid
-            return "pre_play"
+        # No 8-card bids — proceed with 4-card bid
+        return "pre_play"
 
 
 def check_reshuffle_eligibility(state: GameState, seat: Seat) -> None:
@@ -507,29 +583,48 @@ def check_reshuffle_eligibility(state: GameState, seat: Seat) -> None:
 
 
 def check_redeal_8_eligibility(state: GameState, seat: Seat) -> None:
-    """Validate that a player can call a redeal on 8 cards.
+    """Validate that a player can call a pass-on on 8 cards.
 
-    A redeal is allowed if:
+    [House Rule] A pass-on is allowed if:
     1. The game is in the 8-card betting phase.
     2. The caller's 8-card hand totals less than 25 points.
+    3. The caller is on their first 8-card speech — once they have bet,
+       passed, or been skipped past, the option is waived.
+    4. It is the caller's turn (you cannot pass-on out of turn).
+
+    On a successful call, the deal moves to the next dealer (anticlockwise).
 
     Args:
         state: The current game state.
-        seat: The seat requesting the redeal.
+        seat: The seat requesting the pass-on.
 
     Raises:
         InvalidPhaseError: If not in 8-card betting.
-        InvalidBidError: If hand is too strong.
+        InvalidBidError: If hand is too strong, not first speech, or
+            not the caller's turn.
     """
     if state.phase != Phase.BETTING_8:
-        raise InvalidPhaseError("Can only redeal during 8-card betting.")
+        raise InvalidPhaseError("Can only pass-on during 8-card betting.")
+
+    bidding = state.bidding
+    if bidding is None:
+        raise InvalidPhaseError("Bidding state not initialised.")
+
+    if seat != bidding.current_bidder:
+        raise InvalidBidError("Pass-on can only be called on your own turn.")
+
+    player_state = bidding.player_state.get(seat)
+    if player_state is None or player_state.speech_count != 0:
+        raise InvalidBidError(
+            "Pass-on must be declared on your first 8-card speech."
+        )
 
     hand = state.hands.get(seat, [])
     points = hand_points(hand)
     if points >= REDEAL_POINT_THRESHOLD:
         raise InvalidBidError(
             f"Hand has {points} points. Must be less than "
-            f"{REDEAL_POINT_THRESHOLD} to redeal."
+            f"{REDEAL_POINT_THRESHOLD} to pass-on."
         )
 
 
