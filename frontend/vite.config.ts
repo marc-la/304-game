@@ -29,6 +29,7 @@ const buildInputs: Record<string, string> = {
   index: resolve(repoRoot, 'index.html'),
   rules: resolve(repoRoot, 'rules.html'),
   stats: resolve(repoRoot, 'stats.html'),
+  practice: resolve(repoRoot, 'practice.html'),
 };
 if (includePlay) {
   buildInputs.play = resolve(repoRoot, 'play.html');
@@ -37,6 +38,9 @@ if (includePlay) {
 export default defineConfig({
   plugins: [react()],
   root: repoRoot,
+  // Relative asset paths so the build can be served from any subpath
+  // (e.g. ``user.github.io/304-game/``) without rewriting hrefs.
+  base: './',
   publicDir: false,           // no auxiliary public dir; everything is in repoRoot
   build: {
     outDir: resolve(__dirname, 'dist'),

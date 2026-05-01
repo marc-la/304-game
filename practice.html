@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>304 Game — Play</title>
-  <meta name="description" content="Play 304 online with friends. Real-time multiplayer trick-taking card game.">
+  <title>304 Game — Caps Practice</title>
+  <meta name="description" content="Practise calling Caps at the right moment. A solo trainer for the hardest skill in 304.">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#fbf6e8" media="(prefers-color-scheme: light)">
@@ -23,7 +23,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/play.css">
 </head>
 <body>
 
@@ -32,16 +31,17 @@
     <a href="./" class="site-nav-brand">3<span class="brand-zero">0</span>4</a>
     <nav class="site-nav-links">
       <a href="rules.html">Rules</a>
-      <a href="practice.html">Practice</a>
+      <a href="practice.html" class="active">Practice</a>
       <a href="stats.html" class="site-nav-cta">Leaderboard</a>
     </nav>
   </div>
 </header>
 
-<!-- React mount point. The app is bundled by Vite from frontend/src/main.tsx. -->
-<div id="root"></div>
+<!-- React mount point. The app is bundled by Vite from frontend/src/practice/main.tsx.
+     Pure CSR — no API calls, ships as static files (GitHub Pages compatible). -->
+<div id="practice-root"></div>
 
 <script type="module" src="js/theme.js"></script>
-<script type="module" src="/frontend/src/main.tsx"></script>
+<script type="module" src="/frontend/src/practice/main.tsx"></script>
 </body>
 </html>
