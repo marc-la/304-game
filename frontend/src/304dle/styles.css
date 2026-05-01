@@ -1,0 +1,521 @@
+/* 304dle styles. Mobile-first single-column layout.
+   Uses the global theme variables from /css/styles.css. */
+
+.dle-app {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-family: var(--font-heading);
+  color: var(--clr-text);
+}
+
+.dle-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  color: var(--clr-text-muted);
+  font-family: var(--font-heading);
+}
+
+.dle-app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.dle-app-header h1 {
+  font-size: 1.4rem;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+.dle-app-date {
+  color: var(--clr-text-muted);
+  font-size: 0.85rem;
+}
+
+.dle-intro {
+  text-align: center;
+  padding-top: 30vh;
+  align-items: center;
+}
+.dle-intro h1 {
+  font-size: 3rem;
+  letter-spacing: 0.1em;
+  margin: 0;
+}
+.dle-intro-date {
+  color: var(--clr-text-muted);
+  margin: 0.5rem 0 1.5rem;
+}
+.dle-intro-blurb {
+  max-width: 360px;
+  margin: 0 auto 2rem;
+  color: var(--clr-text);
+  line-height: 1.5;
+}
+.dle-streak-pill {
+  margin-top: 1.5rem;
+  display: inline-block;
+  padding: 4px 12px;
+  background: var(--clr-accent-light);
+  color: var(--clr-accent);
+  border-radius: 999px;
+  font-size: 0.85rem;
+}
+
+/* ----------------- Table ----------------- */
+
+.dle-table {
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: 12px;
+  padding: 14px;
+  display: grid;
+  grid-template-areas:
+    "header  header   header"
+    "west    center   east"
+    "north   north    north";
+  grid-template-columns: 1fr 2fr 1fr;
+  gap: 10px;
+  position: relative;
+}
+.dle-table-header {
+  grid-area: header;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.dle-trump-chip,
+.dle-round-chip {
+  background: var(--clr-accent-light);
+  color: var(--clr-accent);
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+.dle-round-chip {
+  background: var(--clr-accent-cool-light);
+  color: var(--clr-accent-cool);
+}
+.dle-table-center {
+  grid-area: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 90px;
+  text-align: center;
+  position: relative;
+}
+.dle-tricks {
+  display: flex;
+  gap: 14px;
+  font-size: 0.85rem;
+  color: var(--clr-text-muted);
+}
+.dle-seat {
+  font-size: 0.78rem;
+  color: var(--clr-text-muted);
+  text-align: center;
+  position: relative;
+}
+.dle-seat-active {
+  color: var(--clr-accent);
+}
+.dle-seat-active .dle-seat-label::after {
+  content: ' ▸';
+}
+.dle-seat-north { grid-area: north; }
+.dle-seat-west  { grid-area: west; }
+.dle-seat-east  { grid-area: east; }
+.dle-seat-label {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.dle-seat-cards {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  flex-wrap: nowrap;
+}
+.dle-seat-cards-side {
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.dle-seat-played {
+  margin-top: 4px;
+  display: flex;
+  justify-content: center;
+}
+.dle-played-south {
+  position: absolute;
+  bottom: -8px;
+}
+
+/* ----------------- Cards ----------------- */
+
+.dle-card {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 60px;
+  border: 1.5px solid var(--clr-border);
+  background: var(--clr-surface-elev);
+  border-radius: 6px;
+  cursor: default;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  padding: 0;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+.dle-card-small {
+  width: 30px;
+  height: 42px;
+  font-size: 0.8rem;
+}
+.dle-card-rank {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+.dle-card-suit {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+.dle-card-small .dle-card-rank { font-size: 0.78rem; }
+.dle-card-small .dle-card-suit { font-size: 0.9rem; }
+.dle-card-red { color: var(--clr-accent); }
+.dle-card-black { color: var(--clr-text); }
+.dle-card-faded { opacity: 0.4; }
+.dle-card-selectable {
+  cursor: pointer;
+}
+.dle-card-selectable:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px var(--clr-shadow);
+}
+.dle-card-selected {
+  border-color: var(--clr-accent);
+  background: var(--clr-accent-light);
+  transform: translateY(-2px);
+}
+.dle-card-back {
+  background: linear-gradient(135deg, var(--clr-accent-cool), var(--clr-accent-cool) 50%, var(--clr-accent-cool-light));
+  color: var(--clr-surface-elev);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+}
+.dle-card[disabled] { cursor: default; }
+
+/* ----------------- Hand ----------------- */
+
+.dle-hand {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 0;
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: 12px;
+}
+
+/* ----------------- Public info ----------------- */
+
+.dle-public {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+  color: var(--clr-text-muted);
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.dle-voids {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.dle-void-chip {
+  background: var(--clr-accent-light);
+  color: var(--clr-accent);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+}
+.dle-voids-empty {
+  color: var(--clr-text-muted);
+  font-style: italic;
+}
+.dle-worlds {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.dle-worlds-toggle {
+  background: none;
+  border: 1px solid var(--clr-border);
+  color: var(--clr-text-muted);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.dle-worlds-bucket {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--clr-accent-cool);
+}
+
+/* ----------------- Actions ----------------- */
+
+.dle-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+.dle-btn {
+  border: 1px solid var(--clr-border);
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--clr-surface-elev);
+  color: var(--clr-text);
+  font-size: 0.9rem;
+  transition: background 120ms;
+}
+.dle-btn-primary {
+  background: var(--clr-accent);
+  color: var(--clr-surface-elev);
+  border-color: var(--clr-accent);
+}
+.dle-btn-primary:hover {
+  background: #b53626;
+}
+.dle-btn-primary:disabled {
+  background: var(--clr-text-muted);
+  border-color: var(--clr-text-muted);
+  cursor: not-allowed;
+}
+.dle-btn-secondary {
+  background: var(--clr-surface);
+}
+.dle-btn-large {
+  padding: 14px 32px;
+  font-size: 1rem;
+}
+
+/* ----------------- Modals ----------------- */
+
+.dle-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(31, 22, 17, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+.dle-modal {
+  background: var(--clr-surface);
+  border-radius: 14px;
+  padding: 22px;
+  max-width: 480px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px var(--clr-shadow-strong);
+}
+.dle-modal h2 {
+  font-size: 1.4rem;
+  margin: 0 0 8px;
+}
+.dle-modal-blurb,
+.dle-modal-prompt {
+  font-size: 0.9rem;
+  color: var(--clr-text-muted);
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+.dle-modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.dle-order-slots {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 10px;
+  background: var(--clr-surface-elev);
+  border-radius: 8px;
+  border: 1px dashed var(--clr-border);
+  min-height: 70px;
+}
+.dle-order-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 38px;
+}
+.dle-order-slot-num {
+  font-size: 0.7rem;
+  color: var(--clr-text-muted);
+}
+.dle-order-slot-empty {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--clr-text-muted);
+  border: 2px dashed var(--clr-border);
+  border-radius: 6px;
+}
+.dle-order-pool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+}
+
+/* ----------------- Caps reveal ----------------- */
+
+.dle-reveal-modal h2 {
+  font-size: 2rem;
+  text-align: center;
+}
+.dle-reveal-correct h2 { color: #2e6b3e; }
+.dle-reveal-late h2    { color: #7a5a10; }
+.dle-reveal-fail h2    { color: var(--clr-accent); }
+.dle-reveal-blurb {
+  text-align: center;
+  font-size: 0.95rem;
+  color: var(--clr-text);
+  line-height: 1.5;
+}
+.dle-reveal-hint {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--clr-text-muted);
+  margin: 0 0 14px;
+}
+.dle-reveal-order {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.dle-reveal-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 220ms, transform 220ms;
+}
+.dle-reveal-card-shown {
+  opacity: 1;
+  transform: translateY(0);
+}
+.dle-reveal-num {
+  font-size: 0.7rem;
+  color: var(--clr-text-muted);
+}
+
+/* ----------------- Result ----------------- */
+
+.dle-result {
+  text-align: center;
+  background: var(--clr-surface);
+  border-radius: 14px;
+  padding: 24px;
+  border: 1px solid var(--clr-border);
+}
+.dle-result-title {
+  margin: 0 0 12px;
+  font-size: 1.3rem;
+}
+.dle-result-score {
+  font-size: 4rem;
+  font-weight: 700;
+  color: var(--clr-accent);
+  line-height: 1;
+}
+.dle-result-score span {
+  font-size: 1.2rem;
+  color: var(--clr-text-muted);
+  margin-left: 4px;
+}
+.dle-result-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+  text-align: left;
+  max-width: 280px;
+  margin: 16px auto;
+  font-size: 0.85rem;
+}
+.dle-result-stats dt { color: var(--clr-text-muted); }
+.dle-result-stats dd { margin: 0; font-weight: 600; }
+.dle-share-grid {
+  background: var(--clr-surface-elev);
+  border: 1px solid var(--clr-border);
+  border-radius: 8px;
+  padding: 14px;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  white-space: pre;
+  margin: 16px auto;
+  max-width: 340px;
+  text-align: left;
+}
+.dle-result-actions { display: flex; justify-content: center; }
+.dle-result-tomorrow {
+  margin-top: 16px;
+  font-size: 0.8rem;
+  color: var(--clr-text-muted);
+}
+
+/* ----------------- Onboarding ----------------- */
+
+.dle-onboarding p {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--clr-text);
+}
+.dle-onboarding-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 18px 0;
+}
+.dle-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--clr-border);
+}
+.dle-dot-active { background: var(--clr-accent); }
+
+.dle-hint-readout {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--clr-text-muted);
+  font-style: italic;
+}

@@ -41,7 +41,10 @@ export default defineConfig({
   // Relative asset paths so the build can be served from any subpath
   // (e.g. ``user.github.io/304-game/``) without rewriting hrefs.
   base: './',
-  publicDir: false,           // no auxiliary public dir; everything is in repoRoot
+  // Static assets that aren't referenced by HTML directly (e.g. the
+  // pre-baked daily puzzles loaded by 304dle at runtime). Files here
+  // are copied verbatim into ``dist/``.
+  publicDir: resolve(__dirname, 'public'),
   build: {
     outDir: resolve(__dirname, 'dist'),
     emptyOutDir: true,

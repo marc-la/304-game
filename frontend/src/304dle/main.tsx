@@ -1,13 +1,12 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import PracticeApp from './PracticeApp';
-import './practice.css';
+import { App } from './App';
 
 const root = document.getElementById('practice-root');
 if (root) {
   createRoot(root).render(
     <StrictMode>
-      <PracticeApp />
+      <App />
     </StrictMode>,
   );
 }
