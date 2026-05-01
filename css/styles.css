@@ -228,6 +228,7 @@ body {
   text-decoration: none;
   letter-spacing: 0.04em;
   line-height: 1;
+  white-space: nowrap;
 }
 
 .site-nav-brand:hover {
@@ -356,23 +357,29 @@ body {
 
 @media (max-width: 500px) {
   .site-nav-inner {
-    padding: 0 16px;
+    padding: 0 12px;
   }
   .site-nav-brand {
-    font-size: 1.7rem;
+    font-size: 1.6rem;
     letter-spacing: 0.02em;
   }
   .site-nav-links {
-    gap: 2px;
+    gap: 0;
   }
   .site-nav-links a {
-    padding: 8px 10px;
-    font-size: 0.76rem;
-    letter-spacing: 0.04em;
+    padding: 8px 8px;
+    font-size: 0.74rem;
+    letter-spacing: 0.03em;
   }
   .site-nav-links a.site-nav-cta {
-    padding: 7px 14px;
-    margin-left: 2px;
+    padding: 6px 12px;
+    margin-left: 4px;
+  }
+  /* theme.js injects a button into .site-nav-links — leave room for it. */
+  .theme-toggle {
+    width: 36px;
+    height: 36px;
+    margin-left: 4px;
   }
 }
 
@@ -452,9 +459,14 @@ body {
   padding: 4px 12px;
 }
 
-/* Main content */
+/* Main content. min-width: 0 stops flex's default `min-width: auto` from
+   honouring child min-content (e.g. wide scoring tables inside
+   .table-wrapper). Without this, mobile browsers expand the layout
+   viewport past device-width to fit the table's min-content, and every
+   paragraph then renders that wider too. */
 .main-content {
   flex: 1;
+  min-width: 0;
   max-width: var(--max-width);
   margin: 0 auto;
   padding: 48px 40px 120px;
@@ -1780,7 +1792,8 @@ details[open] > summary .tree-chevron {
 /* ===== Responsive ===== */
 @media (max-width: 900px) {
   /* Off-canvas sidebar capped at 85vw so a 320px viewport keeps a visible
-     edge of the page behind. */
+     edge of the page behind. min-width is reset so the off-canvas sidebar
+     doesn't force the layout viewport to expand to 260px+. */
   .sidebar {
     position: fixed;
     left: -100%;
@@ -1788,6 +1801,7 @@ details[open] > summary .tree-chevron {
     z-index: 800;
     height: calc(100vh - var(--nav-height));
     width: min(280px, 85vw);
+    min-width: 0;
     transition: left 0.3s ease;
     box-shadow: 4px 0 20px var(--clr-shadow-strong);
   }
