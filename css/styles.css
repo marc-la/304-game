@@ -193,11 +193,12 @@ body {
   background: var(--clr-bg);
 }
 
-/* ===== Site Navigation ===== */
+/* Z-index ladder (highest first): site-nav 1000 / sidebar-toggle 950 /
+   lobby-toast 850 / sidebar 800 / play overlays 500 / stats-jump 50. */
 .site-nav {
   position: sticky;
   top: 0;
-  z-index: 1001;
+  z-index: 1000;
   height: var(--nav-height);
   background: var(--clr-surface);
   border-bottom: 1px solid var(--clr-border);
@@ -251,9 +252,9 @@ body {
   pointer-events: none;
 }
 
-/* Below ~32px cap height (mobile, favicon contexts) the lozenge gets
-   illegible; the wordmark drops it and stands on the typography alone. */
-@media (max-width: 500px) {
+/* The clip-path lozenge is ~3.5×6.4px at 2rem and rasterises poorly on
+   mobile DPIs. Drop it once the wordmark starts shrinking. */
+@media (max-width: 700px) {
   .site-nav-brand .brand-zero::after {
     display: none;
   }
@@ -342,6 +343,37 @@ body {
 .site-nav-links a.site-nav-cta.is-active {
   box-shadow: inset 0 0 0 2px var(--clr-accent), 0 2px 8px rgba(156, 47, 29, 0.18);
   background: var(--clr-accent);
+}
+
+/* On phone widths the row (brand + 3 links + CTA pill) collides at default
+   sizing — at 360px it sums to ~360px with zero slack. Tighten gutters,
+   shrink the brand, and trim link/CTA padding so the row breathes. */
+@media (max-width: 700px) {
+  .site-nav-inner {
+    padding: 0 20px;
+  }
+}
+
+@media (max-width: 500px) {
+  .site-nav-inner {
+    padding: 0 16px;
+  }
+  .site-nav-brand {
+    font-size: 1.7rem;
+    letter-spacing: 0.02em;
+  }
+  .site-nav-links {
+    gap: 2px;
+  }
+  .site-nav-links a {
+    padding: 8px 10px;
+    font-size: 0.76rem;
+    letter-spacing: 0.04em;
+  }
+  .site-nav-links a.site-nav-cta {
+    padding: 7px 14px;
+    margin-left: 2px;
+  }
 }
 
 /* ===== Layout ===== */
@@ -741,7 +773,7 @@ dd {
 .stats-jump {
   position: sticky;
   top: var(--nav-height);
-  z-index: 10;
+  z-index: 50;
   display: flex;
   gap: 2px;
   flex-wrap: wrap;
@@ -1571,9 +1603,21 @@ details[open] > summary .tree-chevron {
   margin-bottom: 6px;
 }
 
-/* Betting grid */
-.bets-table-wrap {
+/* Betting grid. Scroll-shadow technique (Verou/Komarov): the two `local`
+   backgrounds are content-affixed solid covers; the two `scroll` radial
+   gradients are fixed shadows. When scrolled away from an edge, the
+   cover moves out and the shadow shows — giving a CSS-only swipe hint. */
+.bets-table-wrap,
+.rev-heatmap {
   overflow-x: auto;
+  background:
+    linear-gradient(to right, var(--clr-bg), var(--clr-bg)) left center,
+    linear-gradient(to left,  var(--clr-bg), var(--clr-bg)) right center,
+    radial-gradient(farthest-side at 0%   50%, var(--clr-shadow-strong), transparent) left center,
+    radial-gradient(farthest-side at 100% 50%, var(--clr-shadow-strong), transparent) right center;
+  background-repeat: no-repeat;
+  background-size: 14px 100%, 14px 100%, 8px 100%, 8px 100%;
+  background-attachment: local, local, scroll, scroll;
 }
 
 .bets-table {
@@ -1720,7 +1764,7 @@ details[open] > summary .tree-chevron {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  z-index: 1000;
+  z-index: 950;
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -1735,13 +1779,15 @@ details[open] > summary .tree-chevron {
 
 /* ===== Responsive ===== */
 @media (max-width: 900px) {
+  /* Off-canvas sidebar capped at 85vw so a 320px viewport keeps a visible
+     edge of the page behind. */
   .sidebar {
     position: fixed;
     left: -100%;
     top: var(--nav-height);
-    z-index: 999;
+    z-index: 800;
     height: calc(100vh - var(--nav-height));
-    width: 280px;
+    width: min(280px, 85vw);
     transition: left 0.3s ease;
     box-shadow: 4px 0 20px var(--clr-shadow-strong);
   }
@@ -1789,10 +1835,6 @@ details[open] > summary .tree-chevron {
     min-width: 140px;
   }
 
-  .player-grid {
-    grid-template-columns: 1fr;
-  }
-
   .partnership-grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -1810,6 +1852,12 @@ details[open] > summary .tree-chevron {
 
   .info-tooltip {
     width: 200px;
+  }
+
+  /* The stats-jump bar is itself sticky and adds ~50px of chrome under the
+     site nav. Bump scroll-padding so anchor jumps land below it. */
+  html:has(.stats-jump) {
+    scroll-padding-top: calc(var(--nav-height) + 64px);
   }
 }
 
@@ -1834,8 +1882,53 @@ details[open] > summary .tree-chevron {
     flex: 1 1 100%;
   }
 
+  .player-grid {
+    grid-template-columns: 1fr;
+  }
+
   .partnership-grid {
     grid-template-columns: 1fr;
+  }
+
+  .chart-canvas-wrap {
+    height: 220px;
+  }
+
+  /* Inset callouts: at 16px gutters the desktop 4px border + 20px pad
+     pushes content 24px past body text. Lighten the rule and tighten the
+     pad so callouts align with the surrounding paragraphs. */
+  .intro {
+    border-left-width: 2px;
+    padding-left: 12px;
+  }
+  .note {
+    border-left-width: 2px;
+    padding: 10px 12px;
+  }
+  .house-rule-block {
+    border-left-width: 2px;
+    padding: 10px 12px;
+  }
+  dd {
+    padding-left: 12px;
+  }
+
+  /* Touch targets: 0.82rem links and 32px square icons fall short of the
+     ~44px iOS / 48dp Android minimum. Keep them visually similar but
+     bump the hit area on phones. */
+  .theme-toggle {
+    width: 40px;
+    height: 40px;
+  }
+  .filter-btn {
+    padding: 8px 14px;
+  }
+  .partnership-trend > summary {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 16px;
+    border-radius: 8px;
+    justify-content: space-between;
   }
 }
 
@@ -2159,7 +2252,7 @@ details[open] > summary .tree-chevron {
 
 @media (max-width: 900px) {
   .hero-mantra {
-    padding: 64px 28px;
+    padding: 64px 20px;
     min-height: auto;
   }
 
@@ -2175,7 +2268,7 @@ details[open] > summary .tree-chevron {
 
 @media (max-width: 500px) {
   .hero-mantra {
-    padding: 48px 20px;
+    padding: 48px 16px;
   }
 }
 

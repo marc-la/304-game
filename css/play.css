@@ -544,7 +544,7 @@
   font-size: 0.9rem;
   color: var(--clr-accent);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
+  z-index: 850;
   animation: toastIn 0.2s ease-out, toastOut 0.2s ease-in 2.8s forwards;
   max-width: 90vw;
   text-align: center;
@@ -841,7 +841,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 500;
 }
 
 .bidding-overlay[hidden],
@@ -1019,7 +1019,17 @@
   color: var(--clr-text-muted);
 }
 
-/* ===== Responsive ===== */
+/* ===== Responsive =====
+   Lobby/error layouts ladder at 900/500 to match the rest of the site
+   (styles.css). The game-table keeps its own 700/500 ladder because its
+   3-column desktop grid (left opponent / centre / right opponent) needs
+   ~600px of horizontal room — collapsing it earlier wastes the space. */
+@media (max-width: 900px) {
+  .lobby-container {
+    padding: 40px 20px 60px;
+  }
+}
+
 @media (max-width: 700px) {
   .game-table {
     grid-template-rows: auto auto 1fr auto auto;
@@ -1053,13 +1063,23 @@
     width: 48px;
     height: 68px;
   }
+}
 
+@media (max-width: 500px) {
   .lobby-container {
-    padding: 32px 16px 60px;
+    padding: 32px 16px 48px;
+  }
+
+  .lobby-title {
+    font-size: 1.5rem;
+  }
+
+  .lobby-subtitle {
+    font-size: 1rem;
+    margin-bottom: 28px;
   }
 
   .avatar-grid {
-    grid-template-columns: repeat(4, 1fr);
     gap: 8px;
   }
 
@@ -1068,9 +1088,10 @@
     height: 48px;
     font-size: 1.3rem;
   }
-}
 
-@media (max-width: 400px) {
+  /* Eight cards at 48px + gap don't fit a 360px viewport in one row, so
+     the hand wraps and gets clipped under the table's overflow:hidden.
+     Shrink the card so the row holds. */
   .card {
     width: 40px;
     height: 58px;
@@ -1081,5 +1102,39 @@
 
   .hand-container {
     gap: 2px;
+  }
+
+  /* Overlay panels: desktop 28px 32px padding + max-width 400px crowds
+     the screen edges on a 360px phone. Tighten on small viewports. */
+  .bidding-panel,
+  .trump-panel,
+  .preplay-panel,
+  .cutting-panel,
+  .result-panel {
+    padding: 20px 16px;
+  }
+
+  .bid-actions,
+  .preplay-actions,
+  .cutting-actions {
+    flex-wrap: wrap;
+  }
+
+  /* Touch targets: lobby admin buttons are ~22px tall by default. Bump
+     hit area without redesigning the rendered icon size. */
+  .btn-copy {
+    padding: 8px;
+  }
+
+  .btn-sm {
+    padding: 8px 14px;
+  }
+
+  .slot-edit-btn,
+  .slot-swap-btn,
+  .slot-kick-btn {
+    padding: 8px;
+    min-width: 36px;
+    min-height: 36px;
   }
 }
