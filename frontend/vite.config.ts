@@ -1,5 +1,6 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import { cpSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 /**
@@ -25,6 +26,27 @@ import { resolve } from 'node:path';
 const repoRoot = resolve(__dirname, '..');
 const includePlay = process.env.INCLUDE_PLAY === '1';
 
+// Copy non-Vite-managed assets that the multi-page site references via
+// repo-root-relative URLs (``docs/stats.xlsx`` for the leaderboard,
+// per-revolution betting CSVs under ``docs/bets/``, legacy non-module
+// scripts under ``js/``). When deploying via GitHub Actions we ship
+// only ``dist/``, so any file the HTML references must end up there.
+const copyRepoAssets = (): Plugin => ({
+  name: '304-copy-repo-assets',
+  apply: 'build',
+  closeBundle() {
+    const outDir = resolve(__dirname, 'dist');
+    const copyTree = (rel: string) => {
+      const src = resolve(repoRoot, rel);
+      if (!existsSync(src)) return;
+      cpSync(src, resolve(outDir, rel), { recursive: true });
+    };
+    copyTree('docs');
+    copyTree('js');
+    copyTree('css');
+  },
+});
+
 const buildInputs: Record<string, string> = {
   index: resolve(repoRoot, 'index.html'),
   rules: resolve(repoRoot, 'rules.html'),
@@ -36,7 +58,7 @@ if (includePlay) {
 }
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), copyRepoAssets()],
   root: repoRoot,
   // Relative asset paths so the build can be served from any subpath
   // (e.g. ``user.github.io/304-game/``) without rewriting hrefs.
