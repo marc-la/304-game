@@ -740,6 +740,498 @@ dd {
   color: var(--clr-text-muted);
 }
 
+/* ===== Phase Timeline ===== */
+/* Horizontal ribbon of seven phase chips at the top of the rules page.
+   Acts as a navigation spine — each chip is an in-page anchor to the
+   section that governs that phase. Wraps to two rows on narrow screens. */
+.phase-timeline {
+  margin: 8px 0 28px;
+  padding: 16px 20px;
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: 10px;
+}
+
+.phase-timeline-track {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  counter-reset: none;
+}
+
+.phase-timeline-track li {
+  flex: 1 1 110px;
+  min-width: 0;
+}
+
+.phase-timeline-track a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--clr-bg);
+  border: 1px solid var(--clr-border);
+  border-radius: 6px;
+  text-decoration: none;
+  color: var(--clr-text);
+  font-size: 0.85rem;
+  line-height: 1.2;
+  transition: background 0.15s, border-color 0.15s;
+  height: 100%;
+}
+
+.phase-timeline-track a:hover {
+  background: var(--clr-accent-light);
+  border-color: var(--clr-accent);
+}
+
+.phase-num {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--clr-accent);
+  color: var(--clr-surface);
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.78rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.phase-label {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.phase-timeline figcaption {
+  font-size: 0.85rem;
+  color: var(--clr-text-muted);
+  font-style: italic;
+}
+
+.cheatsheet-link {
+  font-size: 0.92rem;
+  color: var(--clr-text-muted);
+  margin-bottom: 24px;
+}
+
+.cheatsheet-link a {
+  color: var(--clr-accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.cheatsheet-link a:hover {
+  text-decoration: underline;
+}
+
+/* ===== Seating Diagram ===== */
+.seating-diagram {
+  margin: 20px 0 24px;
+  text-align: center;
+}
+
+.seating-diagram svg {
+  max-width: 360px;
+  width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.seating-table {
+  fill: var(--clr-surface);
+  stroke: var(--clr-border);
+  stroke-width: 1.5;
+}
+
+.seating-tie {
+  stroke-width: 2;
+  stroke-dasharray: 4 4;
+  opacity: 0.55;
+}
+
+.tie-team-a { stroke: var(--clr-accent-cool); }
+.tie-team-b { stroke: var(--clr-accent); }
+
+.seating-arrow {
+  stroke: var(--clr-text-muted);
+  stroke-width: 1.5;
+  fill: none;
+}
+
+.seating-arrowhead {
+  fill: var(--clr-text-muted);
+}
+
+.seating-arrow-label {
+  fill: var(--clr-text-muted);
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-style: italic;
+  text-anchor: middle;
+}
+
+.seat circle {
+  fill: var(--clr-bg);
+  stroke: var(--clr-border);
+  stroke-width: 1.5;
+}
+
+.seat.seat-a circle, .seat.seat-c circle { stroke: var(--clr-accent-cool); }
+.seat.seat-b circle, .seat.seat-d circle { stroke: var(--clr-accent); }
+
+.seat-label {
+  fill: var(--clr-text);
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 18px;
+  text-anchor: middle;
+}
+
+.seat-role {
+  fill: var(--clr-text-muted);
+  font-size: 9px;
+  text-anchor: middle;
+  font-family: var(--font-body);
+}
+
+.seating-diagram figcaption {
+  font-size: 0.92rem;
+  color: var(--clr-text-muted);
+  margin-top: 12px;
+  text-align: left;
+  line-height: 1.5;
+}
+
+/* ===== Rule citation labels (§B-1, §T-3, §C-5, etc.) ===== */
+/* Used for cite-able numbered rules in formal sections (Bidding,
+   Trumper Constraints, Caps). Beginners can ignore; experts can cite. */
+.rule-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.rule-list > li {
+  margin-bottom: 14px;
+  padding-left: 0;
+}
+
+.rule-list > li > ul,
+.rule-list > li > ol {
+  margin-top: 6px;
+  padding-left: 24px;
+}
+
+.rule-tag {
+  display: inline-block;
+  background: var(--clr-accent-light);
+  color: var(--clr-accent);
+  font-family: var(--font-heading);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 3px;
+  margin-right: 6px;
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+
+/* ===== Edge case + design note callouts ===== */
+.edge-case {
+  background: var(--clr-note-bg);
+  border-left: 3px solid var(--clr-link);
+  padding: 12px 16px;
+  border-radius: 0 6px 6px 0;
+  margin: 12px 0 16px;
+  font-size: 0.95rem;
+}
+
+.design-note {
+  background: var(--clr-example-bg);
+  border-left: 3px solid var(--clr-text-muted);
+  padding: 14px 18px;
+  border-radius: 0 6px 6px 0;
+  margin: 16px 0;
+  font-size: 0.95rem;
+}
+
+.design-note ul {
+  margin-top: 8px;
+  margin-bottom: 0;
+}
+
+/* ===== Caps decision flowchart ===== */
+.caps-flowchart {
+  margin: 20px 0 28px;
+  padding: 16px;
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: 10px;
+}
+
+.caps-flowchart svg {
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.caps-node rect {
+  stroke-width: 1.5;
+}
+
+.caps-node text {
+  font-family: var(--font-body);
+  font-size: 13px;
+  text-anchor: middle;
+  fill: var(--clr-text);
+  font-weight: 500;
+}
+
+.caps-decision rect {
+  fill: var(--clr-bg);
+  stroke: var(--clr-text-muted);
+}
+
+.caps-outcome rect {
+  stroke: transparent;
+}
+
+.caps-good rect { fill: var(--clr-house-bg); stroke: var(--clr-house); }
+.caps-good text { fill: var(--clr-house); font-weight: 600; }
+
+.caps-bad rect { fill: var(--clr-accent-light); stroke: var(--clr-accent); }
+.caps-bad text { fill: var(--clr-accent); font-weight: 600; }
+
+.caps-neutral rect { fill: var(--clr-example-bg); stroke: var(--clr-example-border); }
+
+.caps-stone {
+  font-size: 11px !important;
+  font-weight: 400 !important;
+  fill: var(--clr-text-muted) !important;
+}
+
+.caps-arrow-line {
+  stroke: var(--clr-text-muted);
+  stroke-width: 1.5;
+  fill: none;
+}
+
+.caps-arrowhead {
+  fill: var(--clr-text-muted);
+}
+
+.caps-arrow-label {
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--clr-text-muted);
+  text-anchor: middle;
+}
+
+.caps-flowchart figcaption {
+  margin-top: 12px;
+  font-size: 0.9rem;
+  color: var(--clr-text-muted);
+  font-style: italic;
+}
+
+/* ===== Card chips (for worked examples) ===== */
+.card-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 8px 0 16px;
+}
+
+.card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-width: 36px;
+  padding: 6px 8px;
+  background: var(--clr-surface-elev);
+  border: 1px solid var(--clr-border);
+  border-radius: 5px;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1;
+  box-shadow: 0 1px 2px var(--clr-shadow);
+}
+
+.card-inline {
+  vertical-align: -3px;
+  min-width: 28px;
+  padding: 3px 5px;
+  font-size: 0.85rem;
+  margin: 0 1px;
+  box-shadow: none;
+}
+
+.card-red { color: #b03030; }
+.card-black { color: var(--clr-text); }
+
+:root[data-theme="dark"] .card-red {
+  color: #e57878;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .card-red {
+    color: #e57878;
+  }
+}
+
+.card-suit {
+  font-size: 0.95em;
+  margin-left: 1px;
+}
+
+/* ===== House Rules diff table ===== */
+.table-house-diff th:first-child,
+.table-house-diff td:first-child {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  white-space: nowrap;
+  width: 1%;
+}
+
+.table-house-diff td:nth-child(5) {
+  font-size: 0.88rem;
+}
+
+/* ===== Cheat Sheet ===== */
+#cheatsheet h2 {
+  margin-bottom: 8px;
+}
+
+.cheatsheet-intro {
+  color: var(--clr-text-muted);
+  margin-bottom: 24px;
+  font-style: italic;
+}
+
+.cheatsheet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.cheatsheet-card {
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: 8px;
+  padding: 16px 18px;
+}
+
+.cheatsheet-card h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  font-family: var(--font-heading);
+  color: var(--clr-accent);
+  border-bottom: 1px solid var(--clr-border);
+  padding-bottom: 6px;
+}
+
+.cheatsheet-card ul,
+.cheatsheet-card ol {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.cheatsheet-card ul ul,
+.cheatsheet-card ol ol {
+  margin-top: 4px;
+  font-size: 0.86rem;
+}
+
+.cheatsheet-card li {
+  margin-bottom: 6px;
+}
+
+.cheatsheet-foot {
+  margin-top: 10px;
+  margin-bottom: 0;
+  font-size: 0.82rem;
+  color: var(--clr-text-muted);
+  font-style: italic;
+}
+
+.cheatsheet-table {
+  width: 100%;
+  font-size: 0.88rem;
+  border-collapse: collapse;
+  margin-top: 4px;
+}
+
+.cheatsheet-table th,
+.cheatsheet-table td {
+  padding: 4px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--clr-border);
+}
+
+.cheatsheet-table th {
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--clr-text-muted);
+  font-weight: 600;
+}
+
+.cheatsheet-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.cheatsheet-ranks {
+  columns: 2;
+  column-gap: 16px;
+}
+
+.cheatsheet-decision strong {
+  color: var(--clr-accent);
+}
+
+/* Make the cheat-sheet a clean printable surface */
+@media print {
+  .phase-timeline,
+  .seating-diagram,
+  .caps-flowchart,
+  .sidebar,
+  .sidebar-toggle,
+  .site-nav,
+  .cheatsheet-link {
+    display: none !important;
+  }
+  #cheatsheet { page-break-before: always; }
+  .cheatsheet-card { break-inside: avoid; }
+  .main-content { padding: 0 !important; max-width: 100% !important; }
+  body { font-size: 11pt; }
+}
+
+/* Sidebar — distinct treatment for the cheat-sheet shortcut */
+.sidebar nav a.sidebar-cheatsheet-link {
+  color: var(--clr-accent);
+  font-weight: 700;
+  background: var(--clr-accent-light);
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
+
 /* ===== Stats Page Layout ===== */
 .stats-content {
   max-width: 1000px;

@@ -44,12 +44,19 @@ from typing import Any
 
 CODE_LENGTH: int = 4
 CODE_ALPHABET: str = "ABCDEFGHJKMNPQRSTUVWXYZ"  # excludes I, L, O
-MAX_NAME_LENGTH: int = 12
+# Sized to fit the longest auto-assigned name ("Cunning Cinnamon" = 16
+# chars) without truncation. Longer user-typed names are truncated to
+# this length on update.
+MAX_NAME_LENGTH: int = 16
 
 SEATS: tuple[str, ...] = ("north", "east", "south", "west")
 TEAMS: tuple[str, ...] = ("teamA", "teamB")
+# "Colombo card table" theme: Sri Lankan flora, fauna and pantry staples.
+# The frontend AVATAR_GLYPH map (in LobbyRoom.tsx and EditPanel.tsx) must
+# match these keys.
 ALL_AVATARS: tuple[str, ...] = (
-    "spade", "heart", "diamond", "club", "crown", "knight", "tower", "star",
+    "peacock", "elephant", "leopard", "tortoise",
+    "lotus", "tea", "coconut", "chili",
 )
 
 # Player is considered disconnected if the last heartbeat is older than this.
@@ -64,13 +71,18 @@ LOBBY_STATUS_IN_GAME: str = "in_game"
 # ---------------------------------------------------------------------------
 
 
+# Cheeky, opinionated, table-banter adjectives that fit the rules'
+# "spirited deliberation" tone.
 _ADJECTIVES = (
-    "Bold", "Swift", "Sly", "Lucky", "Sharp", "Keen", "Wild", "Grand",
-    "Brave", "Deft", "Quick", "Wily", "Calm", "Firm",
+    "Sly", "Wily", "Cheeky", "Smug", "Bold", "Sharp", "Salty", "Brassy",
+    "Cunning", "Plucky", "Crafty", "Dodgy", "Slick", "Flashy", "Lucky",
+    "Quick", "Cool", "Bossy", "Grumpy", "Spry",
 )
+# Sri Lankan flora/fauna + pantry staples + 304-game roles.
 _NOUNS = (
-    "Trump", "Dealer", "Jack", "Bidder", "Ace", "Cutter", "Bluff",
-    "Player", "Trick", "Suit", "Hand", "Stone", "Queen", "Knight",
+    "Peacock", "Elephant", "Leopard", "Tortoise", "Mongoose", "Hornbill",
+    "Loris", "Hopper", "Sambol", "Kottu", "Coconut", "Cardamom", "Chili",
+    "Cinnamon", "Mango", "Trumper", "Bidder", "Capper", "Cutter", "Keeper",
 )
 
 

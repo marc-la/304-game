@@ -206,10 +206,11 @@ class TestUpdateProfile:
             store.update_profile(lobby.code, host, name="   ")
 
     def test_long_name_truncated(self, store):
+        from lobby import MAX_NAME_LENGTH
         host = new_player_id()
         lobby = store.create(host)
         store.update_profile(lobby.code, host, name="A" * 50)
-        assert len(lobby.seats["north"].name) == 12
+        assert len(lobby.seats["north"].name) == MAX_NAME_LENGTH
 
     def test_invalid_avatar_rejected(self, store):
         host = new_player_id()

@@ -6,15 +6,17 @@ import styles from './Lobby.module.css';
 
 const SEATS: Seat[] = ['north', 'east', 'south', 'west'];
 
+// "Colombo card table" theme. Keys must match ALL_AVATARS in
+// backend/lobby.py.
 const AVATAR_GLYPH: Record<string, string> = {
-  spade: '♠',
-  heart: '♥',
-  diamond: '♦',
-  club: '♣',
-  crown: '♚',
-  knight: '♞',
-  tower: '♜',
-  star: '★',
+  peacock: '🦚',
+  elephant: '🐘',
+  leopard: '🐆',
+  tortoise: '🐢',
+  lotus: '🪷',
+  tea: '🍵',
+  coconut: '🥥',
+  chili: '🌶',
 };
 
 interface LobbyRoomProps {

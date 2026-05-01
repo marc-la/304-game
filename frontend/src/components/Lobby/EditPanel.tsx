@@ -3,14 +3,22 @@ import { useLobbyStore } from '../../store/lobbyStore';
 import type { LobbyView, Seat } from '../../api/lobbyApi';
 import styles from './Lobby.module.css';
 
+// "Colombo card table" theme. Keys must match ALL_AVATARS in
+// backend/lobby.py and AVATAR_GLYPH in LobbyRoom.tsx.
 const AVATARS = [
-  'spade', 'heart', 'diamond', 'club',
-  'crown', 'knight', 'tower', 'star',
+  'peacock', 'elephant', 'leopard', 'tortoise',
+  'lotus', 'tea', 'coconut', 'chili',
 ];
 
 const AVATAR_GLYPH: Record<string, string> = {
-  spade: '♠', heart: '♥', diamond: '♦', club: '♣',
-  crown: '♚', knight: '♞', tower: '♜', star: '★',
+  peacock: '🦚',
+  elephant: '🐘',
+  leopard: '🐆',
+  tortoise: '🐢',
+  lotus: '🪷',
+  tea: '🍵',
+  coconut: '🥥',
+  chili: '🌶',
 };
 
 interface EditPanelProps {
