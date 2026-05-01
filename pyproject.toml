@@ -10,7 +10,7 @@ requires-python = ">=3.11"
 license = {text = "MIT"}
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0"]
+dev = ["pytest>=7.0", "prompt_toolkit>=3.0"]
 
 [tool.setuptools.packages.find]
 include = ["game304*"]

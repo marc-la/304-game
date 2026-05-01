@@ -124,6 +124,10 @@ def validate_and_play(
     # Remove card from hand (or from the table if it's the trump card)
     if is_trump_card_play:
         state.trump.trump_card = None
+        if not face_down:
+            # Folded trump card played face-up (only legal in round 8 as
+            # the trumper's last card) — trump suit is now visible.
+            state.trump.is_revealed = True
     else:
         state.hands[seat] = [c for c in hand if c != card]
 
@@ -441,6 +445,10 @@ def resolve_current_round(state: GameState) -> CompletedRound:
                 if not trump_card_played:
                     state.hands[trump.trumper_seat].append(trump.trump_card)
                     trump.trump_card_in_hand = True
+                    # The card is no longer "the folded card on the table" —
+                    # it's a normal card in the trumper's hand. Clear the
+                    # slot to keep state consistent with declare_open_trump.
+                    trump.trump_card = None
 
             # Mark revealed face-down trump cards
             for entry in round_cards:
@@ -473,7 +481,8 @@ def advance_after_round(state: GameState, completed: CompletedRound) -> bool:
     """Advance game state after a round is resolved.
 
     Sets up the next round or transitions to scrutiny if all 8
-    rounds are complete.
+    rounds are complete. Always clears ``current_round`` — the cards
+    have been archived into ``completed_rounds`` by ``resolve_current_round``.
 
     Args:
         state: The game state (mutated in place).
@@ -484,6 +493,10 @@ def advance_after_round(state: GameState, completed: CompletedRound) -> bool:
     """
     play = state.play
 
+    # Always clear the in-progress round; resolved cards are already
+    # archived in completed_rounds.
+    play.current_round = []
+
     if play.round_number >= 8:
         return True
 
@@ -491,7 +504,6 @@ def advance_after_round(state: GameState, completed: CompletedRound) -> bool:
     play.round_number += 1
     play.priority = completed.winner
     play.current_turn = completed.winner
-    play.current_round = []
 
     # Skip PCC partner
     if state.pcc_partner_out == play.current_turn:
