@@ -188,11 +188,17 @@ export const useStore = create<Store>((set, get) => ({
     const valid = validateCapsCall(engine, 'south', s.chosen);
     const obligated = checkCapsObligation(engine, 'south');
     const late = isCapsLate(engine, 'south');
+    // Verdict precedence: a `late` flag means south was obligated at
+    // some past moment (the stamp persists). It dominates
+    // 'wrong-not-obligated' even if obligation no longer holds in
+    // the current state — the player missed the first moment, that
+    // is the rule's primary verdict, regardless of whether their
+    // current order can still sweep.
     let verdict: CapsVerdictKind;
     if (valid && !late) verdict = 'correct';
-    else if (valid && late) verdict = 'late';
-    else if (!obligated) verdict = 'wrong-not-obligated';
-    else verdict = 'wrong-bad-order';
+    else if (late) verdict = 'late';
+    else if (obligated) verdict = 'wrong-bad-order';
+    else verdict = 'wrong-not-obligated';
 
     let breaking: string | null = null;
     if (verdict !== 'correct' && verdict !== 'late') {
