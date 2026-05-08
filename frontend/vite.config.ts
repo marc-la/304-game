@@ -1,6 +1,6 @@
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
-import { cpSync, existsSync } from 'node:fs';
+import { cpSync, existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 /**
@@ -60,9 +60,36 @@ const copyRepoAssets = (): Plugin => ({
   },
 });
 
+// HTML partial includes. Replaces `<!-- @include partials/foo.html -->` in
+// every served/built HTML page with the contents of `partials/foo.html`,
+// resolved from the repo root. Runs in both dev and build via
+// `transformIndexHtml`, so the header (and other shared chrome) is baked
+// into the HTML the browser receives — no runtime injection, no flicker.
+const htmlPartials = (): Plugin => ({
+  name: '304-html-partials',
+  enforce: 'pre',
+  transformIndexHtml: {
+    order: 'pre',
+    handler(html) {
+      return html.replace(
+        /<!--\s*@include\s+([\w./-]+)\s*-->/g,
+        (_match, rel: string) => {
+          const partialPath = resolve(repoRoot, rel);
+          if (!existsSync(partialPath)) {
+            throw new Error(`htmlPartials: missing partial ${rel}`);
+          }
+          return readFileSync(partialPath, 'utf8').trimEnd();
+        },
+      );
+    },
+  },
+});
+
 const buildInputs: Record<string, string> = {
   index: resolve(repoRoot, 'index.html'),
   rules: resolve(repoRoot, 'rules.html'),
+  cheatsheet: resolve(repoRoot, 'cheatsheet.html'),
+  capsFormalism: resolve(repoRoot, 'caps-formalism.html'),
   stats: resolve(repoRoot, 'stats.html'),
   practice: resolve(repoRoot, 'practice.html'),
 };
@@ -71,7 +98,7 @@ if (includePlay) {
 }
 
 export default defineConfig({
-  plugins: [react(), copyRepoAssets()],
+  plugins: [htmlPartials(), react(), copyRepoAssets()],
   root: repoRoot,
   // Relative asset paths so the build can be served from any subpath
   // (e.g. ``user.github.io/304-game/``) without rewriting hrefs.

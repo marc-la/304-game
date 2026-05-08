@@ -199,6 +199,16 @@ body {
   background: var(--clr-bg);
 }
 
+/* React mount points reserve viewport height so the page doesn't snap when
+   the bundle hydrates. While the slot is empty (pre-mount) the rule applies;
+   once React inserts content the children flow normally and the min-height
+   is just a floor. */
+#root:empty,
+#practice-root:empty {
+  display: block;
+  min-height: calc(100vh - var(--nav-height));
+}
+
 /* Z-index ladder (highest first): site-nav 1000 / sidebar-toggle 950 /
    sidebar 800 / stats-jump 50. */
 .site-nav {
@@ -325,7 +335,10 @@ body {
   display: block;
 }
 
-.site-nav-links a.active {
+.site-nav-links a.active,
+body[data-section="rules"] .site-nav-links .site-nav-rules > a,
+body[data-section="practice"] .site-nav-links a[href="practice.html"],
+body[data-section="stats"] .site-nav-links a[href="stats.html"] {
   background: var(--clr-accent-light);
   color: var(--clr-accent);
 }
@@ -433,7 +446,10 @@ body {
   color: var(--clr-text);
 }
 
-.site-nav-rules-menu a.active {
+.site-nav-rules-menu a.active,
+body[data-page="rules"] .site-nav-rules-menu a[href="rules.html"],
+body[data-page="cheatsheet"] .site-nav-rules-menu a[href="cheatsheet.html"],
+body[data-page="caps-formalism"] .site-nav-rules-menu a[href="caps-formalism.html"] {
   background: var(--clr-accent-light);
   color: var(--clr-accent);
 }
