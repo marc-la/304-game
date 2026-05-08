@@ -1,24 +1,25 @@
 // Live possible-worlds count from South's viewpoint. Soul §IV.7:
 // the visible spine of the puzzle.
 //
-// Strategy: cheap upper-bound multinomial estimate every play
-// (BigInt; the count routinely exceeds 2^53). When the estimate
-// drops below EXACT_THRESHOLD, switch to an exact count via the
-// engine's world enumerator. Display in scientific notation for
-// large counts; integer when small.
+// Strategy: constraint-aware multinomial estimator for the
+// general case; switch to exact enumeration when the estimate
+// drops below MAX_WORLDS. The estimator factors in deduced void
+// constraints — as voids accumulate during play, the displayed
+// count drops faster than just hand-size shrinkage would warrant.
 
 import { buildInfoSet, enumerateWorlds, MAX_WORLDS } from './engine';
+import type { Suit } from './engine/card';
 import type { Seat } from './engine/seating';
 import type { Runtime } from './runtime';
 import { toEngineState } from './runtime';
 
 export interface WorldsCount {
-  estimate: bigint;     // upper-bound multinomial estimate
-  exact: number | null; // exact integer when known, else null
-  capped: boolean;      // true when even the estimate is capped at the display ceiling
+  estimate: bigint;
+  exact: number | null;
+  capped: boolean;
 }
 
-const ENUM_BUDGET = MAX_WORLDS; // cap on exact enumeration cost
+const ENUM_BUDGET = MAX_WORLDS;
 
 const factBigInt = (n: number): bigint => {
   let r = 1n;
@@ -26,12 +27,56 @@ const factBigInt = (n: number): bigint => {
   return r;
 };
 
-// Multinomial coefficient (n; k1, k2, ..., km).
+// Multinomial coefficient n! / (k1! * k2! * ... * km!) where
+// k_i are the slot sizes (here: opp hand sizes).
 const multinomial = (sizes: number[]): bigint => {
   const n = sizes.reduce((a, b) => a + b, 0);
   let num = factBigInt(n);
   for (const k of sizes) num /= factBigInt(k);
   return num;
+};
+
+// C(n, k) as bigint.
+const choose = (n: number, k: number): bigint => {
+  if (k < 0 || k > n) return 0n;
+  if (k === 0 || k === n) return 1n;
+  let num = 1n, den = 1n;
+  for (let i = 1; i <= k; i++) {
+    num *= BigInt(n - i + 1);
+    den *= BigInt(i);
+  }
+  return num / den;
+};
+
+// Constraint penalty: probability (under a uniform prior over hand
+// assignments) that opps' deduced exhaustions hold simultaneously.
+// Computed as the product of per-(opp, exhausted-suit) probabilities
+// that the opp's hand contains zero cards of that suit, treated as
+// independent (over-counts dependence — the result is therefore an
+// upper bound on the constraint factor, i.e. a slight over-estimate
+// of remaining worlds).
+//
+// Returned as (numerator, denominator) bigints so caller can apply
+// the factor to the estimate without losing precision.
+const constraintFactor = (
+  poolBySuit: Record<Suit, number>,
+  totalPool: number,
+  opps: Array<{ size: number; exhausted: ReadonlySet<Suit> }>,
+): { num: bigint; den: bigint } => {
+  let num = 1n;
+  let den = 1n;
+  for (const opp of opps) {
+    if (opp.size === 0) continue;
+    for (const suit of opp.exhausted) {
+      const c = poolBySuit[suit];
+      if (c === 0) continue;
+      // P(no suit in hand of size opp.size drawn from pool of size
+      // totalPool) = C(totalPool - c, opp.size) / C(totalPool, opp.size)
+      num *= choose(totalPool - c, opp.size);
+      den *= choose(totalPool, opp.size);
+    }
+  }
+  return { num, den };
 };
 
 export const countWorlds = (
@@ -46,19 +91,41 @@ export const countWorlds = (
   }
 
   const sizes: number[] = [];
+  const opps: Array<{ size: number; exhausted: ReadonlySet<Suit> }> = [];
   for (const [seat, size] of info.handSizes) {
     if (seat === viewer) continue;
     sizes.push(size);
+    opps.push({ size, exhausted: info.exhaustedSuits.get(seat) ?? new Set() });
   }
-  // Add a slot for the folded trump card if it's hidden from viewer.
+  // Hidden folded trump card slot.
   if (info.foldedTrumpOnTable && info.knownFoldedTrumpCard === null) sizes.push(1);
 
-  const estimate = multinomial(sizes);
+  // Build pool composition by suit. The "pool" is everything the
+  // viewer doesn't see: full deck minus own hand minus knownPlayed
+  // minus the known-folded-trump-card (if any).
+  const poolBySuit: Record<Suit, number> = { c: 0, d: 0, h: 0, s: 0 };
+  let totalPool = 0;
+  const seen = new Set<string>([
+    ...info.ownHand,
+    ...info.knownPlayed,
+    ...(info.knownFoldedTrumpCard !== null ? [info.knownFoldedTrumpCard] : []),
+  ]);
+  for (const suit of ['c', 'd', 'h', 's'] as Suit[]) {
+    for (const rank of ['J', '9', 'A', '10', 'K', 'Q', '8', '7']) {
+      const card = (rank + suit);
+      if (!seen.has(card)) {
+        poolBySuit[suit]++;
+        totalPool++;
+      }
+    }
+  }
 
-  // Switch to exact when the estimate is small enough that
-  // enumeration is feasible. The enumerator caps at MAX_WORLDS;
-  // if the actual count is above EXACT_THRESHOLD but below
-  // MAX_WORLDS, we still get an exact count.
+  const baseMultinomial = multinomial(sizes);
+  const { num, den } = constraintFactor(poolBySuit, totalPool, opps);
+
+  const estimate = den === 0n ? baseMultinomial : (baseMultinomial * num) / den;
+
+  // Auto-exact when estimate is small enough to enumerate.
   if (estimate <= BigInt(ENUM_BUDGET)) {
     let n = 0;
     for (const _ of enumerateWorlds(info, { maxWorlds: ENUM_BUDGET + 1 })) {
@@ -75,12 +142,6 @@ export const countWorlds = (
   return { estimate, exact: null, capped: false };
 };
 
-// Format a worlds count for display. Always one cell of text.
-//   - exact, n=0   → "—"
-//   - exact, n=1   → "1"
-//   - exact, small → "N" (e.g. "42")
-//   - exact, mid   → "1.2k"
-//   - estimate     → scientific (e.g. "1.4e7")
 export const formatWorlds = (w: WorldsCount): string => {
   if (w.exact !== null) {
     if (w.exact === 0) return '—';
@@ -93,11 +154,21 @@ export const formatWorlds = (w: WorldsCount): string => {
 const formatBigInt = (n: bigint): string => {
   if (n === 0n) return '0';
   if (n < 1000n) return n.toString();
-  // Scientific notation: two significant digits.
   const s = n.toString();
   const exp = s.length - 1;
   const mantissa =
     s.length === 1 ? s
     : s[0] + (s[1] === '0' ? '' : '.' + s[1]);
   return `${mantissa}e${exp}`;
+};
+
+// Numeric measure for difficulty grading (Phase 4).
+// Caller passes the worlds count at submitCaps time; this picks
+// one comparable scalar (exact when known, log-magnitude of
+// estimate otherwise — both bounded into the same regime).
+export const measureForDifficulty = (w: WorldsCount): number => {
+  if (w.exact !== null) return w.exact;
+  // Log-scale the bigint estimate. We don't need precision here.
+  const s = w.estimate.toString();
+  return Math.pow(10, s.length - 1) * parseFloat(s[0] + '.' + (s[1] ?? '0'));
 };

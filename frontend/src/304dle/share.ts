@@ -1,13 +1,14 @@
-// Share grid. Verdict-first; no numeric score.
+// Share grid. Verdict + difficulty; no numeric score.
 
-import type { CapsVerdictKind } from './scoring';
+import type { CapsDifficulty, CapsVerdictKind } from './scoring';
 
 export interface ShareInputs {
   date: string;
   verdict: CapsVerdictKind;
   callRound: number | null;
-  parRound: number | null;
-  orderLength: number | null;
+  obligatedAtRound: number | null;
+  difficulty: CapsDifficulty | null;
+  worldsAtCall: number | null;
 }
 
 const VERDICT_TAG: Record<CapsVerdictKind, string> = {
@@ -17,6 +18,13 @@ const VERDICT_TAG: Record<CapsVerdictKind, string> = {
   missed: 'Missed',
 };
 
+const DIFFICULTY_TAG: Record<CapsDifficulty, string> = {
+  master: 'Master',
+  competent: 'Competent',
+  standard: 'Standard',
+  trivial: 'Trivial',
+};
+
 const buildRoundsRow = (callRound: number | null): string => {
   const filled = callRound ?? 8;
   let s = '';
@@ -24,35 +32,30 @@ const buildRoundsRow = (callRound: number | null): string => {
   return s;
 };
 
-const buildSweepRow = (
-  verdict: CapsVerdictKind,
-  orderLength: number | null,
-): string => {
-  if (orderLength === null) return '';
-  const ok = verdict === 'correct';
-  const partial = verdict === 'late';
-  let s = '';
-  for (let i = 0; i < orderLength; i++) {
-    if (ok) s += '🟩';
-    else if (partial) s += '🟨';
-    else s += '🟥';
+const verdictGlyph = (verdict: CapsVerdictKind, difficulty: CapsDifficulty | null): string => {
+  if (verdict === 'correct') {
+    if (difficulty === 'master') return '🟩🟩🟩';
+    if (difficulty === 'competent') return '🟩🟩';
+    if (difficulty === 'standard') return '🟩';
+    return '⬛'; // trivial — non-streak-extending
   }
-  return s;
+  if (verdict === 'late') return '🟨';
+  return '🟥';
 };
 
 export const buildShareGrid = (inp: ShareInputs): string => {
   const lines: string[] = [];
   const callTag = inp.callRound !== null ? ` · R${inp.callRound}` : '';
   const parTag =
-    inp.parRound !== null && inp.callRound !== null && inp.callRound > inp.parRound
-      ? ` (par R${inp.parRound})`
+    inp.obligatedAtRound !== null && inp.callRound !== null && inp.callRound > inp.obligatedAtRound
+      ? ` (par R${inp.obligatedAtRound})`
       : '';
+  const diffTag = inp.difficulty ? ` · ${DIFFICULTY_TAG[inp.difficulty]}` : '';
   lines.push(
-    `304dle · ${inp.date} · ${VERDICT_TAG[inp.verdict]}${callTag}${parTag}`,
+    `304dle · ${inp.date} · ${VERDICT_TAG[inp.verdict]}${callTag}${parTag}${diffTag}`,
   );
   lines.push('');
   lines.push(buildRoundsRow(inp.callRound));
-  const sweep = buildSweepRow(inp.verdict, inp.orderLength);
-  if (sweep) lines.push(sweep);
+  lines.push(verdictGlyph(inp.verdict, inp.difficulty));
   return lines.join('\n');
 };

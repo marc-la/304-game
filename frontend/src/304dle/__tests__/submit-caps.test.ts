@@ -144,7 +144,9 @@ describe('submitCaps verdict tree (adaptive)', () => {
     const s = useStore.getState().state;
     if (s.kind !== 'result') throw new Error(`expected result, got ${s.kind}`);
     expect(s.callRound).toBe(7);
-    expect(s.parRound).toBe(7);
+    // Dynamic par: obligation arose in R7 (in this fixture's
+    // play, north's Ah triggered the stamp at start of R7).
+    expect(s.obligatedAtRound).toBe(7);
     expect(s.verdict).toBe('correct');
   });
 });

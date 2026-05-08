@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import type { DailyPuzzle } from '../types';
-import type { CapsVerdictKind } from '../scoring';
+import type { CapsDifficulty, CapsVerdictKind } from '../scoring';
 import { buildShareGrid } from '../share';
 
 interface Props {
   puzzle: DailyPuzzle;
   verdict: CapsVerdictKind;
   callRound: number | null;
-  parRound: number | null;
-  orderLength: number | null;
+  obligatedAtRound: number | null;
+  worldsAtCall: number | null;
+  difficulty: CapsDifficulty | null;
   streakCurrent: number;
   streakLongest: number;
   onReplay?: () => void;
@@ -21,14 +22,30 @@ const VERDICT_LABEL: Record<CapsVerdictKind, string> = {
   missed: 'Caps was missed',
 };
 
-// Soul §VI.4: verdict-first. The numeric 0-100 is gone. The only
-// secondary signal is the par-delta — how many rounds late you
-// called vs the earliest possible moment — surfaced as descriptive
-// text, not as a penalty.
+const DIFFICULTY_LABEL: Record<CapsDifficulty, string> = {
+  master: 'Master',
+  competent: 'Competent',
+  standard: 'Standard',
+  trivial: 'Trivial',
+};
+
+const DIFFICULTY_BLURB: Record<CapsDifficulty, string> = {
+  master: 'Many worlds still consistent — you read what others couldn\'t.',
+  competent: 'A real read.',
+  standard: 'Solid call.',
+  trivial: 'Information had already collapsed — no real test, no streak credit.',
+};
+
 const verdictClass = (v: CapsVerdictKind): string => {
   if (v === 'correct') return 'dle-result-correct';
   if (v === 'late') return 'dle-result-late';
   return 'dle-result-fail';
+};
+
+const formatWorldsValue = (n: number): string => {
+  if (n < 1000) return String(Math.round(n));
+  if (n < 1_000_000) return `${(n / 1000).toFixed(1)}k`;
+  return n.toExponential(1);
 };
 
 export const ResultScreen = (props: Props) => {
@@ -37,8 +54,9 @@ export const ResultScreen = (props: Props) => {
     date: props.puzzle.date,
     verdict: props.verdict,
     callRound: props.callRound,
-    parRound: props.parRound,
-    orderLength: props.orderLength,
+    obligatedAtRound: props.obligatedAtRound,
+    difficulty: props.difficulty,
+    worldsAtCall: props.worldsAtCall,
   });
   const handleShare = async () => {
     try {
@@ -51,13 +69,20 @@ export const ResultScreen = (props: Props) => {
   };
 
   const parDelta =
-    props.callRound !== null && props.parRound !== null
-      ? Math.max(0, props.callRound - props.parRound)
+    props.callRound !== null && props.obligatedAtRound !== null
+      ? Math.max(0, props.callRound - props.obligatedAtRound)
       : null;
 
   return (
     <div className={`dle-result ${verdictClass(props.verdict)}`}>
       <h2 className="dle-result-title">{VERDICT_LABEL[props.verdict]}</h2>
+
+      {props.difficulty && props.verdict === 'correct' && (
+        <div className={`dle-result-difficulty dle-difficulty-${props.difficulty}`}>
+          <span className="dle-difficulty-label">{DIFFICULTY_LABEL[props.difficulty]}</span>
+          <span className="dle-difficulty-blurb">{DIFFICULTY_BLURB[props.difficulty]}</span>
+        </div>
+      )}
 
       <dl className="dle-result-stats">
         {props.callRound !== null && (
@@ -65,14 +90,19 @@ export const ResultScreen = (props: Props) => {
             <dt>Called at</dt><dd>R{props.callRound}</dd>
           </>
         )}
-        {props.parRound !== null && (
+        {props.obligatedAtRound !== null && (
           <>
-            <dt>Par</dt><dd>R{props.parRound}</dd>
+            <dt>Obligation arose</dt><dd>R{props.obligatedAtRound}</dd>
           </>
         )}
         {parDelta !== null && parDelta > 0 && (
           <>
             <dt>Late by</dt><dd>{parDelta} round{parDelta === 1 ? '' : 's'}</dd>
+          </>
+        )}
+        {props.worldsAtCall !== null && (
+          <>
+            <dt>Worlds at call</dt><dd>{formatWorldsValue(props.worldsAtCall)}</dd>
           </>
         )}
         <dt>Streak</dt><dd>{props.streakCurrent} (best {props.streakLongest})</dd>

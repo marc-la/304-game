@@ -1,11 +1,9 @@
 // Zustand store driving the 304dle game session.
 //
-// Soul §VI.4 + rules.md §C-1 adaptive: the player no longer
-// states a play order. They tap "Call Caps", confirm, and the
-// engine verifies obligation via the CSP adaptive solver. The
-// reveal modal can show one canonical witness line for clarity,
-// but the strategy is adaptive — there is no single "correct
-// order" the player must commit to.
+// Adaptive caps + dynamic-par + worlds-at-call difficulty.
+// Static puzzle.classification.optimalCallRound is no longer
+// part of the verdict — runtime's capsObligations stamp is the
+// dynamic par.
 
 import { create } from 'zustand';
 import type { CardId } from './engine/card';
@@ -27,8 +25,10 @@ import {
   ledSuit as runtimeLedSuit,
 } from './runtime';
 import type { Runtime } from './runtime';
-import type { CapsVerdictKind } from './scoring';
+import type { CapsDifficulty, CapsVerdictKind } from './scoring';
+import { gradeDifficulty } from './scoring';
 import { seatsHoldingTrump } from './engine/play';
+import { countWorlds, measureForDifficulty } from './worlds-counter';
 
 export type AppState =
   | { kind: 'loading' }
@@ -49,14 +49,19 @@ export type AppState =
       puzzle: DailyPuzzle;
       runtime: Runtime;
       verdict: CapsVerdictKind;
-      witnessLine: CardId[] | null; // engine-named demonstration line; null if no obligation
+      witnessLine: CardId[] | null;
+      worldsAtCall: number | null;
+      difficulty: CapsDifficulty | null;
+      obligatedAtRound: number | null;
     }
   | {
       kind: 'result';
       puzzle: DailyPuzzle;
       verdict: CapsVerdictKind;
       callRound: number | null;
-      parRound: number | null;
+      obligatedAtRound: number | null;
+      worldsAtCall: number | null;
+      difficulty: CapsDifficulty | null;
     };
 
 interface Store {
@@ -74,13 +79,6 @@ interface Store {
   finishGame: () => void;
   replayHand: () => void;
 }
-
-// Convention bridge: the puzzle generator records
-// `optimalCallRound = R` to mean "obligation first arose after
-// round R completed". The runtime / display uses round-in-which-
-// caps-is-called = R+1.
-const displayPar = (raw: number | null): number | null =>
-  raw === null ? null : raw + 1;
 
 export const useStore = create<Store>((set, get) => ({
   state: { kind: 'loading' },
@@ -191,6 +189,12 @@ export const useStore = create<Store>((set, get) => ({
       verdict = 'wrong-not-obligated';
     }
 
+    const worldsCount = countWorlds(s.runtime, 'south');
+    const worldsAtCall = measureForDifficulty(worldsCount);
+    const difficulty = gradeDifficulty(worldsAtCall);
+    const stamp = s.runtime.capsObligations.get('south');
+    const obligatedAtRound = stamp?.obligatedAtRound ?? null;
+
     set({
       state: {
         kind: 'caps-reveal',
@@ -198,6 +202,9 @@ export const useStore = create<Store>((set, get) => ({
         runtime: s.runtime,
         verdict,
         witnessLine,
+        worldsAtCall,
+        difficulty,
+        obligatedAtRound,
       },
     });
   },
@@ -211,7 +218,9 @@ export const useStore = create<Store>((set, get) => ({
         puzzle: s.puzzle,
         verdict: s.verdict,
         callRound: s.runtime.roundNumber,
-        parRound: displayPar(s.puzzle.classification.optimalCallRound),
+        obligatedAtRound: s.obligatedAtRound,
+        worldsAtCall: s.worldsAtCall,
+        difficulty: s.difficulty,
       },
     });
   },
@@ -236,13 +245,16 @@ export const useStore = create<Store>((set, get) => ({
     const s = get().state;
     if (s.kind !== 'playing') return;
     if (!isGameOver(s.runtime)) return;
+    const stamp = s.runtime.capsObligations.get('south');
     set({
       state: {
         kind: 'result',
         puzzle: s.puzzle,
         verdict: 'missed',
         callRound: null,
-        parRound: displayPar(s.puzzle.classification.optimalCallRound),
+        obligatedAtRound: stamp?.obligatedAtRound ?? null,
+        worldsAtCall: null,
+        difficulty: null,
       },
     });
   },

@@ -142,42 +142,57 @@ describe('runtime caps obligation tracking', () => {
 });
 
 describe('buildVerdict', () => {
-  it('correct at par → no parDelta, extends streak', () => {
-    const v = buildVerdict({ verdict: 'correct', callRound: 5, parRound: 5 });
+  it('correct at dynamic par + master worlds → no parDelta, extends streak', () => {
+    const v = buildVerdict({
+      verdict: 'correct', callRound: 5, obligatedAtRound: 5, worldsAtCall: 2000,
+    });
     expect(v.parDelta).toBe(0);
+    expect(v.difficulty).toBe('master');
     expect(v.extendsStreak).toBe(true);
   });
-  it('correct late vs par → parDelta is the over-call', () => {
-    const v = buildVerdict({ verdict: 'correct', callRound: 7, parRound: 5 });
+  it('correct but trivial worlds → no streak extension', () => {
+    const v = buildVerdict({
+      verdict: 'correct', callRound: 7, obligatedAtRound: 5, worldsAtCall: 3,
+    });
     expect(v.parDelta).toBe(2);
-    expect(v.extendsStreak).toBe(true);
+    expect(v.difficulty).toBe('trivial');
+    expect(v.extendsStreak).toBe(false);
   });
   it('late verdict does not extend streak', () => {
-    const v = buildVerdict({ verdict: 'late', callRound: 7, parRound: 4 });
+    const v = buildVerdict({
+      verdict: 'late', callRound: 7, obligatedAtRound: 4, worldsAtCall: 50,
+    });
     expect(v.extendsStreak).toBe(false);
   });
   it('wrong-not-obligated does not extend streak', () => {
-    const v = buildVerdict({ verdict: 'wrong-not-obligated', callRound: 3, parRound: 6 });
+    const v = buildVerdict({
+      verdict: 'wrong-not-obligated', callRound: 3, obligatedAtRound: null, worldsAtCall: 5000,
+    });
     expect(v.extendsStreak).toBe(false);
   });
-  it('missed (no callRound) yields null parDelta', () => {
-    const v = buildVerdict({ verdict: 'missed', callRound: null, parRound: 6 });
+  it('missed (no callRound, no worlds) yields null parDelta and null difficulty', () => {
+    const v = buildVerdict({
+      verdict: 'missed', callRound: null, obligatedAtRound: 6, worldsAtCall: null,
+    });
     expect(v.parDelta).toBeNull();
+    expect(v.difficulty).toBeNull();
     expect(v.extendsStreak).toBe(false);
   });
 });
 
 describe('share grid', () => {
-  it('produces a non-empty multi-line grid without /100', () => {
+  it('includes verdict + difficulty + dynamic par; no /100', () => {
     const grid = buildShareGrid({
       date: '2026-05-01',
       verdict: 'correct',
       callRound: 5,
-      parRound: 5,
-      orderLength: 4,
+      obligatedAtRound: 5,
+      difficulty: 'master',
+      worldsAtCall: 2000,
     });
     expect(grid).toContain('304dle');
     expect(grid).toContain('Caps');
+    expect(grid).toContain('Master');
     expect(grid).not.toContain('/100');
     expect(grid.split('\n').length).toBeGreaterThan(2);
   });

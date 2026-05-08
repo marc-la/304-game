@@ -90,8 +90,9 @@ export const App = () => {
             puzzle={state.puzzle}
             verdict={r.verdict}
             callRound={r.callRound}
-            parRound={r.parRound}
-            orderLength={null}
+            obligatedAtRound={r.obligatedAtRound}
+            worldsAtCall={r.worldsAtCall}
+            difficulty={r.difficulty}
             streakCurrent={persisted.streak.current}
             streakLongest={persisted.streak.longest}
             onReplay={() => useStore.getState().replayHand()}
@@ -129,7 +130,8 @@ export const App = () => {
       const v = buildVerdict({
         verdict: state.verdict,
         callRound: state.callRound,
-        parRound: state.parRound,
+        obligatedAtRound: state.obligatedAtRound,
+        worldsAtCall: state.worldsAtCall,
       });
       const next = recordResult(
         persisted,
@@ -137,7 +139,9 @@ export const App = () => {
           date: state.puzzle.date,
           verdict: state.verdict,
           callRound: state.callRound,
-          parRound: state.parRound,
+          obligatedAtRound: state.obligatedAtRound,
+          worldsAtCall: state.worldsAtCall,
+          difficulty: state.difficulty,
         },
         v.extendsStreak,
       );
@@ -150,8 +154,9 @@ export const App = () => {
           puzzle={state.puzzle}
           verdict={state.verdict}
           callRound={state.callRound}
-          parRound={state.parRound}
-          orderLength={null}
+          obligatedAtRound={state.obligatedAtRound}
+          worldsAtCall={state.worldsAtCall}
+          difficulty={state.difficulty}
           streakCurrent={persisted.streak.current}
           streakLongest={persisted.streak.longest}
           onReplay={() => useStore.getState().replayHand()}

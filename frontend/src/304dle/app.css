@@ -667,3 +667,57 @@
 .dle-result-correct .dle-result-title { color: #2e6b3e; }
 .dle-result-late    .dle-result-title { color: #7a5a10; }
 .dle-result-fail    .dle-result-title { color: var(--clr-accent); }
+
+/* Difficulty pills — the secondary signal on a correct call.
+   Trivial calls register but get a muted, slightly disappointed
+   palette since they don't extend the streak. */
+.dle-result-difficulty {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 8px auto 16px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  border: 1px solid;
+  max-width: 420px;
+}
+.dle-difficulty-label {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.dle-difficulty-blurb {
+  font-size: 0.82rem;
+  color: var(--clr-text-muted);
+  text-align: center;
+}
+.dle-difficulty-master {
+  border-color: #6cba87;
+  background: #d6f0df;
+  color: #1f5b32;
+}
+.dle-difficulty-master .dle-difficulty-blurb { color: #2e6b3e; }
+.dle-difficulty-competent {
+  border-color: #b9c9d6;
+  background: #e8eef3;
+  color: #1c3050;
+}
+.dle-difficulty-competent .dle-difficulty-blurb { color: #1c3050; opacity: 0.75; }
+.dle-difficulty-standard {
+  border-color: #d6c8b9;
+  background: #f5efe7;
+  color: #4a3a20;
+}
+.dle-difficulty-standard .dle-difficulty-blurb { color: #4a3a20; opacity: 0.75; }
+.dle-difficulty-trivial {
+  border-color: #c8c0bc;
+  background: #ebe8e6;
+  color: #6b6660;
+  opacity: 0.85;
+}
+.dle-difficulty-trivial .dle-difficulty-label {
+  text-decoration: line-through;
+}

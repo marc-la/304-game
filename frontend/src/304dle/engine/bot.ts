@@ -1,13 +1,39 @@
 // Heuristic bot for opponent (and pre-classifier) play. Deterministic
-// given (seed, history). Intentionally weak — strong defense kills
-// caps lines. Plays legally and plausibly, with light noise.
+// given (seed, history). Plays legally and plausibly, with light
+// noise.
+//
+// Tuned to make caps puzzles non-trivial: opps preserve high
+// cards (J / 9 / A) rather than spending them on small tricks
+// where the points-on-table don't justify the loss. Partner
+// (north) plays similarly — does not always cover south, so
+// south has to commit cards to take tricks rather than letting
+// partner win for free.
 
 import type { CardId, Suit } from './card';
-import { pointsOf, powerOf, suitOf } from './card';
+import { pointsOf, powerOf, rankOf, suitOf } from './card';
 import { legalPlays, roundWinner, seatsHoldingTrump } from './play';
 import type { Seat } from './seating';
 import { partnerSeat } from './seating';
 import type { EngineGameState } from './state';
+
+// A card is "high-value" if losing it would meaningfully
+// degrade the holder's future plays. J (30), 9 (20), A (11)
+// are the "stars"; everything else is cheap.
+const isHighValue = (card: CardId): boolean => {
+  const r = rankOf(card);
+  return r === 'J' || r === '9' || r === 'A';
+};
+
+// Threshold a winner-card is worth spending: only play J on a
+// trick worth ≥ 18 points; only play 9 on ≥ 10; only play A on ≥ 8.
+// Below threshold, prefer to sluff rather than win with a star.
+const spendThreshold = (card: CardId): number => {
+  const r = rankOf(card);
+  if (r === 'J') return 18;
+  if (r === '9') return 10;
+  if (r === 'A') return 8;
+  return 0;
+};
 
 export interface BotContext {
   seat: Seat;
@@ -134,17 +160,29 @@ export const chooseBotPlay = (ctx: BotContext): CardId => {
     .filter(e => e.card !== null)
     .map(e => [e.seat, e.card!]);
 
-  // Rule: partner currently winning → sluff lowest-pointed legal card.
+  // Rule: partner currently winning → sluff lowest-pointed legal
+  // card AND prefer to keep stars. (lowestByPoints already orders
+  // 0-point cards by power-desc, so stars are kept naturally —
+  // confirmed; no change needed beyond the existing call.)
   if (!isLead && partnerIsWinning(seat, trump, inProgressTyped)) {
     return lowestByPoints(legal);
   }
 
-  // Rule: I can take the trick cheaply when there are points showing.
+  // Rule: take the trick — but only spend a high-value card if
+  // the trick justifies the spend. Star cards (J / 9 / A) are
+  // gated by `spendThreshold` (J needs ≥18 pts on table, 9 needs
+  // ≥10, A needs ≥8). Below threshold, fall through to sluff.
   if (!isLead) {
     const points = inProgressTyped.reduce((s, [, c]) => s + pointsOf(c), 0);
-    if (points >= 5) {
+    if (points >= 3) {
       const winner = cheapestWinnerVs(legal, ledSuit!, trump, inProgressTyped);
-      if (winner !== null) return winner;
+      if (winner !== null) {
+        if (!isHighValue(winner) || points >= spendThreshold(winner)) {
+          return winner;
+        }
+        // Star is too expensive for this trick; let it pass and
+        // sluff something cheaper below.
+      }
     }
   }
 
@@ -168,20 +206,21 @@ export const chooseBotPlay = (ctx: BotContext): CardId => {
     }
   }
 
-  // Lead rule: lead from longest non-trump suit, lowest non-Jack card.
+  // Lead rule: lead a low non-star card from the longest
+  // non-trump suit (preserve stars; force opp to spend top cards
+  // to win these tricks).
   if (isLead) {
     const ls = longestNonTrumpSuit(hand, trump);
     if (ls !== null) {
       const candidates = legal.filter(c => suitOf(c) === ls);
       const ranked = [...candidates].sort((a, b) => {
-        // prefer non-J, low points
-        const aJ = a.startsWith('J') ? 1 : 0;
-        const bJ = b.startsWith('J') ? 1 : 0;
-        return aJ - bJ || pointsOf(a) - pointsOf(b);
+        const aStar = isHighValue(a) ? 1 : 0;
+        const bStar = isHighValue(b) ? 1 : 0;
+        return aStar - bStar || pointsOf(a) - pointsOf(b) || powerOf(b) - powerOf(a);
       });
       if (ranked.length > 0) return ranked[0];
     }
-    // All trumps → lead lowest trump.
+    // All trumps → lead lowest-power trump (preserve high trumps).
     return lowestByPoints(legal);
   }
 

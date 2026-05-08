@@ -1,20 +1,22 @@
-// localStorage persistence for 304dle: per-puzzle results, streak.
-// No backend.
+// localStorage persistence for 304dle.
 //
-// Schema bumped to 2 when scoring was hard-ripped (no more 0-100,
-// no more hint/worlds preferences). Existing v1 state is discarded
-// silently — fine for a daily puzzle with no irreplaceable history.
+// Schema v3: DayResult tracks dynamic-par + worlds-at-call +
+// difficulty (Phase 2-5 of the incentive-fix plan). The static
+// optimalCallRound from puzzle metadata is no longer recorded.
+// Streak: only correct + non-trivial caps extend it.
 
-import type { CapsVerdictKind } from './scoring';
+import type { CapsDifficulty, CapsVerdictKind } from './scoring';
 
 const STORAGE_KEY = '304dle:state';
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 export interface DayResult {
   date: string;
   verdict: CapsVerdictKind;
   callRound: number | null;
-  parRound: number | null;
+  obligatedAtRound: number | null;
+  worldsAtCall: number | null;
+  difficulty: CapsDifficulty | null;
 }
 
 export interface PersistedState {
@@ -62,9 +64,9 @@ const consecutiveDays = (a: string, b: string): boolean => {
   return diff === 1;
 };
 
-// Streak rule: 'correct' extends; everything else resets to 0.
-// Late, wrong, missed all reset — this is the soul-aligned posture
-// (§IV.11 sting-of-loss): you don't get partial credit for almost.
+// Streak rule: only `correct` + non-trivial difficulty extends.
+// Late, wrong, missed, and trivial-correct all reset to 0.
+// Soul §IV.11 sting-of-loss + Phase 5 anti-exploit alignment.
 export const recordResult = (
   prev: PersistedState,
   result: DayResult,
