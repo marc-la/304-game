@@ -28,7 +28,7 @@ import {
   saveState,
   setPreference,
 } from './storage';
-import './styles.css';
+import './app.css';
 
 const todayDateString = (): string => {
   const d = new Date();
