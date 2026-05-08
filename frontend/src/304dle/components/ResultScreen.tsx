@@ -21,6 +21,7 @@ const VERDICT_LABEL: Record<CapsVerdictKind, string> = {
   'wrong-bad-order': 'Order broke in some world',
   'wrong-not-obligated': 'Called too early',
   missed: 'Caps was missed',
+  'no-caps-available': 'No caps available this game',
 };
 
 export const ResultScreen = (props: Props) => {

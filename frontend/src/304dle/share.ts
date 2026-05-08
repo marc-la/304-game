@@ -26,6 +26,7 @@ const VERDICT_TAG: Record<CapsVerdictKind, string> = {
   'wrong-bad-order': 'Wrong',
   'wrong-not-obligated': 'Early',
   missed: 'Missed',
+  'no-caps-available': 'NoCaps',
 };
 
 const buildRoundsRow = (callRound: number | null): string => {
