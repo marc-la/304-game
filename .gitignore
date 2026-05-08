@@ -39,3 +39,8 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Hard-caps curator work-in-progress (pool generation streams here;
+# committed pool/selection JSONs should be force-added explicitly).
+frontend/public/puzzles/pool*.jsonl
+frontend/public/puzzles/pool*.meta.json
