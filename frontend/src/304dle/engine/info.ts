@@ -13,6 +13,13 @@ export interface HiddenSlot {
   seat: Seat;
   roundNumber: number;
   ledSuit: Suit;
+  // When set, the slot's card must be of this exact suit. Used by
+  // tools that build relaxed information sets where the player saw
+  // *which* suit was played but is being asked counterfactually to
+  // forget the precise rank. Native closed-trump face-down slots
+  // leave this undefined and use the standard ledSuit/trump-forbidden
+  // semantics.
+  knownSuit?: Suit;
 }
 
 export interface InformationSet {
@@ -216,13 +223,22 @@ function* enumerateForTrump(
   const slots: Slot[] = [];
 
   for (const hs of info.hiddenSlots) {
-    const forbidden = new Set<Suit>([hs.ledSuit, trumpSuit]);
-    slots.push({
-      key: `hidden:${hs.seat}:${hs.roundNumber}`,
-      size: 1,
-      forbiddenSuits: forbidden,
-      allowedSuits: null,
-    });
+    if (hs.knownSuit !== undefined) {
+      slots.push({
+        key: `hidden:${hs.seat}:${hs.roundNumber}`,
+        size: 1,
+        forbiddenSuits: new Set(),
+        allowedSuits: new Set([hs.knownSuit]),
+      });
+    } else {
+      const forbidden = new Set<Suit>([hs.ledSuit, trumpSuit]);
+      slots.push({
+        key: `hidden:${hs.seat}:${hs.roundNumber}`,
+        size: 1,
+        forbiddenSuits: forbidden,
+        allowedSuits: null,
+      });
+    }
   }
 
   let foldedSlotKey: string | null = null;
@@ -390,7 +406,9 @@ export const worldIsConsistent = (
   for (const [k, c] of world.hiddenSlotAssignments) {
     const slot = slotIndex.get(k);
     if (!slot) return false;
-    if (suitOf(c) === slot.ledSuit || suitOf(c) === world.trumpSuit) {
+    if (slot.knownSuit !== undefined) {
+      if (suitOf(c) !== slot.knownSuit) return false;
+    } else if (suitOf(c) === slot.ledSuit || suitOf(c) === world.trumpSuit) {
       return false;
     }
   }
