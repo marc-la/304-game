@@ -1,7 +1,24 @@
-/* Note: Crimson Pro and Inter are loaded by the host HTML page (play.html
-   loads them with <link rel="preconnect"> + the Google Fonts stylesheet).
-   We don't @import them here to avoid a render-blocking double request. */
-@import './variables.css';
+/* React multiplayer app globals.
+ *
+ * The site-wide colour and font tokens (--clr-* and --font-body /
+ * --font-heading / --font-mono) are owned by /css/styles.css, which the
+ * host HTML page (play.html) loads before this file. Don't redefine them
+ * here — anything in this :root block is React-only.
+ *
+ * Crimson Pro and Inter are also loaded by the host HTML page via Google
+ * Fonts; we don't @import them here to avoid a render-blocking double
+ * request. */
+
+:root {
+  /* React-app design tokens with no site equivalent. */
+  --clr-table-center: #1e5c35;
+  --clr-table-border: #1a5c32;
+  --font-card: var(--font-mono, 'JetBrains Mono', 'Courier New', monospace);
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --shadow-card: 0 2px 4px var(--clr-shadow);
+}
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -15,20 +32,18 @@ html, body, #root {
 }
 
 /* Body uses the site's serif (Crimson Pro). UI elements opt back into
-   Inter via .font-ui or the per-component class. The previous default
-   was Inter for everything, which broke visual continuity with the
-   static pages. */
+   Inter via the per-component font-family rules below. */
 body {
   font-family: var(--font-body);
-  background: var(--color-bg);
-  color: var(--color-text);
+  background: var(--clr-bg);
+  color: var(--clr-text);
   font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 
 button, input, select, textarea {
-  font-family: var(--font-ui);
+  font-family: var(--font-heading);
 }
 
 button {
@@ -48,42 +63,42 @@ button:disabled {
 }
 
 button.primary {
-  background: var(--color-accent);
+  background: var(--clr-accent);
   color: white;
 }
 button.primary:hover:not(:disabled) {
-  background: var(--color-accent-cool);
+  background: var(--clr-accent-cool);
 }
 
 button.secondary {
-  background: var(--color-border);
-  color: var(--color-text);
+  background: var(--clr-border);
+  color: var(--clr-text);
 }
 button.secondary:hover:not(:disabled) {
-  background: var(--color-surface);
+  background: var(--clr-surface);
 }
 
 button.ghost {
   background: transparent;
-  color: var(--color-text-secondary);
+  color: var(--clr-text-muted);
 }
 button.ghost:hover:not(:disabled) {
-  background: var(--color-accent-light);
+  background: var(--clr-accent-light);
 }
 
 input, select {
   font-size: 13px;
   padding: 5px 10px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--clr-border);
   border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  color: var(--color-text);
+  background: var(--clr-surface);
+  color: var(--clr-text);
 }
 
 input:focus, select:focus {
   outline: none;
-  border-color: var(--color-accent);
+  border-color: var(--clr-accent);
 }
 
-.team-a { color: var(--color-team-a); }
-.team-b { color: var(--color-team-b); }
+.team-a { color: var(--clr-accent); }
+.team-b { color: var(--clr-accent-cool); }

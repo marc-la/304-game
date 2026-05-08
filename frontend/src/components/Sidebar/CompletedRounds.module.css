@@ -6,13 +6,13 @@
 
 .empty {
   font-size: 12px;
-  color: var(--color-text-secondary);
+  color: var(--clr-text-muted);
   text-align: center;
   padding: 20px;
 }
 
 .round {
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--clr-border);
   border-radius: var(--radius-sm);
   overflow: hidden;
 }
@@ -31,7 +31,7 @@
   text-align: left;
 }
 .roundHeader:hover {
-  background: var(--color-accent-light);
+  background: var(--clr-accent-light);
 }
 
 .trumpBadge {
@@ -47,7 +47,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--clr-border);
   background: #fafaf8;
 }
 
@@ -62,7 +62,7 @@
   font-weight: 600;
   width: 50px;
   font-size: 11px;
-  color: var(--color-text-secondary);
+  color: var(--clr-text-muted);
 }
 
 .cardValue {
@@ -72,11 +72,11 @@
 
 .faceDown {
   font-size: 10px;
-  color: var(--color-text-secondary);
+  color: var(--clr-text-muted);
   font-style: italic;
 }
 
 .winnerMark {
-  color: var(--color-accent);
+  color: var(--clr-accent);
   font-size: 11px;
 }

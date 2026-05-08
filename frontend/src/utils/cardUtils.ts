@@ -2,7 +2,7 @@ import type { CardData, Suit, Rank } from '../types/game';
 import { SUIT_SYMBOLS, RANK_ORDER } from '../types/game';
 
 export function suitColor(suit: Suit): string {
-  return suit === 'h' || suit === 'd' ? 'var(--color-suit-red)' : 'var(--color-suit-black)';
+  return suit === 'h' || suit === 'd' ? 'var(--clr-accent)' : 'var(--clr-text)';
 }
 
 export function suitSymbol(suit: Suit): string {

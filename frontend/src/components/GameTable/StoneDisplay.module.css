@@ -1,7 +1,7 @@
 .container {
   display: flex;
   gap: 16px;
-  font-family: var(--font-ui);
+  font-family: var(--font-heading);
 }
 
 .team {
@@ -15,10 +15,10 @@
 }
 
 .teamA {
-  border-top: 2px solid var(--color-team-a);
+  border-top: 2px solid var(--clr-accent);
 }
 .teamB {
-  border-top: 2px solid var(--color-team-b);
+  border-top: 2px solid var(--clr-accent-cool);
 }
 
 .label {

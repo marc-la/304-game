@@ -6,13 +6,13 @@
 
 .empty {
   font-size: 12px;
-  color: var(--color-text-secondary);
+  color: var(--clr-text-muted);
   text-align: center;
   padding: 20px;
 }
 
 .entry {
-  font-family: var(--font-ui);
+  font-family: var(--font-heading);
   font-size: 11px;
   padding: 3px 6px;
   border-radius: var(--radius-sm);
@@ -20,12 +20,12 @@
   line-height: 1.4;
 }
 
-.bid { border-left-color: var(--color-accent); }
-.play { border-left-color: var(--color-table); }
-.result { border-left-color: var(--color-house-rule); background: rgba(46, 107, 62, 0.05); }
-.error { border-left-color: var(--color-danger); background: rgba(204, 0, 0, 0.05); color: var(--color-danger); }
+.bid { border-left-color: var(--clr-accent); }
+.play { border-left-color: var(--clr-house); }
+.result { border-left-color: var(--clr-house); background: rgba(46, 107, 62, 0.05); }
+.error { border-left-color: var(--clr-accent); background: rgba(204, 0, 0, 0.05); color: var(--clr-accent); }
 .trump { border-left-color: #9b59b6; }
-.info { border-left-color: var(--color-border); }
+.info { border-left-color: var(--clr-border); }
 
-.team_a { color: var(--color-team-a); }
-.team_b { color: var(--color-team-b); }
+.team_a { color: var(--clr-accent); }
+.team_b { color: var(--clr-accent-cool); }

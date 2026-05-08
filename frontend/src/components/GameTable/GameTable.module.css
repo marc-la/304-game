@@ -1,7 +1,7 @@
 .table {
-  background: radial-gradient(ellipse at center, var(--color-table-center) 0%, var(--color-table) 70%);
+  background: radial-gradient(ellipse at center, var(--clr-table-center) 0%, var(--clr-house) 70%);
   border-radius: var(--radius-lg);
-  border: 3px solid var(--color-table-border);
+  border: 3px solid var(--clr-table-border);
   display: flex;
   flex-direction: column;
   height: 100%;

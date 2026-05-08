@@ -45,7 +45,7 @@ export default function CompletedRounds() {
                       className={styles.cardValue}
                       style={{
                         color: entry.card.suit === 'h' || entry.card.suit === 'd'
-                          ? 'var(--color-suit-red)' : 'var(--color-suit-black)'
+                          ? 'var(--clr-accent)' : 'var(--clr-text)'
                       }}
                     >
                       {entry.card.rank}{SUIT_SYMBOLS[entry.card.suit]}

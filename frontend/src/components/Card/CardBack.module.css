@@ -2,7 +2,7 @@
   position: relative;
   width: 70px;
   height: 100px;
-  background: var(--color-card-face-down);
+  background: var(--clr-border);
   border: 1px solid #a0b0a0;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
@@ -33,7 +33,7 @@
 }
 
 .label {
-  font-family: var(--font-ui);
+  font-family: var(--font-heading);
   font-size: 16px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.6);

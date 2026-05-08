@@ -12,15 +12,15 @@
 }
 
 .info {
-  font-family: var(--font-ui);
+  font-family: var(--font-heading);
   font-size: 12px;
-  color: var(--color-text-secondary);
+  color: var(--clr-text-muted);
 }
 
 .hint {
-  font-family: var(--font-ui);
+  font-family: var(--font-heading);
   font-size: 11px;
-  color: var(--color-text-secondary);
+  color: var(--clr-text-muted);
   font-style: italic;
 }
 
@@ -29,8 +29,8 @@
 }
 
 .resultBox {
-  background: var(--color-accent-light);
-  border: 1px solid var(--color-accent);
+  background: var(--clr-accent-light);
+  border: 1px solid var(--clr-accent);
   border-radius: var(--radius-md);
   padding: 10px;
   display: flex;
@@ -39,23 +39,23 @@
 }
 
 .resultTitle {
-  font-family: var(--font-ui);
+  font-family: var(--font-heading);
   font-size: 14px;
   font-weight: 700;
-  color: var(--color-accent);
+  color: var(--clr-accent);
 }
 
 .resultDesc {
   font-family: var(--font-body);
   font-size: 14px;
-  color: var(--color-text);
+  color: var(--clr-text);
 }
 
 .matchWinner {
-  font-family: var(--font-ui);
+  font-family: var(--font-heading);
   font-size: 16px;
   font-weight: 800;
-  color: var(--color-accent);
+  color: var(--clr-accent);
   text-align: center;
   padding: 8px;
 }
@@ -72,25 +72,25 @@
   font-size: 13px;
   font-weight: 700;
   padding: 4px 10px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
   border-radius: var(--radius-sm);
   cursor: pointer;
 }
 .capsCard:hover {
-  background: var(--color-accent-light);
+  background: var(--clr-accent-light);
 }
 
 .capsSelected {
-  background: var(--color-accent-light);
-  border-color: var(--color-accent);
+  background: var(--clr-accent-light);
+  border-color: var(--clr-accent);
 }
 
 .capsIndex {
   position: absolute;
   top: -6px;
   right: -6px;
-  background: var(--color-accent);
+  background: var(--clr-accent);
   color: white;
   font-size: 9px;
   width: 14px;
@@ -99,5 +99,5 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  font-family: var(--font-ui);
+  font-family: var(--font-heading);
 }

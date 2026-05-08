@@ -2,8 +2,8 @@
   position: relative;
   width: 70px;
   height: 100px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
   font-family: var(--font-card);
@@ -32,7 +32,7 @@
 
 .selected {
   transform: translateY(-16px);
-  border: 2px solid var(--color-accent);
+  border: 2px solid var(--clr-accent);
   box-shadow: 0 0 12px rgba(181, 67, 42, 0.3);
 }
 
@@ -78,12 +78,12 @@
   position: absolute;
   top: -6px;
   right: -6px;
-  background: var(--color-accent);
+  background: var(--clr-accent);
   color: white;
   font-size: 9px;
   font-weight: 700;
   padding: 1px 4px;
   border-radius: 8px;
-  font-family: var(--font-ui);
+  font-family: var(--font-heading);
   line-height: 1.3;
 }

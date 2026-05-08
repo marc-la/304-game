@@ -30,7 +30,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-family: var(--font-ui);
+  font-family: var(--font-heading);
   font-size: 12px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.9);
@@ -39,8 +39,8 @@
   background: rgba(0, 0, 0, 0.3);
 }
 
-.teamA { border-left: 3px solid var(--color-team-a); }
-.teamB { border-left: 3px solid var(--color-team-b); }
+.teamA { border-left: 3px solid var(--clr-accent); }
+.teamB { border-left: 3px solid var(--clr-accent-cool); }
 
 .name {
   text-transform: uppercase;
@@ -71,7 +71,7 @@
 }
 
 .turnArrow {
-  color: var(--color-active);
+  color: var(--clr-house-bg);
   font-size: 10px;
   animation: pulse 1s infinite;
 }
