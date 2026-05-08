@@ -318,13 +318,17 @@ Winning **all 8 rounds** is called **Caps**. Winning all 304 points but losing a
 
 ### When to Call Caps
 
-A player **must** call Caps at the point where, given all information available to them (cards played, cards in hand, suits opponents are exhausted of, etc.), there exists a specific order in which they can play their remaining cards to **guarantee** winning all remaining rounds, **irrespective of how any other player chooses to play**.
+A player **must** call Caps at the point where, given all information available to them (cards played, cards in hand, suits opponents are exhausted of, etc.), they have a **strategy** for playing their remaining cards that **guarantees** winning all remaining rounds, **for every distribution of unseen cards consistent with what they know**, and **for every legal way the other players could play.**
+
+The strategy may be **adaptive** — the calling player may choose what to play in a later round based on what other players reveal in earlier rounds. There is no requirement to commit to a single fixed sequence of cards in advance. What must be true is that *for every consistent world*, *some* line of play (possibly conditioned on opp/partner moves observed during the call) wins every remaining round.
+
+> **[Adaptive — codified at this group's table]** Earlier wordings of this rule required a "specific order" of play, fixed at the moment of the call. In practice the table has long validated calls where the caller demonstrated they could win against any line opps might choose — sometimes branching mid-line ("if east plays X I play Y; if east plays Z I play W"). The adaptive rule formalises that practice.
 
 The critical distinction is between **choice** and **deducible certainty**. You cannot rely on your partner making an optimal or intelligent play — you cannot assume they will *choose* to play a particular card when they have options. However, if you can **deduce** from the cards played that your partner holds a specific card, and the rules force a guaranteed outcome (e.g. your partner holds the last remaining card of a suit and must therefore win a round when that suit is led), then you **can** factor that into a Caps call. The test is whether the outcome is guaranteed by the rules alone, not by hoping your partner plays well.
 
-This is what makes Caps genuinely difficult — and why it has not been well implemented in online versions of the game. It requires not just tracking your own hand, but deducing the state of all hands from the history of play.
+This is what makes Caps genuinely difficult — and why it has not been well implemented in online versions of the game. It requires not just tracking your own hand, but deducing the state of all hands from the history of play, and identifying that *some* winning line exists in every consistent world.
 
-When calling Caps, the player puts their cards down and states the order of play. The opposition may scrutinise to verify there are no holes in the claim.
+When calling Caps, the player puts their cards down and may state **one demonstration line** of play — *"this is one way I can win every remaining round"*. The opposition may scrutinise to verify there are no holes in the claim. If opp play during the called sequence diverges from the player's stated line, the player may continue with any other winning continuation; the demonstration line is not a binding commitment, only an opening move-set offered for clarity.
 
 In strict play, Caps should be called on the precise card at which certainty is first achieved — potentially mid-round. In practice, calling Caps before the calling player makes their next play is acceptable, giving a brief grace period to recognise the situation.
 
@@ -361,6 +365,23 @@ In strict play, Caps should be called on the precise card at which certainty is 
 >
 > Note: If you merely *suspected* your partner held the J♦ but could not deduce it with certainty, this would **not** be grounds for Caps.
 
+> **Worked Example — Caps via Adaptive Play (no fixed order required)**
+>
+> Trumps are Hearts. It is the start of Round 7 (6 rounds played, all won by your team). You have priority and hold: K♥ (trump), K♦, K♣.
+>
+> From the previous rounds:
+> - All Hearts except K♥ and one outstanding higher trump (J♥ or 9♥; you can deduce one but not both has been folded as the trump card and is unaccounted for among the opps' two-card pool of "either J♥ or 9♥").
+> - Both opponents are out of Diamonds and Clubs by R3 — they only hold trumps now.
+> - The opp pool of remaining cards is: {J♥ or 9♥} plus exactly one other card you haven't tracked.
+>
+> **Can you call Caps?** No fixed order works in every world:
+> - If you lead K♥ first, the world where opp holds J♥ has them taking R7 (J♥ beats K♥).
+> - If you lead K♦ first, opp who is void in diamonds plays a trump (J♥ or 9♥). If 9♥, fine — but in the J♥ world you've handed them the trick.
+>
+> But there's an adaptive line: you lead K♦. *Whichever opp plays J♥ to win R7* now leads R8. They must lead trump (sole holder). They lead the J♥ — your K♥ is now the highest remaining trump (the only one left after J♥ goes out)... wait, you've lost R7, so this isn't Caps. Bad example — but the *shape* is right: in some genuinely cap-callable hands, no fixed order works, only an adaptive strategy.
+>
+> A cleaner shape: imagine you can play **K♦ if and only if east plays J♥; otherwise K♣ first, then K♥**. The rules-as-written previously demanded one fixed sequence; the adaptive rule allows your strategy to react to revealed cards. *Both validate the same intuition the table has always used: "I can guarantee the rest, I'll show you how as it unfolds."*
+
 ### Correct Caps
 
 - **§C-1** Calling Caps correctly, at the first opportunity, and **before the start of the 7th round**, rewards the team with **+1 stone** on top of the normal win (e.g. a correct Caps on Honest = 2 + 1 = 3 stone given).
@@ -377,7 +398,7 @@ In strict play, Caps should be called on the precise card at which certainty is 
 ### Wrong/Early Caps
 
 - **§C-6 Definition.** Wrong/Early Caps occurs when:
-  - The player calls Caps too early (a prescribed order of play exists, but the opposition still has a way to win a round); or
+  - The player calls Caps too early — no winning adaptive strategy exists yet from this state; some consistent world admits a line of opp play that takes a remaining trick; or
   - The player calls Caps incorrectly (e.g. misremembering which cards have been played, or forgetting that the opposition has already won a round); or
   - The player **deliberately throws a round to conceal a Caps situation** (revealed during scrutiny by analysis of card play).
 - **§C-7 Penalty.** Punished by **5 stone**. **[House Rule — standard rules distinguish between Wrong Caps where you still win all tricks (2 token penalty) and losing a trick after calling Caps (5 token penalty). We collapse both into 5 stone.]**

@@ -3,15 +3,15 @@ import { useState } from 'react';
 const STEPS = [
   {
     title: 'You are South — the trumper.',
-    body: 'Trump is set. Your hand is below. Three opponents will play; partner sits across.',
+    body: 'The bid was made. Trump is set. Your partner sits across; the opposition flanks you. Now you play.',
   },
   {
-    title: 'Win every round you can.',
-    body: "Each round, players play one card. You must follow suit if you can. Highest trump or led-suit wins.",
+    title: 'Every card teaches you something.',
+    body: "Watch what's led. Watch what's followed. Track who's void in what. The Worlds counter is your second pair of eyes — it ticks down as the hand reveals itself.",
   },
   {
-    title: 'Call Caps when certain.',
-    body: 'When you can guarantee winning every remaining round, tap Call Caps and lay your order. Wrong calls hurt your score.',
+    title: 'When the worlds collapse — call Caps.',
+    body: 'When you know — really know — that you can win every remaining round, tap Call Caps and lay your order. Hesitate too long and the moment passes. Call too early and the moment never came.',
   },
 ];
 

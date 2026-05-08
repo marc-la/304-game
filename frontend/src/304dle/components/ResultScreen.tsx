@@ -5,35 +5,40 @@ import { buildShareGrid } from '../share';
 
 interface Props {
   puzzle: DailyPuzzle;
-  score: number;
   verdict: CapsVerdictKind;
   callRound: number | null;
+  parRound: number | null;
   orderLength: number | null;
-  hintsUsed: number;
-  worldsToggleUses: number;
   streakCurrent: number;
   streakLongest: number;
+  onReplay?: () => void;
 }
 
 const VERDICT_LABEL: Record<CapsVerdictKind, string> = {
-  correct: 'Caps called correctly',
-  late: 'Late caps — credit, but not on time',
-  'wrong-bad-order': 'Order broke in some world',
+  correct: 'Caps',
+  late: 'Late Caps',
   'wrong-not-obligated': 'Called too early',
   missed: 'Caps was missed',
-  'no-caps-available': 'No caps available this game',
+};
+
+// Soul §VI.4: verdict-first. The numeric 0-100 is gone. The only
+// secondary signal is the par-delta — how many rounds late you
+// called vs the earliest possible moment — surfaced as descriptive
+// text, not as a penalty.
+const verdictClass = (v: CapsVerdictKind): string => {
+  if (v === 'correct') return 'dle-result-correct';
+  if (v === 'late') return 'dle-result-late';
+  return 'dle-result-fail';
 };
 
 export const ResultScreen = (props: Props) => {
   const [copied, setCopied] = useState(false);
   const grid = buildShareGrid({
     date: props.puzzle.date,
-    difficulty: props.puzzle.difficulty,
     verdict: props.verdict,
-    score: props.score,
     callRound: props.callRound,
+    parRound: props.parRound,
     orderLength: props.orderLength,
-    worldsAtCall: null,
   });
   const handleShare = async () => {
     try {
@@ -44,26 +49,33 @@ export const ResultScreen = (props: Props) => {
       // ignore
     }
   };
+
+  const parDelta =
+    props.callRound !== null && props.parRound !== null
+      ? Math.max(0, props.callRound - props.parRound)
+      : null;
+
   return (
-    <div className="dle-result">
+    <div className={`dle-result ${verdictClass(props.verdict)}`}>
       <h2 className="dle-result-title">{VERDICT_LABEL[props.verdict]}</h2>
-      <div className="dle-result-score">{props.score}<span> / 100</span></div>
 
       <dl className="dle-result-stats">
         {props.callRound !== null && (
           <>
-            <dt>Called at</dt><dd>Round {props.callRound}</dd>
+            <dt>Called at</dt><dd>R{props.callRound}</dd>
           </>
         )}
-        {props.puzzle.classification.optimalCallRound !== null && (
+        {props.parRound !== null && (
           <>
-            <dt>Par</dt><dd>Round {props.puzzle.classification.optimalCallRound}</dd>
+            <dt>Par</dt><dd>R{props.parRound}</dd>
           </>
         )}
-        <dt>Hints used</dt><dd>{props.hintsUsed}</dd>
-        <dt>Worlds peeks</dt><dd>{props.worldsToggleUses}</dd>
-        <dt>Current streak</dt><dd>{props.streakCurrent}</dd>
-        <dt>Longest streak</dt><dd>{props.streakLongest}</dd>
+        {parDelta !== null && parDelta > 0 && (
+          <>
+            <dt>Late by</dt><dd>{parDelta} round{parDelta === 1 ? '' : 's'}</dd>
+          </>
+        )}
+        <dt>Streak</dt><dd>{props.streakCurrent} (best {props.streakLongest})</dd>
       </dl>
 
       <pre className="dle-share-grid">{grid}</pre>
@@ -71,7 +83,22 @@ export const ResultScreen = (props: Props) => {
         <button type="button" className="dle-btn dle-btn-primary" onClick={handleShare}>
           {copied ? 'Copied!' : 'Copy share grid'}
         </button>
+        {props.onReplay && props.verdict !== 'correct' && (
+          <button
+            type="button"
+            className="dle-btn dle-btn-secondary"
+            onClick={props.onReplay}
+            title="Replay this same hand. Today's verdict and streak are already recorded — this is for scrutiny."
+          >
+            Replay this hand
+          </button>
+        )}
       </div>
+      {props.verdict !== 'correct' && props.onReplay && (
+        <p className="dle-result-replay-note">
+          Replay won't change today's verdict — only your reading of it.
+        </p>
+      )}
       <p className="dle-result-tomorrow">Come back tomorrow for a new puzzle.</p>
     </div>
   );

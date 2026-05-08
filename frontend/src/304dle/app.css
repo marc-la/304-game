@@ -81,93 +81,210 @@
 }
 
 /* ----------------- Table ----------------- */
+/*
+ * Soul §III.5: cards have provenance. Layout is true-compass —
+ * partner across, opposition rotated to face inward, four petals
+ * converge in the centre with each card's orientation matching
+ * the player who placed it. Round piles grow on each team's side.
+ */
 
 .dle-table {
-  background: var(--clr-surface);
+  background: var(--clr-felt, #2c4a3a);
+  background-image:
+    radial-gradient(ellipse at center, rgba(255,255,255,0.04), transparent 70%),
+    var(--clr-felt, linear-gradient(135deg, #2c4a3a, #1c3a2a));
   border: 1px solid var(--clr-border);
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 14px;
-  display: grid;
-  grid-template-areas:
-    "header  header   header"
-    "west    center   east"
-    "north   north    north";
-  grid-template-columns: 1fr 2fr 1fr;
-  gap: 10px;
   position: relative;
+  color: #f3eee0;
 }
 .dle-table-header {
-  grid-area: header;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 8px;
 }
 .dle-trump-chip,
 .dle-round-chip {
-  background: var(--clr-accent-light);
-  color: var(--clr-accent);
+  background: rgba(255, 247, 224, 0.92);
+  color: #4a2014;
   padding: 3px 10px;
   border-radius: 6px;
   font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 .dle-round-chip {
-  background: var(--clr-accent-cool-light);
-  color: var(--clr-accent-cool);
+  background: rgba(220, 235, 255, 0.92);
+  color: #1c3050;
 }
-.dle-table-center {
-  grid-area: center;
+.dle-trump-card-mini {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  pointer-events: none;
+}
+.dle-trump-card-mini .dle-card { cursor: default; }
+.dle-points-readout {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: rgba(243, 238, 224, 0.92);
+  background: rgba(0,0,0,0.18);
+  padding: 4px 10px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.dle-points-divider { opacity: 0.5; }
+/* Trump card highlight in south's hand. Soul §IV.5 + §1: the
+   trumper's bid card is visible — the player can see what they
+   folded. */
+.dle-card-trump {
+  box-shadow: 0 0 0 2px #d6a648, 0 1px 4px rgba(214,166,72,0.35);
+  border-color: #d6a648 !important;
+}
+
+.dle-board {
+  display: grid;
+  grid-template-columns: 64px 1fr 64px;
+  grid-template-rows: auto 200px;
+  grid-template-areas:
+    ".     north  ."
+    "west  flower east";
+  gap: 10px;
+  align-items: center;
+  justify-items: center;
+  position: relative;     /* anchor for absolutely-positioned pile wraps */
+}
+
+.dle-seat {
+  font-size: 0.7rem;
+  color: rgba(243, 238, 224, 0.8);
+  text-align: center;
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: 90px;
-  text-align: center;
-  position: relative;
+  gap: 4px;
 }
-.dle-tricks {
-  display: flex;
-  gap: 14px;
-  font-size: 0.85rem;
-  color: var(--clr-text-muted);
+.dle-seat-active .dle-seat-label {
+  color: #ffd87a;
+  font-weight: 700;
 }
-.dle-seat {
-  font-size: 0.78rem;
-  color: var(--clr-text-muted);
-  text-align: center;
-  position: relative;
-}
-.dle-seat-active {
-  color: var(--clr-accent);
-}
-.dle-seat-active .dle-seat-label::after {
-  content: ' ▸';
-}
+.dle-seat-active .dle-seat-label::before { content: '▸ '; }
+.dle-seat-active .dle-seat-label::after  { content: ' ◂'; }
+
 .dle-seat-north { grid-area: north; }
 .dle-seat-west  { grid-area: west; }
 .dle-seat-east  { grid-area: east; }
+
 .dle-seat-label {
   font-weight: 600;
-  margin-bottom: 4px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 0.65rem;
 }
-.dle-seat-cards {
+
+/* Fanned card-back hands. Horizontal for North, vertical for the
+   opposition. Each card slightly overlaps the next. */
+.dle-seat-fan {
   display: flex;
   justify-content: center;
-  gap: 2px;
-  flex-wrap: nowrap;
-}
-.dle-seat-cards-side {
-  flex-direction: column;
   align-items: center;
-  gap: 2px;
 }
-.dle-seat-played {
-  margin-top: 4px;
+.dle-seat-fan-h {
+  flex-direction: row;
+}
+.dle-seat-fan-h .dle-card { margin-left: -16px; }
+.dle-seat-fan-h .dle-card:first-child { margin-left: 0; }
+
+.dle-seat-fan-v {
+  flex-direction: column;
+}
+.dle-seat-fan-v .dle-card { margin-top: -28px; }
+.dle-seat-fan-v .dle-card:first-child { margin-top: 0; }
+
+/* Rotate opposition card-backs so they "face" the centre. */
+.dle-rotate-cw  .dle-card { transform: rotate(90deg); }
+.dle-rotate-ccw .dle-card { transform: rotate(-90deg); }
+
+/* The four-petal flower: nested 3x3 grid where each petal sits in
+   one of the cardinal cells. Cards are rotated to match seat. */
+.dle-flower {
+  grid-area: flower;
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-items: center;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0.18), transparent 70%);
+}
+.dle-petal {
   display: flex;
+  align-items: center;
   justify-content: center;
+  z-index: 2;
 }
-.dle-played-south {
+/* Pile wraps — off-axis, secondary visual elements. Team A
+   (you+partner) bottom-left; Team B (opps) top-right. */
+.dle-pile-wrap {
   position: absolute;
-  bottom: -8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+}
+.dle-pile-wrap-a {
+  bottom: 8px;
+  left: 8px;
+}
+.dle-pile-wrap-b {
+  top: 8px;
+  right: 8px;
+}
+
+/* Round-pile stacks. Soul §III.5: the two neat stacks preserve
+   the entire game's history. */
+.dle-pile {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  width: 26px;
+  height: 34px;
+}
+.dle-pile-empty {
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(255,255,255,0.05),
+    rgba(255,255,255,0.05) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+  border: 1px dashed rgba(255,255,255,0.15);
+  border-radius: 4px;
+}
+.dle-pile-card {
+  position: absolute;
+  width: 18px;
+  height: 26px;
+  border: 1px solid rgba(0,0,0,0.4);
+  border-radius: 3px;
+  background: linear-gradient(135deg, var(--clr-accent-cool), var(--clr-accent-cool-light));
+}
+.dle-pile-count {
+  margin-left: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: rgba(243, 238, 224, 0.92);
 }
 
 /* ----------------- Cards ----------------- */
@@ -267,24 +384,37 @@
   font-style: italic;
 }
 .dle-worlds {
-  display: flex;
+  display: inline-flex;
+  align-items: baseline;
   gap: 8px;
-  align-items: center;
-}
-.dle-worlds-toggle {
-  background: none;
+  padding: 4px 12px;
+  border-radius: 999px;
   border: 1px solid var(--clr-border);
-  color: var(--clr-text-muted);
-  padding: 2px 8px;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  cursor: pointer;
-}
-.dle-worlds-bucket {
+  background: var(--clr-surface, transparent);
   font-family: var(--font-mono);
-  font-size: 0.8rem;
-  color: var(--clr-accent-cool);
+  transition: background 200ms ease, color 200ms ease, border-color 200ms ease;
 }
+.dle-worlds-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--clr-text-muted);
+}
+.dle-worlds-count {
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 3ch;
+  text-align: right;
+}
+/* Intensity grading: as the count converges toward 1, the chip
+   warms up. Soul §VI.4: "rush the player without explicitly
+   rushing them." The ticker does the work. */
+.dle-worlds-idle      { color: var(--clr-text-muted); }
+.dle-worlds-cool      { color: var(--clr-text-muted); }
+.dle-worlds-warm      { color: #7a5a10; border-color: #d6b96a; background: #fff7e0; }
+.dle-worlds-hot       { color: #b25b1b; border-color: #e3a16a; background: #fde9d3; }
+.dle-worlds-converged { color: #1f5b32; border-color: #6cba87; background: #d6f0df; font-weight: 800; }
 
 /* ----------------- Actions ----------------- */
 
@@ -463,7 +593,7 @@
   margin: 0 0 12px;
   font-size: 1.3rem;
 }
-.dle-result-score {
+.dle-result-score-deprecated {
   font-size: 4rem;
   font-weight: 700;
   color: var(--clr-accent);
@@ -498,6 +628,13 @@
   text-align: left;
 }
 .dle-result-actions { display: flex; justify-content: center; }
+.dle-result-replay-note {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--clr-text-muted);
+  font-style: italic;
+  margin: 8px 0 0;
+}
 .dle-result-tomorrow {
   margin-top: 16px;
   font-size: 0.8rem;
@@ -525,9 +662,8 @@
 }
 .dle-dot-active { background: var(--clr-accent); }
 
-.dle-hint-readout {
-  text-align: center;
-  font-size: 0.78rem;
-  color: var(--clr-text-muted);
-  font-style: italic;
-}
+/* Verdict-coloured result frames. Soul §IV.11: loss must sting
+   appropriate to cause; correct must feel beautiful. */
+.dle-result-correct .dle-result-title { color: #2e6b3e; }
+.dle-result-late    .dle-result-title { color: #7a5a10; }
+.dle-result-fail    .dle-result-title { color: var(--clr-accent); }

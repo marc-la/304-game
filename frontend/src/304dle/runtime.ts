@@ -36,8 +36,6 @@ export interface Runtime {
   // `trackCapsObligation` (engine), never written from elsewhere in
   // the runtime. Schema mirrors game304/state.py:CapsObligation.
   capsObligations: Map<Seat, CapsObligation>;
-  hintsUsed: number;
-  worldsToggleUses: number;
   rng: () => number;
 }
 
@@ -56,8 +54,6 @@ export const newRuntime = (opts: RuntimeOptions): Runtime => ({
   completedRounds: [],
   pointsWon: { team_a: 0, team_b: 0 },
   capsObligations: new Map(),
-  hintsUsed: 0,
-  worldsToggleUses: 0,
   rng: makeRng(opts.botSeed),
 });
 

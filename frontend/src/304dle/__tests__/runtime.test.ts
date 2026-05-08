@@ -10,7 +10,7 @@ import {
   turnOrder,
   whoseTurn,
 } from '../runtime';
-import { computeScore } from '../scoring';
+import { buildVerdict } from '../scoring';
 import { buildShareGrid } from '../share';
 import { fixtureSimpleSweep } from '../engine/__tests__/fixtures';
 import type { Seat } from '../engine/seating';
@@ -141,42 +141,44 @@ describe('runtime caps obligation tracking', () => {
   });
 });
 
-describe('computeScore', () => {
-  it('100 for correct call at par with no aids', () => {
-    expect(computeScore({
-      verdict: 'correct', callRound: 5, parRound: 5, hintsUsed: 0, worldsToggleUses: 0,
-    }).total).toBe(100);
+describe('buildVerdict', () => {
+  it('correct at par → no parDelta, extends streak', () => {
+    const v = buildVerdict({ verdict: 'correct', callRound: 5, parRound: 5 });
+    expect(v.parDelta).toBe(0);
+    expect(v.extendsStreak).toBe(true);
   });
-  it('penalises late call vs par', () => {
-    expect(computeScore({
-      verdict: 'correct', callRound: 7, parRound: 5, hintsUsed: 0, worldsToggleUses: 0,
-    }).total).toBe(100 - 16);
+  it('correct late vs par → parDelta is the over-call', () => {
+    const v = buildVerdict({ verdict: 'correct', callRound: 7, parRound: 5 });
+    expect(v.parDelta).toBe(2);
+    expect(v.extendsStreak).toBe(true);
   });
-  it('40 for late', () => {
-    expect(computeScore({
-      verdict: 'late', callRound: 7, parRound: 4, hintsUsed: 0, worldsToggleUses: 0,
-    }).total).toBe(40);
+  it('late verdict does not extend streak', () => {
+    const v = buildVerdict({ verdict: 'late', callRound: 7, parRound: 4 });
+    expect(v.extendsStreak).toBe(false);
   });
-  it('0 for early/missed', () => {
-    expect(computeScore({
-      verdict: 'wrong-not-obligated', callRound: 3, parRound: 6, hintsUsed: 0, worldsToggleUses: 0,
-    }).total).toBe(0);
+  it('wrong-not-obligated does not extend streak', () => {
+    const v = buildVerdict({ verdict: 'wrong-not-obligated', callRound: 3, parRound: 6 });
+    expect(v.extendsStreak).toBe(false);
+  });
+  it('missed (no callRound) yields null parDelta', () => {
+    const v = buildVerdict({ verdict: 'missed', callRound: null, parRound: 6 });
+    expect(v.parDelta).toBeNull();
+    expect(v.extendsStreak).toBe(false);
   });
 });
 
 describe('share grid', () => {
-  it('produces a non-empty multi-line grid', () => {
+  it('produces a non-empty multi-line grid without /100', () => {
     const grid = buildShareGrid({
       date: '2026-05-01',
-      difficulty: 'wednesday',
       verdict: 'correct',
-      score: 100,
       callRound: 5,
+      parRound: 5,
       orderLength: 4,
-      worldsAtCall: null,
     });
     expect(grid).toContain('304dle');
-    expect(grid).toContain('100');
+    expect(grid).toContain('Caps');
+    expect(grid).not.toContain('/100');
     expect(grid.split('\n').length).toBeGreaterThan(2);
   });
 });

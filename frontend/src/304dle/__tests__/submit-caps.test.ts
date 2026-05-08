@@ -1,7 +1,7 @@
 // End-to-end verdict tests for the submitCaps store action.
-// The engine layer is unit-tested elsewhere; these tests verify
-// the store + runtime + engine wiring produces the right verdict
-// across the four reachable branches of the verdict tree.
+// Adaptive caps (rules.md §C-1 rewrite): no order is committed by
+// the player. submitCaps verifies obligation via the CSP solver
+// and emits a verdict.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CardId } from '../engine/card';
@@ -15,10 +15,6 @@ import { useStore } from '../store';
 import type { DailyPuzzle } from '../types';
 import type { Fixture } from '../engine/__tests__/fixtures';
 
-// Build a Runtime whose internal state mirrors a caps test fixture
-// (engine-level EngineGameState). The fixture supplies completed
-// rounds, current hands, trump, and priority. We project these
-// onto the runtime fields directly — there is no public mutator.
 const runtimeFromFixture = (fx: Fixture): Runtime => {
   const rt = newRuntime({
     hands: {
@@ -60,13 +56,12 @@ const stubPuzzle = (rt: Runtime): DailyPuzzle => ({
   },
 });
 
-const seedCapsEntry = (rt: Runtime, chosen: CardId[]) => {
+const seedCapsConfirm = (rt: Runtime, puzzle?: DailyPuzzle) => {
   useStore.setState({
     state: {
-      kind: 'caps-entry',
-      puzzle: stubPuzzle(rt),
+      kind: 'caps-confirm',
+      puzzle: puzzle ?? stubPuzzle(rt),
       runtime: rt,
-      chosen,
     },
   });
 };
@@ -79,119 +74,67 @@ const verdict = () => {
   return s.verdict;
 };
 
-describe('submitCaps verdict tree', () => {
+describe('submitCaps verdict tree (adaptive)', () => {
   beforeEach(() => {
-    // Reset store to a known state before each test.
     useStore.setState({ state: { kind: 'loading' } });
   });
 
-  it("'correct' when called at first-moment with a witness order", () => {
-    // fixtureSimpleSweep: round 7 about to start, south holds top
-    // two trumps, both [Jh,9h] and [9h,Jh] are witness orders.
+  it("'correct' when caller is obligated and on time", () => {
     const rt = runtimeFromFixture(fixtureSimpleSweep);
-    // Trigger the tracker by playing a single card. The stamp
-    // lands at {round:7, card:1, vPlays:6}.
     applyPlay(rt, 'north', 'Ah' as CardId);
     expect(rt.capsObligations.size).toBe(1);
 
-    seedCapsEntry(rt, ['Jh', '9h'] as CardId[]);
+    seedCapsConfirm(rt);
     useStore.getState().submitCaps();
     expect(verdict()).toBe('correct');
   });
 
   it("'late' when caller plays a card after obligation arises before calling", () => {
     const rt = runtimeFromFixture(fixtureSimpleSweep);
-    // Stamp at the natural first-moment.
     applyPlay(rt, 'north', 'Ah' as CardId);
     applyPlay(rt, 'west', 'Kh' as CardId);
-    // South now plays Jh → vPlaysNow = 7 > vPlaysAtObligation = 6.
     applyPlay(rt, 'south', 'Jh' as CardId);
     expect(rt.capsObligations.get('south' as Seat)?.vPlaysAtObligation)
       .toBe(6);
 
-    // Remaining hand is [9h]; a single-card order trivially
-    // sweeps R7's tail and R8.
-    seedCapsEntry(rt, ['9h'] as CardId[]);
+    seedCapsConfirm(rt);
     useStore.getState().submitCaps();
     expect(verdict()).toBe('late');
   });
 
   it("'wrong-not-obligated' when obligation never holds", () => {
-    // fixtureNotObligated: round 7 start, south holds [Jh, 7h].
-    // 7h cannot sweep R8, so obligation is false.
     const rt = runtimeFromFixture(fixtureNotObligated);
     expect(rt.capsObligations.size).toBe(0);
-    seedCapsEntry(rt, ['Jh', '7h'] as CardId[]);
+    seedCapsConfirm(rt);
     useStore.getState().submitCaps();
     expect(verdict()).toBe('wrong-not-obligated');
   });
 
-  it("'wrong-bad-order' when obligated but the chosen order does not match the hand", () => {
-    // fixtureSimpleSweep is obligated; submitting a partial
-    // order (missing 9h) makes validateCapsCall fail on the
-    // multiset check while obligation is true.
+  it("'late' wins precedence when stamp predates current state", () => {
     const rt = runtimeFromFixture(fixtureSimpleSweep);
-    applyPlay(rt, 'north', 'Ah' as CardId);
-    seedCapsEntry(rt, ['Jh'] as CardId[]);
-    useStore.getState().submitCaps();
-    expect(verdict()).toBe('wrong-bad-order');
-  });
-
-  it("'late' wins precedence over 'wrong-not-obligated' when the witness was broken by a post-stamp play", () => {
-    // Real-puzzle scenario: south is obligated, doesn't call, then
-    // plays a card that breaks the witness. After the bad play,
-    // obligation no longer holds in the current state — but the
-    // stamp persists. Submitting caps should yield 'late' (player
-    // missed the moment), not 'wrong-not-obligated' (which would
-    // imply they were never obligated).
-    const rt = runtimeFromFixture(fixtureSimpleSweep);
-    // Manually stamp obligation as if it had been detected at
-    // start of round 7 (mirrors the natural stamp for this fixture).
     rt.capsObligations.set('south' as Seat, {
       obligatedAtRound: 7,
       obligatedAtCard: 0,
       vPlaysAtObligation: 6,
     });
-    // Round 7 plays out: north opens, west follows. South now plays
-    // 9h (the lower trump) as a non-witness move.
     applyPlay(rt, 'north', 'Ah' as CardId);
     applyPlay(rt, 'west', 'Kh' as CardId);
     applyPlay(rt, 'south', '9h' as CardId);
-    // Hand left: [Jh]. After south's 9h play, vPlaysNow = 7 > 6 → late.
-    seedCapsEntry(rt, ['Jh'] as CardId[]);
+    seedCapsConfirm(rt);
     useStore.getState().submitCaps();
-    // 9h still wins R7 (rank 2 trump beats Ah/Kh), then Jh wins R8
-    // alone. So the order [Jh] is actually still a witness in this
-    // particular fixture. To force the scenario where the witness
-    // is broken by 9h, we'd need a scenario where 9h losing matters.
-    // Either way the verdict should be 'late', never 'correct'.
     expect(verdict()).toBe('late');
   });
 
-  it('finishGame awards full 100 when caps is called at the first possible moment', () => {
-    // Regression for the par/call convention bridge: puzzle
-    // generator records optimalCallRound=R (rounds completed at
-    // first obligation); runtime emits callRound = roundNumber
-    // (the round in which the call happens). Calling at the
-    // earliest moment must net zero parPenalty.
+  it('finishGame surfaces callRound and displayPar (par+1) when obligation just arose', () => {
     const rt = runtimeFromFixture(fixtureSimpleSweep);
     applyPlay(rt, 'north', 'Ah' as CardId);
 
-    // Stub puzzle with optimalCallRound = 6 (matching generator
-    // convention: obligation first detected post-round-6 here).
-    useStore.setState({
-      state: {
-        kind: 'caps-entry',
-        puzzle: {
-          ...stubPuzzle(rt),
-          classification: {
-            capsAchievable: true,
-            optimalCallRound: 6,
-            parScore: 100,
-          },
-        },
-        runtime: rt,
-        chosen: ['Jh', '9h'] as CardId[],
+    seedCapsConfirm(rt, {
+      ...stubPuzzle(rt),
+      classification: {
+        capsAchievable: true,
+        optimalCallRound: 6,
+        parScore: 100,
       },
     });
     useStore.getState().submitCaps();
@@ -200,7 +143,8 @@ describe('submitCaps verdict tree', () => {
 
     const s = useStore.getState().state;
     if (s.kind !== 'result') throw new Error(`expected result, got ${s.kind}`);
-    expect(s.score).toBe(100);
-    expect(s.callRound).toBe(7); // user-facing display: round 7
+    expect(s.callRound).toBe(7);
+    expect(s.parRound).toBe(7);
+    expect(s.verdict).toBe('correct');
   });
 });

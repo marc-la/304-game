@@ -1,52 +1,31 @@
-import type { Suit } from '../engine/card';
-import type { Seat } from '../engine/seating';
-import { SEAT_NAMES, SUIT_SYMBOLS } from '../../types/game';
+import type { WorldsCount } from '../worlds-counter';
+import { formatWorlds } from '../worlds-counter';
 
 interface Props {
-  voids: Map<Seat, Set<Suit>>;
-  showWorlds: boolean;
-  worldsBucket: 'many' | 'some' | 'few' | 'one' | null;
-  onToggleWorlds: () => void;
+  worlds: WorldsCount | null;
 }
 
-const BUCKET_LABEL: Record<'many' | 'some' | 'few' | 'one', string> = {
-  many: '▒▒▒▒',
-  some: '▒▒▒░',
-  few: '▒▒░░',
-  one: '▒░░░',
+// Soul §IV.7: the worlds counter is the visible spine. Always
+// shown, never paywalled. Voids are deliberately NOT displayed —
+// the player should remember.
+const intensityClass = (w: WorldsCount | null): string => {
+  if (w === null) return 'dle-worlds-idle';
+  // Use exact count when available; else fall back to estimate.
+  const measure = w.exact ?? Number(w.estimate > 1_000_000n ? 1_000_000n : w.estimate);
+  if (measure === 0) return 'dle-worlds-idle';
+  if (measure > 100) return 'dle-worlds-cool';
+  if (measure > 10) return 'dle-worlds-warm';
+  if (measure > 1) return 'dle-worlds-hot';
+  return 'dle-worlds-converged';
 };
 
-export const PublicInfo = ({ voids, showWorlds, worldsBucket, onToggleWorlds }: Props) => {
-  const chips: Array<{ seat: Seat; suit: Suit }> = [];
-  for (const [seat, suits] of voids) {
-    for (const suit of suits) chips.push({ seat, suit });
-  }
-  return (
-    <div className="dle-public">
-      <div className="dle-voids">
-        {chips.length === 0 && (
-          <span className="dle-voids-empty">No public voids yet</span>
-        )}
-        {chips.map(({ seat, suit }) => (
-          <span key={`${seat}:${suit}`} className="dle-void-chip">
-            {SEAT_NAMES[seat][0]} void <span aria-hidden>{SUIT_SYMBOLS[suit]}</span>
-          </span>
-        ))}
-      </div>
-      <div className="dle-worlds">
-        <button
-          type="button"
-          className="dle-worlds-toggle"
-          onClick={onToggleWorlds}
-        >
-          {showWorlds ? 'Hide worlds' : 'Show worlds (-5)'}
-        </button>
-        {showWorlds && worldsBucket && (
-          <span className="dle-worlds-bucket" aria-label={`${worldsBucket} worlds remaining`}>
-            {BUCKET_LABEL[worldsBucket]}
-          </span>
-        )}
-      </div>
+export const PublicInfo = ({ worlds }: Props) => (
+  <div className="dle-public">
+    <div className={`dle-worlds ${intensityClass(worlds)}`}>
+      <span className="dle-worlds-label">Worlds</span>
+      <span className="dle-worlds-count">
+        {worlds ? formatWorlds(worlds) : '…'}
+      </span>
     </div>
-  );
-};
+  </div>
+);

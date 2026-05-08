@@ -456,9 +456,87 @@ export const fixtureLostARound: Fixture = {
   expected: { obligated: false },
 };
 
+// FIXTURE 5: User-reported regression. South starts with
+// Js, As, 10s, Ks, 8s, 7s, 7h, 9c (trump = spades). Plays out R1
+// and R2 (team_a wins both). At mid-R3, south has led Js, partner
+// played 9s. South's remaining hand [As, 10s, Ks, 8s, 7s] is all
+// trump; only outstanding spade is Qs (somewhere in opps). South
+// should be cap-obligated: lead As (kills Qs), then sweep with
+// the remaining trumps.
+//
+// The old enumeration solver returned `not obligated` here because
+// the world count exceeds MAX_WORLDS = 5000 (16 unknowns, ~13.5M
+// worlds). The CSP solver does not enumerate worlds and answers
+// correctly.
+export const fixtureUserCSPRegression: Fixture = {
+  id: 'csp-user-regression-many-worlds',
+  description:
+    'South: As 10s Ks 8s 7s after R3 partial (Js played, 9s partner). ' +
+    'Trump = spades. Only outstanding spade is Qs. Caps obligated.',
+  state: (() => {
+    const c = (s: string): CardId => s as CardId;
+    const hands = new Map<'north' | 'west' | 'south' | 'east', CardId[]>();
+    hands.set('south', [c('As'), c('10s'), c('Ks'), c('8s'), c('7s')]);
+    hands.set('north', [c('Ah'), c('Kh'), c('9h'), c('10h'), c('Jd')]);
+    hands.set('east',  [c('Qs'), c('Qd'), c('Kd'), c('10d'), c('9d'), c('8d')]);
+    hands.set('west',  [c('Jc'), c('Qc'), c('Kc'), c('Ac'), c('Ad'), c('7d')]);
+    return {
+      hands,
+      trump: {
+        trumperSeat: 'south' as const,
+        trumpSuit: 's' as const,
+        trumpCard: c('Js'),
+        trumpCardInHand: false, // Js was played in R3 lead
+        isRevealed: true,
+        isOpen: true,
+      },
+      play: {
+        roundNumber: 3,
+        priority: 'south' as const,
+        currentRound: [
+          { seat: 'south' as const, card: c('Js'), faceDown: false, revealed: false },
+          { seat: 'north' as const, card: c('9s'), faceDown: false, revealed: false },
+        ],
+        completedRounds: [
+          {
+            roundNumber: 1,
+            cards: [
+              { seat: 'south' as const, card: c('7h'), faceDown: false, revealed: false },
+              { seat: 'east' as const,  card: c('8h'), faceDown: false, revealed: false },
+              { seat: 'north' as const, card: c('Jh'), faceDown: false, revealed: false },
+              { seat: 'west' as const,  card: c('Qh'), faceDown: false, revealed: false },
+            ],
+            winner: 'north' as const,
+            pointsWon: 32,
+            trumpRevealed: false,
+          },
+          {
+            roundNumber: 2,
+            cards: [
+              { seat: 'north' as const, card: c('7c'), faceDown: false, revealed: false },
+              { seat: 'east' as const,  card: c('8c'), faceDown: false, revealed: false },
+              { seat: 'south' as const, card: c('9c'), faceDown: false, revealed: false },
+              { seat: 'west' as const,  card: c('10c'), faceDown: false, revealed: false },
+            ],
+            winner: 'south' as const,
+            pointsWon: 30,
+            trumpRevealed: false,
+          },
+        ],
+        pointsWon: { team_a: 62, team_b: 0 },
+        capsObligations: new Map(),
+      },
+      pccPartnerOut: null,
+    };
+  })(),
+  viewer: 'south',
+  expected: { obligated: true },
+};
+
 export const ALL_FIXTURES: Fixture[] = [
   fixtureSimpleSweep,
   fixtureNotObligated,
   fixtureLastRound,
   fixtureLostARound,
+  fixtureUserCSPRegression,
 ];

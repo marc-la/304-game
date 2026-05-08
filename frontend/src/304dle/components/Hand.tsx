@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import type { CardId } from '../engine/card';
 import { powerOf, suitOf } from '../engine/card';
 import { CardView } from './CardView';
@@ -5,6 +6,7 @@ import { CardView } from './CardView';
 interface Props {
   hand: ReadonlyArray<CardId>;
   legalSet: ReadonlySet<CardId>;
+  trumpCard: CardId;          // the card folded as trump (highlighted)
   onPlay: (card: CardId) => void;
 }
 
@@ -18,10 +20,15 @@ const sortedHand = (hand: ReadonlyArray<CardId>): CardId[] =>
     return powerOf(a) - powerOf(b);
   });
 
-export const Hand = ({ hand, legalSet, onPlay }: Props) => {
+export const Hand = ({ hand, legalSet, trumpCard, onPlay }: Props) => {
   const sorted = sortedHand(hand);
   return (
-    <div className="dle-hand">
+    <motion.div
+      className="dle-hand"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.75, duration: 0.5, ease: 'easeOut' }}
+    >
       {sorted.map((c) => {
         const playable = legalSet.has(c);
         return (
@@ -30,10 +37,11 @@ export const Hand = ({ hand, legalSet, onPlay }: Props) => {
             card={c}
             selectable={playable}
             faded={!playable}
+            isTrumpCard={c === trumpCard}
             onClick={playable ? () => onPlay(c) : undefined}
           />
         );
       })}
-    </div>
+    </motion.div>
   );
 };

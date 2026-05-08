@@ -1,64 +1,41 @@
-// Scoring formula for one 304dle session.
+// Verdict model for one 304dle session.
+//
+// Soul §VI.4: 304dle is verdict-first, not score-first. The 0-100
+// numeric model was a Wordle vestige that diluted the binary purity
+// of "called caps right or you didn't". The single optional metric
+// is `parDelta` — how many rounds late you called vs the earliest
+// possible moment — which functions as the "elegance" signal.
 
 export type CapsVerdictKind =
-  | 'correct'
-  | 'late'
-  | 'wrong-bad-order'
-  | 'wrong-not-obligated'
-  | 'missed'
-  // Game ended with no caps call AND south was never caps-obligated:
-  // there was nothing to call. Distinct from 'missed' (was-obligated,
-  // didn't call) so the UI can give honest feedback.
-  | 'no-caps-available';
+  | 'correct'             // adaptive winning strategy exists; called on time
+  | 'late'                // strategy exists but caller passed the obligation moment
+  | 'wrong-not-obligated' // no adaptive strategy at this state — opps can still take a trick
+  | 'missed';             // game ended without a call (curated puzzles always have a witness)
 
-export interface ScoreInputs {
+export interface VerdictInputs {
   verdict: CapsVerdictKind;
   callRound: number | null;
   parRound: number | null;
-  hintsUsed: number;
-  worldsToggleUses: number;
 }
 
-export interface ScoreBreakdown {
-  total: number;
-  base: number;
-  parPenalty: number;
-  hintPenalty: number;
-  worldsPenalty: number;
+export interface Verdict {
+  kind: CapsVerdictKind;
+  callRound: number | null;
+  parRound: number | null;
+  parDelta: number | null;     // rounds called past par; null if not applicable
+  extendsStreak: boolean;       // 'correct' only — late/wrong/missed reset
 }
 
-export const computeScore = (inputs: ScoreInputs): ScoreBreakdown => {
-  let base = 0;
-  let parPenalty = 0;
-  switch (inputs.verdict) {
-    case 'correct':
-      base = 100;
-      if (inputs.callRound !== null && inputs.parRound !== null) {
-        const over = Math.max(0, inputs.callRound - inputs.parRound);
-        parPenalty = over * 8;
-      }
-      break;
-    case 'late':
-      base = 40;
-      break;
-    case 'wrong-bad-order':
-      base = 10;
-      break;
-    case 'wrong-not-obligated':
-    case 'missed':
-      base = 0;
-      break;
-    case 'no-caps-available':
-      // Not the player's fault — this puzzle simply had no caps
-      // obligation arise. Award a neutral participation score.
-      base = 50;
-      break;
-  }
-  const hintPenalty = inputs.hintsUsed * 1;
-  const worldsPenalty = inputs.worldsToggleUses * 5;
-  const total = Math.max(
-    0,
-    Math.min(100, base - parPenalty - hintPenalty - worldsPenalty),
-  );
-  return { total, base, parPenalty, hintPenalty, worldsPenalty };
+export const buildVerdict = (inp: VerdictInputs): Verdict => {
+  const parDelta =
+    inp.callRound !== null && inp.parRound !== null
+      ? Math.max(0, inp.callRound - inp.parRound)
+      : null;
+  return {
+    kind: inp.verdict,
+    callRound: inp.callRound,
+    parRound: inp.parRound,
+    parDelta,
+    extendsStreak: inp.verdict === 'correct',
+  };
 };

@@ -1,9 +1,8 @@
-// Caps obligation algorithm. Composes info.ts (information sets,
-// worlds) and dd.ts (per-world solver) into the §5 single-dummy
-// quantifiers: there exists O such that for every world W and every
-// legal opponent play, O sweeps every remaining round.
-//
-// Mirrors game304/caps.py.
+// Caps obligation algorithm. The primary entry is now the
+// CSP-based adaptive solver in caps-csp.ts (per rules.md §C-1
+// adaptive definition). The world-enumeration machinery here is
+// retained only because checkClaimBalance still uses it; for caps
+// itself we no longer enumerate worlds.
 
 import type { CardId } from './card';
 import type { World, InformationSet } from './info';
@@ -13,41 +12,19 @@ import { orderMinPointsInWorld, orderSweepsWorld } from './dd';
 import type { Seat } from './seating';
 import { teamOf } from './seating';
 import type { CapsObligation, EngineGameState, EnginePlayState } from './state';
+import { checkCapsObligationCSP } from './caps-csp';
 
 export const MAX_WORLDS = 5000;
 export const MAX_PERMUTATIONS = 5040; // 7!
 
+// Caps obligation: caller's team wins all remaining rounds, and
+// the caller has an adaptive winning strategy in every consistent
+// world. Caller's plays may depend on what opps reveal — see
+// rules.md §C-1 adaptive definition.
 export const checkCapsObligation = (
   state: EngineGameState,
   seat: Seat,
-): boolean => {
-  if (state.pccPartnerOut === seat) return false;
-
-  let info: InformationSet;
-  try {
-    info = buildInfoSet(state, seat);
-  } catch {
-    return false;
-  }
-
-  if (!info.teamWonAllCompleted) return false;
-  if (info.ownHand.length === 0) return false;
-
-  const roundsRemaining = 8 - state.play.completedRounds.length;
-  if (roundsRemaining <= 0) return false;
-
-  const worlds = enumerateOrAbort(info);
-  if (worlds === null) return false;
-
-  return hasWitnessOrder({
-    info,
-    seat,
-    play: state.play,
-    worlds,
-    roundsRemaining,
-    pccPartnerOut: state.pccPartnerOut,
-  });
-};
+): boolean => checkCapsObligationCSP(state, seat);
 
 export const validateCapsCall = (
   state: EngineGameState,
@@ -365,13 +342,79 @@ function* permutations<T>(items: ReadonlyArray<T>): Generator<T[]> {
   }
 }
 
-const hasWitnessOrder = (args: WitnessSearchArgs): boolean => {
+const firstWitnessOrder = (args: WitnessSearchArgs): CardId[] | null => {
   const cards = [...args.info.ownHand];
-  if (factorial(cards.length) > MAX_PERMUTATIONS) return false;
+  if (factorial(cards.length) > MAX_PERMUTATIONS) return null;
   for (const ordering of permutations(cards)) {
-    if (orderWinsAllWorlds({ ...args, order: ordering })) return true;
+    if (orderWinsAllWorlds({ ...args, order: ordering })) return ordering;
   }
-  return false;
+  return null;
+};
+
+// Returns south's first witness order at this state, or null if none
+// exists / none can be searched within the permutation cap. Mirrors
+// checkCapsObligation but exposes the actual order. Useful for tooling
+// (puzzle curators) that need to inspect the witness, not just know it
+// exists.
+export const findWitnessOrder = (
+  state: EngineGameState,
+  seat: Seat,
+): CardId[] | null => {
+  if (state.pccPartnerOut === seat) return null;
+
+  let info: InformationSet;
+  try {
+    info = buildInfoSet(state, seat);
+  } catch {
+    return null;
+  }
+
+  if (!info.teamWonAllCompleted) return null;
+  if (info.ownHand.length === 0) return null;
+
+  const roundsRemaining = 8 - state.play.completedRounds.length;
+  if (roundsRemaining <= 0) return null;
+
+  const worlds = enumerateOrAbort(info);
+  if (worlds === null) return null;
+
+  return firstWitnessOrder({
+    info,
+    seat,
+    play: state.play,
+    worlds,
+    roundsRemaining,
+    pccPartnerOut: state.pccPartnerOut,
+  });
+};
+
+// Whether `order` wins across every world consistent with `info`.
+// Lower-level than validateCapsCall: takes a pre-built information
+// set rather than re-deriving from EngineGameState. Used by the
+// curator to test orders against synthesized (relaxed) information
+// sets without round-tripping through the state shape.
+export const orderSurvivesInfo = (args: {
+  info: InformationSet;
+  play: EnginePlayState;
+  seat: Seat;
+  pccPartnerOut: Seat | null;
+  order: ReadonlyArray<CardId>;
+}): boolean => {
+  const roundsRemaining = 8 - args.play.completedRounds.length;
+  if (roundsRemaining <= 0) return false;
+
+  const worlds = enumerateOrAbort(args.info);
+  if (worlds === null) return false;
+
+  return orderWinsAllWorlds({
+    info: args.info,
+    seat: args.seat,
+    play: args.play,
+    worlds,
+    order: [...args.order],
+    roundsRemaining,
+    pccPartnerOut: args.pccPartnerOut,
+  });
 };
 
 const orderWinsAllWorlds = (args: OrderCheckArgs): boolean => {

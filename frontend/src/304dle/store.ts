@@ -1,13 +1,16 @@
 // Zustand store driving the 304dle game session.
+//
+// Soul §VI.4 + rules.md §C-1 adaptive: the player no longer
+// states a play order. They tap "Call Caps", confirm, and the
+// engine verifies obligation via the CSP adaptive solver. The
+// reveal modal can show one canonical witness line for clarity,
+// but the strategy is adaptive — there is no single "correct
+// order" the player must commit to.
 
 import { create } from 'zustand';
 import type { CardId } from './engine/card';
-import {
-  checkCapsObligation,
-  explainCapsFailure,
-  isCapsLate,
-  validateCapsCall,
-} from './engine/caps';
+import { checkCapsObligation, isCapsLate } from './engine/caps';
+import { findWitnessLine } from './engine/caps-csp';
 import { legalPlays } from './engine/play';
 import type { Seat } from './engine/seating';
 import type { CompletedRound } from './engine/state';
@@ -24,7 +27,6 @@ import {
   ledSuit as runtimeLedSuit,
 } from './runtime';
 import type { Runtime } from './runtime';
-import { computeScore } from './scoring';
 import type { CapsVerdictKind } from './scoring';
 import { seatsHoldingTrump } from './engine/play';
 
@@ -36,31 +38,25 @@ export type AppState =
       kind: 'playing';
       puzzle: DailyPuzzle;
       runtime: Runtime;
-      // Bot turns auto-tick via scheduleBotTurn.
     }
   | {
-      kind: 'caps-entry';
+      kind: 'caps-confirm';
       puzzle: DailyPuzzle;
       runtime: Runtime;
-      chosen: CardId[];
     }
   | {
       kind: 'caps-reveal';
       puzzle: DailyPuzzle;
       runtime: Runtime;
       verdict: CapsVerdictKind;
-      order: CardId[];
-      breakingWorldHint: string | null;
+      witnessLine: CardId[] | null; // engine-named demonstration line; null if no obligation
     }
   | {
       kind: 'result';
       puzzle: DailyPuzzle;
-      score: number;
       verdict: CapsVerdictKind;
       callRound: number | null;
-      orderLength: number | null;
-      hintsUsed: number;
-      worldsToggleUses: number;
+      parRound: number | null;
     };
 
 interface Store {
@@ -71,15 +67,20 @@ interface Store {
   playCard: (card: CardId) => void;
   advanceBots: () => void;
   resolveCurrentRound: () => CompletedRound | null;
-  openCapsEntry: () => void;
-  cancelCapsEntry: () => void;
-  toggleCardInOrder: (card: CardId) => void;
+  openCapsConfirm: () => void;
+  cancelCapsConfirm: () => void;
   submitCaps: () => void;
   skipCapsToResult: () => void;
   finishGame: () => void;
-  recordHint: () => void;
-  recordWorldsToggle: () => void;
+  replayHand: () => void;
 }
+
+// Convention bridge: the puzzle generator records
+// `optimalCallRound = R` to mean "obligation first arose after
+// round R completed". The runtime / display uses round-in-which-
+// caps-is-called = R+1.
+const displayPar = (raw: number | null): number | null =>
+  raw === null ? null : raw + 1;
 
 export const useStore = create<Store>((set, get) => ({
   state: { kind: 'loading' },
@@ -153,68 +154,50 @@ export const useStore = create<Store>((set, get) => ({
     return cr;
   },
 
-  openCapsEntry: () => {
+  openCapsConfirm: () => {
     const s = get().state;
     if (s.kind !== 'playing') return;
     set({
       state: {
-        kind: 'caps-entry',
+        kind: 'caps-confirm',
         puzzle: s.puzzle,
         runtime: s.runtime,
-        chosen: [],
       },
     });
   },
 
-  cancelCapsEntry: () => {
+  cancelCapsConfirm: () => {
     const s = get().state;
-    if (s.kind !== 'caps-entry') return;
+    if (s.kind !== 'caps-confirm') return;
     set({ state: { kind: 'playing', puzzle: s.puzzle, runtime: s.runtime } });
-  },
-
-  toggleCardInOrder: (card) => {
-    const s = get().state;
-    if (s.kind !== 'caps-entry') return;
-    const next = s.chosen.includes(card)
-      ? s.chosen.filter(c => c !== card)
-      : [...s.chosen, card];
-    set({ state: { ...s, chosen: next } });
   },
 
   submitCaps: () => {
     const s = get().state;
-    if (s.kind !== 'caps-entry') return;
+    if (s.kind !== 'caps-confirm' && s.kind !== 'playing') return;
     const engine = toEngineState(s.runtime);
-    const valid = validateCapsCall(engine, 'south', s.chosen);
     const obligated = checkCapsObligation(engine, 'south');
     const late = isCapsLate(engine, 'south');
-    // Verdict precedence: a `late` flag means south was obligated at
-    // some past moment (the stamp persists). It dominates
-    // 'wrong-not-obligated' even if obligation no longer holds in
-    // the current state — the player missed the first moment, that
-    // is the rule's primary verdict, regardless of whether their
-    // current order can still sweep.
-    let verdict: CapsVerdictKind;
-    if (valid && !late) verdict = 'correct';
-    else if (late) verdict = 'late';
-    else if (obligated) verdict = 'wrong-bad-order';
-    else verdict = 'wrong-not-obligated';
 
-    let breaking: string | null = null;
-    if (verdict !== 'correct' && verdict !== 'late') {
-      const explained = explainCapsFailure(engine, 'south', s.chosen);
-      if (explained) {
-        breaking = `Order broke in a world consistent with what you know.`;
-      }
+    let verdict: CapsVerdictKind;
+    let witnessLine: CardId[] | null = null;
+    if (obligated && !late) {
+      verdict = 'correct';
+      witnessLine = findWitnessLine(engine, 'south');
+    } else if (late) {
+      verdict = 'late';
+      witnessLine = findWitnessLine(engine, 'south');
+    } else {
+      verdict = 'wrong-not-obligated';
     }
+
     set({
       state: {
         kind: 'caps-reveal',
         puzzle: s.puzzle,
         runtime: s.runtime,
         verdict,
-        order: [...s.chosen],
-        breakingWorldHint: breaking,
+        witnessLine,
       },
     });
   },
@@ -222,81 +205,45 @@ export const useStore = create<Store>((set, get) => ({
   finishGame: () => {
     const s = get().state;
     if (s.kind !== 'caps-reveal') return;
-    const par = s.puzzle.classification.optimalCallRound;
-    const callRound = s.runtime.roundNumber;
-    // Convention bridge: the puzzle generator records
-    // `optimalCallRound = R` to mean "obligation first arose
-    // *after* round R completed", whereas the engine and runtime
-    // use round numbers in which obligation first *holds* (R+1).
-    // Calling at the first possible moment yields callRound = R+1,
-    // so add 1 to par to compare apples-to-apples.
-    const parForCompare = par !== null ? par + 1 : null;
-    const breakdown = computeScore({
-      verdict: s.verdict,
-      callRound,
-      parRound: parForCompare,
-      hintsUsed: s.runtime.hintsUsed,
-      worldsToggleUses: s.runtime.worldsToggleUses,
-    });
     set({
       state: {
         kind: 'result',
         puzzle: s.puzzle,
-        score: breakdown.total,
         verdict: s.verdict,
-        callRound,
-        orderLength: s.order.length,
-        hintsUsed: s.runtime.hintsUsed,
-        worldsToggleUses: s.runtime.worldsToggleUses,
+        callRound: s.runtime.roundNumber,
+        parRound: displayPar(s.puzzle.classification.optimalCallRound),
       },
     });
+  },
+
+  replayHand: () => {
+    const s = get().state;
+    const puzzle =
+      s.kind === 'result' || s.kind === 'caps-reveal' || s.kind === 'caps-confirm' || s.kind === 'playing' || s.kind === 'intro'
+        ? s.puzzle
+        : null;
+    if (puzzle === null) return;
+    const runtime = newRuntime({
+      hands: puzzle.hands,
+      trumpSuit: puzzle.trump.suit,
+      trumpCard: puzzle.trump.card,
+      botSeed: puzzle.botSeed,
+    });
+    set({ state: { kind: 'playing', puzzle, runtime } });
   },
 
   skipCapsToResult: () => {
     const s = get().state;
     if (s.kind !== 'playing') return;
     if (!isGameOver(s.runtime)) return;
-    const par = s.puzzle.classification.optimalCallRound;
-    // Distinguish "missed it" (south was obligated, didn't call)
-    // from "no caps available" (obligation never arose). The
-    // capsObligations map is the single source of truth for whether
-    // obligation ever occurred.
-    const wasEverObligated = s.runtime.capsObligations.has('south');
-    const verdict: CapsVerdictKind = wasEverObligated
-      ? 'missed'
-      : 'no-caps-available';
-    const breakdown = computeScore({
-      verdict,
-      callRound: null,
-      parRound: par,
-      hintsUsed: s.runtime.hintsUsed,
-      worldsToggleUses: s.runtime.worldsToggleUses,
-    });
     set({
       state: {
         kind: 'result',
         puzzle: s.puzzle,
-        score: breakdown.total,
-        verdict,
+        verdict: 'missed',
         callRound: null,
-        orderLength: null,
-        hintsUsed: s.runtime.hintsUsed,
-        worldsToggleUses: s.runtime.worldsToggleUses,
+        parRound: displayPar(s.puzzle.classification.optimalCallRound),
       },
     });
-  },
-
-  recordHint: () => {
-    const s = get().state;
-    if (s.kind !== 'playing') return;
-    s.runtime.hintsUsed++;
-    set({ state: { ...s } });
-  },
-
-  recordWorldsToggle: () => {
-    const s = get().state;
-    if (s.kind !== 'playing') return;
-    s.runtime.worldsToggleUses++;
-    set({ state: { ...s } });
   },
 }));
