@@ -78,9 +78,11 @@
 
 /* Dark overrides apply when (a) the system prefers dark and the user hasn't
    explicitly opted into light, OR (b) the user explicitly forced dark via
-   ?theme=dark (data-theme attribute set by main.js). */
-:root[data-theme="dark"],
-:root.theme-dark {
+   ?theme=dark. The data-theme attribute is set by an inline script in each
+   page's <head> and toggled by js/theme.js. Keep this block in sync with
+   the @media (prefers-color-scheme: dark) block below — they must define
+   the same set of variables. */
+:root[data-theme="dark"] {
   --clr-bg: #1a0f0a;
   --clr-surface: #251812;
   --clr-surface-elev: #2d1d16;
@@ -93,20 +95,24 @@
   --clr-border: #3a302a;
   --clr-house: #6dbe7e;
   --clr-house-bg: #1a2a1f;
+  --clr-house-border: rgba(109, 190, 126, 0.35);
   --clr-example-bg: #2a1d15;
   --clr-example-border: #4a3d30;
+  --clr-example-header-bg: rgba(255, 255, 255, 0.03);
+  --clr-example-header-hover: rgba(255, 255, 255, 0.07);
   --clr-sidebar-bg: #1f140e;
   --clr-link: #7aa3df;
+  --clr-note-bg: #1c2238;
   --clr-tooltip-bg: rgba(240, 232, 218, 0.96);
   --clr-tooltip-fg: #1f1611;
-  --clr-shadow: rgba(0, 0, 0, 0.45);
-  --clr-shadow-strong: rgba(0, 0, 0, 0.65);
-  --clr-jump-bg: rgba(21, 20, 15, 0.9);
-  --clr-row-hover: rgba(255, 255, 255, 0.04);
-  --clr-table-head-bg: #2a2620;
-  --clr-table-head-fg: #f0ede5;
-  --clr-table-rowhead-bg: rgba(255, 255, 255, 0.04);
-  --clr-hero-first-bg: linear-gradient(180deg, #2c2418 0%, var(--clr-surface) 70%);
+  --clr-shadow: rgba(0, 0, 0, 0.55);
+  --clr-shadow-strong: rgba(0, 0, 0, 0.7);
+  --clr-jump-bg: rgba(26, 15, 10, 0.9);
+  --clr-row-hover: rgba(255, 240, 220, 0.04);
+  --clr-table-head-bg: #2d1d16;
+  --clr-table-head-fg: #f0e6d2;
+  --clr-table-rowhead-bg: rgba(255, 240, 220, 0.04);
+  --clr-hero-first-bg: linear-gradient(180deg, #2a1d12 0%, var(--clr-surface) 70%);
   --player-VM: #6f93a6;
   --chip-win-bg:        #1d3324;
   --chip-win-fg:        #80d290;
@@ -194,7 +200,7 @@ body {
 }
 
 /* Z-index ladder (highest first): site-nav 1000 / sidebar-toggle 950 /
-   lobby-toast 850 / sidebar 800 / play overlays 500 / stats-jump 50. */
+   sidebar 800 / stats-jump 50. */
 .site-nav {
   position: sticky;
   top: 0;
@@ -2706,10 +2712,6 @@ details[open] > summary .tree-chevron {
   font-family: 'Segoe UI Symbol', 'Apple Symbols', sans-serif;
   font-size: 30px;
   fill: var(--clr-text);
-}
-
-.hero-table .trump-corner-br {
-  /* The bottom-right corner is rotated 180° to mimic real card faces. */
 }
 
 .hero-table .hero-trump {
