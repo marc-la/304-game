@@ -27,23 +27,36 @@ const repoRoot = resolve(__dirname, '..');
 const includePlay = process.env.INCLUDE_PLAY === '1';
 
 // Copy non-Vite-managed assets that the multi-page site references via
-// repo-root-relative URLs (``docs/stats.xlsx`` for the leaderboard,
-// per-revolution betting CSVs under ``docs/bets/``, legacy non-module
-// scripts under ``js/``). When deploying via GitHub Actions we ship
+// repo-root-relative URLs. When deploying via GitHub Actions we ship
 // only ``dist/``, so any file the HTML references must end up there.
+//
+// This list is intentionally explicit (rather than copying whole dirs)
+// so a stray file dropped into ``css/`` or ``docs/`` doesn't silently
+// ship to the live site.
+const ASSETS_TO_COPY = [
+  // Site stylesheet — loaded by every HTML page.
+  'css/styles.css',
+  // Classic (non-module) scripts loaded by individual pages.
+  // theme.js is loaded by all pages; the others are page-specific.
+  'js/theme.js',
+  'js/hero-reveal.js', // index.html
+  'js/rules.js',       // rules.html (sidebar scroll-spy + collapsibles)
+  'js/stats.js',       // stats.html (loads docs/stats.xlsx + bets CSVs)
+  // Data fetched at runtime by stats.js.
+  'docs/stats.xlsx',
+  'docs/bets',
+];
+
 const copyRepoAssets = (): Plugin => ({
   name: '304-copy-repo-assets',
   apply: 'build',
   closeBundle() {
     const outDir = resolve(__dirname, 'dist');
-    const copyTree = (rel: string) => {
+    for (const rel of ASSETS_TO_COPY) {
       const src = resolve(repoRoot, rel);
-      if (!existsSync(src)) return;
+      if (!existsSync(src)) continue;
       cpSync(src, resolve(outDir, rel), { recursive: true });
-    };
-    copyTree('docs');
-    copyTree('js');
-    copyTree('css');
+    }
   },
 });
 
