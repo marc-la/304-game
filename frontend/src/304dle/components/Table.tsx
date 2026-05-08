@@ -55,11 +55,9 @@ export const Table = ({ runtime }: Props) => {
           initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ type: 'spring', stiffness: 280, damping: 18, delay: 0.15 }}
+          title="You are the trumper. Your trump suit is below; the gold-bordered card in your hand is the one you committed."
         >
-          Trump <span aria-hidden>{SUIT_SYMBOLS[runtime.trumpSuit]}</span>
-          <span className="dle-trump-card-mini">
-            <CardView card={runtime.trumpCard} small isTrumpCard />
-          </span>
+          Your Trump <span aria-hidden>{SUIT_SYMBOLS[runtime.trumpSuit]}</span>
         </motion.span>
         <span className="dle-points-readout">
           You/N <b>{runtime.pointsWon.team_a}</b>

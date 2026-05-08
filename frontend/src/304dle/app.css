@@ -121,13 +121,10 @@
   background: rgba(220, 235, 255, 0.92);
   color: #1c3050;
 }
-.dle-trump-card-mini {
-  display: inline-flex;
-  align-items: center;
-  margin-left: 4px;
-  pointer-events: none;
-}
-.dle-trump-card-mini .dle-card { cursor: default; }
+/* Trump-card-mini removed: the chip no longer shows a separate
+   "folded" card image because the card isn't actually folded —
+   trumpCardInHand=true means it stays in south's hand. The
+   gold-bordered card in the hand is the honest indicator. */
 .dle-points-readout {
   font-family: var(--font-mono);
   font-size: 0.78rem;
