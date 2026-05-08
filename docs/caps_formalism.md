@@ -16,11 +16,12 @@ Caps is not a property of the deal. It is a property of a player's
 plus the public history of play. Two players sitting at the same table
 in the same game can become caps-obligated at different moments,
 because they know different things. A naive implementation that
-checks "given the actual hands, is there a winning order?" is
-**double-dummy** analysis: it tells you whether an omniscient observer
-sees a sweep, not whether the candidate caller can deduce one. The
-correct test is **single-dummy**: does there exist a play order that
-wins against *every* deal consistent with what the player knows?
+checks "given the actual hands, does the caller have a winning
+strategy?" is **double-dummy** analysis on the actual deal: it tells
+you whether an omniscient observer sees a sweep, not whether the
+candidate caller can deduce one. The correct test is **single-dummy**:
+in *every* deal consistent with what the player knows, does the
+caller have a (possibly deal-dependent, adaptive) strategy that wins?
 Single-dummy is strictly stronger than double-dummy and is the only
 formulation that matches the rules' phrase "given all information
 available to them".
@@ -103,29 +104,39 @@ world among many.
 
 ```
 Team(V) has won every round in completed_rounds(S)        (precondition)
-∧ ∃ play order O over H_V(S)                              (witness)
-∀ W ∈ Worlds(I_V, S)
-∀ legal opponent strategy profile σ                       (adversaries)
-   the playout from S, with V playing O and the other
-   non-PCC-out seats playing σ, ends with Team(V) winning
-   every remaining round r(S)+1 … 8.
+∧ ∀ W ∈ Worlds(I_V, S)
+   ∃ adaptive strategy σ_W : Histories → LegalPlays_V     (per-world witness)
+∀ legal opponent strategy profile τ                       (adversaries)
+   the playout from S, with V playing σ_W against τ and
+   the other non-PCC-out seats playing τ, ends with
+   Team(V) winning every remaining round r(S)+1 … 8.
 ```
 
-`O` is a fixed permutation of `H_V(S)`. The order does not adapt to
-opponent plays — when caps is called the caller exposes their hand and
-states the order, so the witness is committed up front. Adaptive
-strategies are not relevant: the rules require an *announced* order, so
-obligation is the existence of a fixed order that survives all worlds
-and all adversaries.
+The witness is **adaptive** and **per-world**: for each world `W`
+consistent with `V`'s information, there exists a strategy σ_W — a
+function from observed play history (in this game, from `S` onward) to
+`V`'s next legal card — that wins every remaining round against every
+adversarial completion. Different worlds may be witnessed by different
+strategies. Within a world, σ_W may branch on what opps reveal as play
+unfolds.
 
-**On legality of the announced order.** When it is `V`'s turn within a
-round, `V` plays the next card in `O`. That card must be a legal play
-under the standard play rules (follow suit if able; closed-trump
-face-down rules; trump-card restrictions; exhausted-trumps). If `O`
-ever requires an illegal play in some world `W`, `O` is not a valid
-witness in that world.
+This is the standard adaptive (single-dummy strategy stealing safe)
+formulation `∀W ∃σ_W` — strictly stronger than the pre-2026 fixed-order
+definition `∃O ∀W`, which required one permutation `O` to win in every
+world. The set inclusion is trivial (a fixed order is a degenerate
+adaptive strategy); strictness comes from the standard min-max
+swap. There exist 304 states that are caps-obligated under `∀W ∃σ_W`
+but not under `∃O ∀W` — typically when `V`'s optimal next play depends
+on a discard or follow that hasn't been observed yet (e.g. symmetric
+blockers across two suits when opps are void in those suits).
 
-**On opponent strategies.** `σ` ranges over every legal continuation —
+**Legality.** σ_W must always select a card legal under the standard
+play rules (follow suit if able; closed-trump face-down rules;
+trump-card restrictions; exhausted-trumps). A "strategy" that ever
+requires an illegal play in some reachable history is not a valid
+witness.
+
+**On opponent strategies.** `τ` ranges over every legal continuation —
 no notion of "reasonable" play. Caps holds only against fully
 adversarial opponents, including ones who play their absolute worst
 card every turn. This matches the rules' "irrespective of how any
@@ -137,6 +148,24 @@ adversarial quantifier collapses to that single play. This is how
 "deducible certainty via partner" works — it is not a special case in
 the formalism, just a consequence of the universal quantifier ranging
 over *legal* moves.
+
+**On the announced "demonstration line."** When `V` calls caps at the
+table, they expose their hand and may state *one* line of play for
+clarity. That line is a single trace through some witnessing σ_W — not
+a binding commitment. If opps play differently than the demonstration
+line anticipates, `V` continues with whatever σ_W (or σ_{W'}, if the
+opp play eliminates a world) prescribes. Scrutiny verifies the
+*existence* of a covering family `{σ_W}`, not the prescience of any
+single trace.
+
+**On the relationship to "deducible certainty."** Adaptive does not
+weaken the certainty test. `V` still cannot rely on partner *choice*;
+σ_W may only branch on observations of cards actually played. Where
+partner's play is forced by the rules (only one legal card), σ_W may
+condition on that forced play just as it would on any other legal
+move. Where partner has discretion, σ_W must succeed against every
+legal partner choice (partner is bound by `τ` for the obligation
+test).
 
 ## 6. Specialisations
 
@@ -159,10 +188,17 @@ A **caps call** by `V` at state `S` consists of:
 
 1. Declaration: `V` announces caps.
 2. Hand exposure: `V` lays `H_V(S)` face up.
-3. Order: `V` states a permutation `O` of `H_V(S)`.
+3. Demonstration line (optional but customary): `V` states one line of
+   play they would play out — equivalently, one trace through a
+   witnessing strategy under some plausible opp continuation.
 
-The call is **correct** iff `V` is caps-obligated at `S` and `O`
-witnesses obligation (the same `O` quantifier from §5 is satisfied).
+The call is **correct** iff `V` is caps-obligated at `S` per §5 (a
+covering family `{σ_W}` exists). The demonstration line is a clarity
+device, not part of the obligation predicate; opp play during the
+called sequence is not constrained to follow the line, and `V` is not
+bound to it. Scrutiny adjudicates by exposing all hands and checking
+whether some adaptive strategy survives every world consistent with
+what `V` could see at `S`, against every legal opp continuation.
 
 ## 8. First opportunity and timing
 
@@ -209,9 +245,9 @@ Given `S*_V`, `t_call`, and the policy, the call is classified:
 
 | Classification | Conditions |
 |----------------|------------|
-| **Correct** | `V` is caps-obligated at `t_call` (witnessed by the announced `O`) AND policy says on-time. Bonus applies if `r(S*_V) < 7`. |
+| **Correct** | `V` is caps-obligated at `t_call` (a covering `{σ_W}` exists per §5) AND policy says on-time. Bonus applies if `r(S*_V) < 7`. |
 | **Late** | `S*_V` exists, `V` is caps-obligated at `t_call`, but policy says not on-time. |
-| **Wrong/Early** | `V` is not caps-obligated at `t_call`, OR `O` does not witness obligation. |
+| **Wrong/Early** | `V` is not caps-obligated at `t_call` (some `W` admits no winning σ_W against some legal opp continuation). |
 | **Missed Late** | No call was made, but `S*_V` exists and the team won all 8 rounds. Treated as Late per [rules.md](rules.md) §C-3(b). |
 
 External-caps outcomes follow the same table against the external
@@ -219,31 +255,36 @@ information set.
 
 ## 9. Decidability and complexity
 
-Caps obligation is decidable. Naively:
+Caps obligation is decidable. Under the adaptive `∀W ∃σ_W` formulation:
 
 - `|Worlds(I_V, S)|` is bounded by the multinomial over the unaccounted
   cards. Mid-to-late game, suit-exhaustion typically prunes this to
   fewer than a few thousand worlds.
-- For each world `W`, the inner game is a 2-player perfect-information
-  zero-sum game tree (caller's order is fixed; opponents are
+- For each world `W` independently, the inner question is a 2-player
+  perfect-information zero-sum game tree (`V` adaptive, opps
   collectively adversarial). Standard alpha-beta with transposition
-  caching solves it in milliseconds for `|H_V| ≤ 8`.
-- The outer existential quantifier over `O` ranges over `|H_V|!`
-  permutations. Most prefixes are eliminated by alpha-beta: an order
-  whose first card loses the next trick in any world dies immediately.
+  caching solves "does `V` have a winning strategy in `W`?" in
+  milliseconds for `|H_V| ≤ 8`. This is equivalent to a per-world
+  double-dummy "`V` can sweep" check.
+- The outer quantifier collapses to a per-world existence check: caps
+  holds iff every consistent world admits its own winning strategy. No
+  outer permutation enumeration is required (compare the pre-2026
+  fixed-order definition, which forced a `|H_V|!` outer search for a
+  single permutation that worked in every world).
 
-Practical complexity is driven by world count, not order count, because
-world enumeration is the only super-polynomial factor that doesn't
-admit aggressive pruning.
+The adaptive formulation is therefore *strictly easier* to compute
+than the fixed-order one: it removes the outer existential quantifier
+over orders entirely. World enumeration remains the only
+super-polynomial factor.
 
 **Equivalence reductions** (deferred optimisations, not required for
 correctness):
 
-- Suit-equivalent cards (consecutive ranks in the same suit, with no
-  intervening card held by anyone else) are interchangeable in any
-  order or world.
 - Worlds that differ only in the assignment of suit-equivalent cards
-  can be collapsed.
+  (consecutive ranks in the same suit, with no intervening card held
+  by anyone else) can be collapsed.
+- Within a world, transposition tables across symmetric subgames cut
+  the per-world search.
 
 ## 10. Related work
 
@@ -256,9 +297,12 @@ sense:
   "any reasonable line").
 - Frank, Basin, Bundy, *"Single-Dummy Solving"*, AAAI 1992 — the
   vanilla algorithm: enumerate consistent deals, double-dummy each,
-  intersect winning strategies. This document's predicate is the
-  intersection-based vanilla algorithm with the fixed-order
-  restriction.
+  intersect winning strategies. This document's predicate is exactly
+  the intersection-based vanilla algorithm: caps holds iff every
+  world's double-dummy says `V` has a winning strategy. Adaptive (per
+  world) is the natural — and computationally simpler — formulation;
+  the pre-2026 fixed-order variant added an outer `∃O` that the 2026
+  rules revision dropped.
 - Frank & Basin, *"Search in games with incomplete information"*,
   AIJ 1998 — discusses non-locality pathologies that affect
   *probabilistic* single-dummy. Certainty (claim) analysis is immune
@@ -278,8 +322,8 @@ formalism:
 | Module | Responsibility | Maps to |
 |--------|----------------|---------|
 | `info.py` | Build `I_V(S)`; enumerate `Worlds(I_V, S)` | §3, §4 |
-| `dd.py` | Per-world double-dummy: does fixed order `O` win against all opponent strategies in world `W`? | inner of §5 |
-| `caps.py` | Outer quantifiers; obligation tracking; timing policy; outcome classification | §5, §6, §7, §8 |
+| `dd.py` | Per-world double-dummy: does `V` have a winning adaptive strategy in world `W` against all opp strategies? | inner of §5 |
+| `caps.py` | Outer ∀-over-worlds quantifier; obligation tracking; timing policy; outcome classification | §5, §6, §7, §8 |
 
 Each module is independently testable. `info.py` has no game-tree
 search; `dd.py` has no information-set logic; `caps.py` orchestrates

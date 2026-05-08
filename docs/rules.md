@@ -416,7 +416,7 @@ In strict play, Caps should be called on the precise card at which certainty is 
 - **§C-13 Correct External Caps before the start of Round 7.** The external team's win is bumped — the betting team gives **+1 additional stone** on top of the normal loss (e.g. on a 160 bid, betting team gives 2 + 1 = 3 stone to the external team).
 - **§C-14 Correct External Caps in or after Round 7.** No bonus — normal opposition win is scored, betting team gives the usual stone for the bid amount.
 - **§C-15 Late External Caps.** The external team won all 8 rounds but, in scrutiny's judgement, had a first opportunity to call Caps during play and missed it. Even though they won every round physically, they **lose** the game on the technicality, and the betting team takes a **win + 1 stone** outcome (e.g. on Honest, betting team gives 2 + 1 = 3 stone *to the external team*). This is harsh by design, exceedingly rare in practice, and exists to ensure the external team takes External Caps seriously when they have the deductive ability to recognise it.
-- **§C-16 Wrong External Caps.** The external team called Caps but the call doesn't hold up under scrutiny (the prescribed order can be broken, or the external team had not in fact won every round). The external team takes a **5-stone penalty** (receives 5 stone).
+- **§C-16 Wrong External Caps.** The external team called Caps but the call doesn't hold up under scrutiny (no winning adaptive strategy exists, or the external team had not in fact won every round). The external team takes a **5-stone penalty** (receives 5 stone).
 
 ### Summary of Caps Outcomes
 
