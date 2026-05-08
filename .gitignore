@@ -1,23 +1,41 @@
 CLAUDE_CODE_CONTEXT.md
 .claude/
+.mock-screenshots/
 
 # Python
 __pycache__/
 *.py[cod]
 *.egg-info/
-dist/
-build/
 .venv/
 *.egg
+.pytest_cache/
 
-# IDE
+# Node / Vite / TypeScript
+node_modules/
+.vite/
+*.tsbuildinfo
+coverage/
+.nyc_output/
+
+# Build outputs
+dist/
+build/
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+
+# IDE / editors
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
 # OS
 .DS_Store
+Thumbs.db
 
 # Logs
 *.log
-
-.mock-screenshots
