@@ -16,6 +16,7 @@ const VERDICT_TITLE: Record<CapsVerdictKind, string> = {
   'wrong-bad-order': 'Caps fails',
   'wrong-not-obligated': 'Wrong call',
   missed: 'Missed',
+  'no-caps-available': 'No Caps',
 };
 
 const VERDICT_BLURB: Record<CapsVerdictKind, string> = {
@@ -24,6 +25,7 @@ const VERDICT_BLURB: Record<CapsVerdictKind, string> = {
   'wrong-bad-order': 'Some world consistent with what you know breaks your witness order.',
   'wrong-not-obligated': "You weren't yet caps-obligated — opponents could legally still take a trick.",
   missed: "Caps was on the table; you didn't claim it.",
+  'no-caps-available': 'No caps obligation arose this game — nothing to call.',
 };
 
 export const CapsRevealModal = ({ order, verdict, breakingHint, onDone }: Props) => {

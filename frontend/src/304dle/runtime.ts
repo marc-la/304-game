@@ -9,11 +9,12 @@ import { roundTurnOrder, roundWinner, roundPoints } from './engine/play';
 import type { Seat, Team } from './engine/seating';
 import { teamOf } from './engine/seating';
 import type {
+  CapsObligation,
   CompletedRound,
   EngineGameState,
   RoundEntry,
 } from './engine/state';
-import { checkCapsObligation } from './engine/caps';
+import { trackCapsObligation } from './engine/caps';
 
 export interface RuntimeOptions {
   hands: Record<Seat, CardId[]>;
@@ -31,7 +32,10 @@ export interface Runtime {
   currentRound: RoundEntry[];
   completedRounds: CompletedRound[];
   pointsWon: Record<Team, number>;
-  capsObligationStamped: { round: number; cardIdx: number } | null;
+  // First-obligation stamps per seat. Populated only by
+  // `trackCapsObligation` (engine), never written from elsewhere in
+  // the runtime. Schema mirrors game304/state.py:CapsObligation.
+  capsObligations: Map<Seat, CapsObligation>;
   hintsUsed: number;
   worldsToggleUses: number;
   rng: () => number;
@@ -51,7 +55,7 @@ export const newRuntime = (opts: RuntimeOptions): Runtime => ({
   currentRound: [],
   completedRounds: [],
   pointsWon: { team_a: 0, team_b: 0 },
-  capsObligationStamped: null,
+  capsObligations: new Map(),
   hintsUsed: 0,
   worldsToggleUses: 0,
   rng: makeRng(opts.botSeed),
@@ -78,7 +82,7 @@ export const toEngineState = (rt: Runtime): EngineGameState => {
       currentRound: rt.currentRound,
       completedRounds: rt.completedRounds,
       pointsWon: rt.pointsWon,
-      capsObligations: new Map(),
+      capsObligations: rt.capsObligations,
     },
     pccPartnerOut: null,
   };
@@ -105,15 +109,7 @@ export const applyPlay = (rt: Runtime, seat: Seat, card: CardId): void => {
   rt.currentRound.push({
     seat, card, faceDown: false, revealed: false,
   });
-  // Stamp South's obligation if this is the first time it became true.
-  if (rt.capsObligationStamped === null) {
-    if (checkCapsObligation(toEngineState(rt), 'south')) {
-      rt.capsObligationStamped = {
-        round: rt.roundNumber,
-        cardIdx: rt.currentRound.length,
-      };
-    }
-  }
+  trackCapsObligation(toEngineState(rt), rt.capsObligations);
 };
 
 // Resolve the current round, mutating runtime to start the next.
@@ -136,11 +132,8 @@ export const resolveRound = (rt: Runtime): CompletedRound => {
   rt.currentRound = [];
   rt.priority = winner;
   rt.roundNumber++;
-  // Re-stamp obligation post-resolution as well.
-  if (rt.capsObligationStamped === null && rt.roundNumber <= 8) {
-    if (checkCapsObligation(toEngineState(rt), 'south')) {
-      rt.capsObligationStamped = { round: rt.roundNumber, cardIdx: 0 };
-    }
+  if (rt.roundNumber <= 8) {
+    trackCapsObligation(toEngineState(rt), rt.capsObligations);
   }
   return completed;
 };

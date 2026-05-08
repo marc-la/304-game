@@ -5,7 +5,11 @@ export type CapsVerdictKind =
   | 'late'
   | 'wrong-bad-order'
   | 'wrong-not-obligated'
-  | 'missed';
+  | 'missed'
+  // Game ended with no caps call AND south was never caps-obligated:
+  // there was nothing to call. Distinct from 'missed' (was-obligated,
+  // didn't call) so the UI can give honest feedback.
+  | 'no-caps-available';
 
 export interface ScoreInputs {
   verdict: CapsVerdictKind;
@@ -43,6 +47,11 @@ export const computeScore = (inputs: ScoreInputs): ScoreBreakdown => {
     case 'wrong-not-obligated':
     case 'missed':
       base = 0;
+      break;
+    case 'no-caps-available':
+      // Not the player's fault — this puzzle simply had no caps
+      // obligation arise. Award a neutral participation score.
+      base = 50;
       break;
   }
   const hintPenalty = inputs.hintsUsed * 1;

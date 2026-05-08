@@ -218,10 +218,17 @@ export const useStore = create<Store>((set, get) => ({
     if (s.kind !== 'caps-reveal') return;
     const par = s.puzzle.classification.optimalCallRound;
     const callRound = s.runtime.roundNumber;
+    // Convention bridge: the puzzle generator records
+    // `optimalCallRound = R` to mean "obligation first arose
+    // *after* round R completed", whereas the engine and runtime
+    // use round numbers in which obligation first *holds* (R+1).
+    // Calling at the first possible moment yields callRound = R+1,
+    // so add 1 to par to compare apples-to-apples.
+    const parForCompare = par !== null ? par + 1 : null;
     const breakdown = computeScore({
       verdict: s.verdict,
       callRound,
-      parRound: par,
+      parRound: parForCompare,
       hintsUsed: s.runtime.hintsUsed,
       worldsToggleUses: s.runtime.worldsToggleUses,
     });
@@ -244,8 +251,14 @@ export const useStore = create<Store>((set, get) => ({
     if (s.kind !== 'playing') return;
     if (!isGameOver(s.runtime)) return;
     const par = s.puzzle.classification.optimalCallRound;
-    // No call was made. If south was ever obligated, this is a missed call.
-    const verdict: CapsVerdictKind = par !== null ? 'missed' : 'missed';
+    // Distinguish "missed it" (south was obligated, didn't call)
+    // from "no caps available" (obligation never arose). The
+    // capsObligations map is the single source of truth for whether
+    // obligation ever occurred.
+    const wasEverObligated = s.runtime.capsObligations.has('south');
+    const verdict: CapsVerdictKind = wasEverObligated
+      ? 'missed'
+      : 'no-caps-available';
     const breakdown = computeScore({
       verdict,
       callRound: null,

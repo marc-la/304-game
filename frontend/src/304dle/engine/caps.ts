@@ -12,7 +12,7 @@ import type { InProgressEntry, PlaySnapshot } from './dd';
 import { orderMinPointsInWorld, orderSweepsWorld } from './dd';
 import type { Seat } from './seating';
 import { teamOf } from './seating';
-import type { EngineGameState, EnginePlayState } from './state';
+import type { CapsObligation, EngineGameState, EnginePlayState } from './state';
 
 export const MAX_WORLDS = 5000;
 export const MAX_PERMUTATIONS = 5040; // 7!
@@ -151,6 +151,57 @@ const anyWorld = (state: EngineGameState): World => {
     foldedTrumpCard: state.trump.trumpCard,
     hiddenSlotAssignments: new Map(),
   };
+};
+
+export interface TrackCapsObligationOptions {
+  // Seats to consider stamping. Default: ['south'] (304dle's only
+  // human seat). Python's track_caps_obligation walks every seat;
+  // 304dle restricts to south to keep per-play cost flat.
+  seats?: ReadonlyArray<Seat>;
+  // Override the expected round size (cards per round). Defaults to
+  // 3 if pccPartnerOut is set, else 4.
+  expectedRoundSize?: number;
+}
+
+// Stamp first-obligation moments into `target`, mirroring
+// game304/caps.py:track_caps_obligation. Idempotent: a seat's
+// stamp is written exactly once; subsequent calls are no-ops for
+// already-stamped seats. Best-effort: any exception from the
+// per-seat predicate is swallowed so the play loop never crashes.
+export const trackCapsObligation = (
+  state: EngineGameState,
+  target: Map<Seat, CapsObligation>,
+  opts: TrackCapsObligationOptions = {},
+): void => {
+  const play = state.play;
+  const expectedRoundSize =
+    opts.expectedRoundSize ?? (state.pccPartnerOut !== null ? 3 : 4);
+  // §rules: caps cannot be called after the final card of round 8.
+  // Obligations arising precisely at that final state are not
+  // stamped; earlier stamps remain.
+  const callWindowClosed =
+    play.roundNumber === 8 && play.currentRound.length >= expectedRoundSize;
+  if (callWindowClosed) return;
+
+  const seats = opts.seats ?? (['south'] as const);
+  for (const seat of seats) {
+    if (target.has(seat)) continue;
+    if (state.pccPartnerOut === seat) continue;
+    let obligated = false;
+    try {
+      obligated = checkCapsObligation(state, seat);
+    } catch {
+      continue;
+    }
+    if (!obligated) continue;
+    const playedInCurrent = play.currentRound.some(e => e.seat === seat);
+    target.set(seat, {
+      obligatedAtRound: play.roundNumber,
+      obligatedAtCard: play.currentRound.length,
+      vPlaysAtObligation:
+        (play.roundNumber - 1) + (playedInCurrent ? 1 : 0),
+    });
+  }
 };
 
 export const isCapsLate = (
