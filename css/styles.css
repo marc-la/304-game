@@ -336,10 +336,21 @@ body {
 }
 
 .site-nav-links a.active,
-body[data-section="rules"] .site-nav-links .site-nav-rules > a,
 body[data-section="practice"] .site-nav-links a[href="practice.html"],
 body[data-section="stats"] .site-nav-links a[href="stats.html"] {
   background: var(--clr-accent-light);
+  color: var(--clr-accent);
+}
+
+/* Rules dropdown active state: paint the wrapper as a single pill so the
+   fill spans label + chevron as one continuous shape. Painting the link
+   alone would leave an abrupt vertical edge against the chevron button. */
+body[data-section="rules"] .site-nav-links .site-nav-rules {
+  background: var(--clr-accent-light);
+  border-radius: 6px;
+}
+body[data-section="rules"] .site-nav-links .site-nav-rules > a,
+body[data-section="rules"] .site-nav-links .site-nav-rules-toggle {
   color: var(--clr-accent);
 }
 

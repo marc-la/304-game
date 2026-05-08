@@ -55,17 +55,23 @@
   function init() {
     var nav = document.querySelector('.site-nav-links');
     if (!nav) return;
-    if (nav.querySelector('.theme-toggle')) return; // idempotent
 
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'theme-toggle';
+    // Hydrate an existing in-markup button if present (preferred — avoids a
+    // nav reflow on load). Fall back to creating one for backwards-compat.
+    var btn = nav.querySelector('.theme-toggle');
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'theme-toggle';
+      nav.appendChild(btn);
+    }
+    if (btn.dataset.themeBound) return; // idempotent
+    btn.dataset.themeBound = '1';
     btn.addEventListener('click', function () {
       var s = read();
       write(NEXT[s]);
       paint(btn);
     });
-    nav.appendChild(btn);
     paint(btn);
   }
 
