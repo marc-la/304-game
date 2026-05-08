@@ -30,7 +30,17 @@
   <div class="site-nav-inner">
     <a href="./" class="site-nav-brand">3<span class="brand-zero">0</span>4</a>
     <nav class="site-nav-links">
-      <a href="rules.html" class="active">Rules</a>
+      <span class="site-nav-rules">
+        <a href="rules.html" class="active">Rules</a>
+        <button type="button" class="site-nav-rules-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Open rules submenu">
+          <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <ul class="site-nav-rules-menu" role="menu">
+          <li role="none"><a role="menuitem" href="rules.html" class="active">Full Ruleset</a></li>
+          <li role="none"><a role="menuitem" href="cheatsheet.html">Cheat Sheet<span class="menu-meta">One-page printable reference</span></a></li>
+          <li role="none"><a role="menuitem" href="caps-formalism.html">Caps Formalism<span class="menu-meta">Advanced article</span></a></li>
+        </ul>
+      </span>
       <a href="practice.html">Daily</a>
       <a href="stats.html" class="site-nav-cta">Leaderboard</a>
     </nav>
@@ -46,7 +56,7 @@
     </div>
     <nav>
       <ul>
-        <li><a href="#cheatsheet" class="sidebar-cheatsheet-link">Cheat Sheet &rarr;</a></li>
+        <li><a href="cheatsheet.html" class="sidebar-cheatsheet-link">Cheat Sheet &rarr;</a></li>
         <li><a href="#introduction">Introduction</a></li>
         <li><a href="#objective">Objective</a>
           <ul>
@@ -79,13 +89,12 @@
         </li>
         <li><a href="#caps">Caps</a>
           <ul>
-            <li><a href="#caps-formalism">Formalism (Advanced)</a></li>
+            <li><a href="caps-formalism.html">Formalism (Advanced) &rarr;</a></li>
           </ul>
         </li>
         <li><a href="#scoring">Scoring</a></li>
         <li><a href="#penalties">Penalties</a></li>
         <li><a href="#house-rules-diff">House Rules vs Standard</a></li>
-        <li><a href="#cheatsheet">Cheat Sheet</a></li>
         <li><a href="#glossary">Glossary</a></li>
       </ul>
     </nav>
@@ -155,7 +164,7 @@
       <figcaption>How a single game flows. Each node is clickable.</figcaption>
     </figure>
 
-    <p class="cheatsheet-link"><a href="#cheatsheet">Jump to the one-page cheat sheet &rarr;</a> &middot; <a href="#house-rules-diff">See house-rule differences from standard 304 &rarr;</a></p>
+    <p class="cheatsheet-link"><a href="cheatsheet.html">Open the one-page cheat sheet &rarr;</a> &middot; <a href="#house-rules-diff">See house-rule differences from standard 304 &rarr;</a></p>
 
     <!-- Introduction -->
     <section id="introduction">
@@ -735,115 +744,14 @@
           </tbody>
         </table>
       </div>
+
+      <p class="article-pointer"><strong>Going deeper.</strong> For an advanced treatment of why &ldquo;deducible certainty&rdquo; means what it means &mdash; the formal single-dummy test scrutiny actually applies &mdash; see <a href="caps-formalism.html">Caps Formalism &rarr;</a>. Beginners can skip it; the headline rule above is enough for normal play.</p>
     </section>
 
-    <hr>
-
-    <!-- Caps Formalism (Advanced) -->
-    <section id="caps-formalism">
-      <h2>Caps Formalism &mdash; What &ldquo;Deducible Certainty&rdquo; Actually Means</h2>
-      <p class="article-meta"><em>An advanced-player article. Last updated <time datetime="2026-05-01">2026-05-01</time>.</em></p>
-      <p>The Caps section above tells you <em>when</em> to call. This article tells you <em>why</em>. It is a precise account of the test scrutiny applies, written for intermediate and expert players who want to argue Caps from first principles. Beginners can ignore it: the headline rule (&ldquo;there exists an order of play that wins every remaining round, given everything I can deduce&rdquo;) does the work for normal play. The formalism only matters when a borderline situation goes to scrutiny, or when you want to step through possible worlds at the table to convince yourself a call holds.</p>
-
-      <div class="example">
-        <div class="example-header">
-          <span>Read the article &mdash; Caps Formalism</span>
-          <span class="chevron">&#9660;</span>
-        </div>
-        <div class="example-body">
-
-          <h3>Why Caps is hard, in one paragraph</h3>
-          <p>Caps is not a fact about the deal. It is a fact about your <strong>information set</strong> &mdash; what you, sitting in your seat, can deduce from your own hand plus the public record of play. Two players at the same table can become Caps-obligated at different moments, because they know different things. The Trumper, who has seen every folded card revealed at end of round, often knows more than their partner; the external team usually knows least. A naive test &mdash; &ldquo;given the actual deal, is there a winning order?&rdquo; &mdash; is the wrong test. That asks whether an omniscient observer sees a sweep, not whether <em>you</em> can deduce one. In bridge terminology that is <strong>double-dummy</strong> analysis, and it is too generous: it gives Caps to a player who, given what they actually know, could still lose. The correct test is <strong>single-dummy</strong>: does there exist a play order that wins against <em>every</em> deal consistent with what you know, and against <em>every</em> legal continuation by the other seats? Single-dummy is strictly stricter, and it is the only test that matches the rules&rsquo; phrase &ldquo;given all information available to them, irrespective of how any other player chooses to play.&rdquo;</p>
-
-          <h3>What you know</h3>
-          <p>Your <strong>information set</strong> at any moment is the union of:</p>
-          <ol>
-            <li><strong>Your own hand.</strong></li>
-            <li><strong>Your own play history</strong> &mdash; including face-down plays you made, since you know what you put down.</li>
-            <li><strong>The public face-up history</strong> &mdash; every face-up card played by anyone, in completed rounds and the in-progress round.</li>
-            <li><strong>Public face-down revelations</strong> &mdash; folded trumps revealed at end-of-round resolution become public the moment they are flipped.</li>
-            <li><strong>Public suit-exhaustion</strong> &mdash; every player who failed to follow a led suit is publicly known to be out of that suit from then on, because the closed-trump rule mandates folding only when one cannot follow.</li>
-            <li><strong>The Trumper&rsquo;s privileged observations</strong> &mdash; if you are the Trumper, you saw the identity of every face-down card at end of round, including opposition cuts, opposition minuses, and your partner&rsquo;s minuses. Your partner and the opposition did not.</li>
-          </ol>
-          <p>Note the asymmetry. The Trumper&rsquo;s information set is larger than anyone else&rsquo;s, which is exactly why the rules hold the Trumper to a stricter &ldquo;first opportunity&rdquo; standard (<a href="#caps">&sect;C-4</a>). The external team&rsquo;s information set excludes line 6, which is why scrutiny is more lenient on them (&sect;C-12). The same predicate, evaluated against a smaller information set, automatically becomes more lenient &mdash; there is no special case.</p>
-
-          <h3>The space of consistent worlds</h3>
-          <p>A <strong>world</strong> is a hypothesis about every card whose location is currently hidden from you. It assigns an identity to every card in every other seat&rsquo;s hand and to every face-down completed-round card whose value you don&rsquo;t already know. A world is <strong>consistent</strong> with your information if:</p>
-          <ul>
-            <li><strong>Cards conserve.</strong> Every card in the 32-card pack appears in exactly one place.</li>
-            <li><strong>Hand sizes are right.</strong> Each remaining seat has the right number of cards for the round number.</li>
-            <li><strong>Suit-exhaustion holds.</strong> No seat known to be out of suit <em>s</em> is given a card of suit <em>s</em>.</li>
-            <li><strong>Hidden minuses obey the rules.</strong> A folded card whose identity you don&rsquo;t know cannot be a card the player could have followed with &mdash; neither the led suit (they would have followed) nor, in most cases, trump (a trump fold would have been revealed at round end).</li>
-            <li><strong>Known cards stay put.</strong> Cards whose identity you have already seen appear where you saw them.</li>
-          </ul>
-          <p>The set of consistent worlds is finite. Early in a game it is large; mid-to-late game, suit-exhaustion typically prunes it heavily. The actual deal is always one of these worlds &mdash; but only one.</p>
-
-          <h3>The Caps obligation, formally</h3>
-          <p>You are <strong>Caps-obligated</strong> at the current state if and only if:</p>
-          <ol>
-            <li><strong>Precondition.</strong> Your team has won every round so far.</li>
-            <li><strong>Witness.</strong> There exists a fixed order <code>O</code> of your remaining cards such that&hellip;</li>
-            <li><strong>&hellip;for every world</strong> consistent with your information, and&hellip;</li>
-            <li><strong>&hellip;for every legal continuation</strong> by the other seats (including the worst conceivable play),</li>
-            <li>the playout from now &mdash; with you playing <code>O</code> in turn and the others playing freely &mdash; ends with your team winning every remaining round.</li>
-          </ol>
-          <p>Three subtleties matter at the table:</p>
-          <ul>
-            <li><strong>The order is fixed up front.</strong> When you call Caps, you expose your hand and announce an order. You do not get to react to opponents&rsquo; choices. So the obligation is the existence of a <em>committed</em> order that survives all worlds and all adversaries.</li>
-            <li><strong>No &ldquo;reasonable&rdquo; assumption.</strong> Opponents may play their absolute worst card every turn. The rules say &ldquo;irrespective of how any other player chooses to play,&rdquo; and the formal test takes that literally.</li>
-            <li><strong>Forced plays count.</strong> If a world or the rules force a unique legal play (your partner has only one card of the led suit, say), the universal quantifier over opponent strategies collapses to that single play. This is how &ldquo;deducible certainty via partner&rdquo; works &mdash; not a special case, just a consequence of quantifying over <em>legal</em> moves.</li>
-          </ul>
-
-          <h3>First opportunity and timing</h3>
-          <p>Your information only changes on observation events &mdash; when a card is played, when round resolution flips a folded trump, when (as Trumper) you inspect folded cards at end of round. Between events, your information set is static, so your Caps obligation cannot flip from false to true.</p>
-          <p>The <strong>first obligation state</strong> is the earliest such event at which the obligation predicate becomes true. The Late Caps judgement is then a function of when you actually called, relative to that first obligation state, under one of three timing policies:</p>
-          <ul>
-            <li><strong>Strict.</strong> The call must be placed at the first obligation state, before any further observation event.</li>
-            <li><strong>Lenient (rules default, &sect;C-3).</strong> The call may be placed at any moment up to and including your next own play. You may not let one of your own plays go by without calling.</li>
-            <li><strong>Unified-time.</strong> A configurable wall-clock window after the first obligation state &mdash; used in fast play, not in scrutiny.</li>
-          </ul>
-          <p>Scrutiny applies the lenient policy by default. The strict policy is the analytical ideal but rarely enforced in practice.</p>
-
-          <h3>One predicate, four mechanics</h3>
-          <p>The same machinery, with different parameters, expresses every related rule:</p>
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr><th>Mechanic</th><th>Specialisation</th></tr>
-              </thead>
-              <tbody>
-                <tr><td><strong>Caps</strong></td><td>Your team is the trumping team; if you are the Trumper, your information set includes folded-card observations.</td></tr>
-                <tr><td><strong>External Caps</strong></td><td>Your team is the non-trumping team; the information set excludes folded-card observations. Same predicate, smaller info set, automatically more lenient.</td></tr>
-                <tr><td><strong>Absolute Hand</strong></td><td>Caps obligation evaluated at the start of round 1, before any plays. Your information is your hand and the public bidding history.</td></tr>
-                <tr><td><strong>Claim Balance</strong></td><td>Replace &ldquo;win every remaining round&rdquo; with &ldquo;reach the points threshold.&rdquo; World enumeration is identical.</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <p>Absolute Hand is the round-1 case of Caps. Claim Balance is Caps with a different terminal predicate. One framework, four mechanics.</p>
-
-          <h3>Walking the worlds at the table</h3>
-          <p>You don&rsquo;t enumerate worlds explicitly in real play &mdash; you reason about the <em>structure</em> of the world set: &ldquo;all remaining tops are mine; opponents are out of the only suit I lack; my partner&rsquo;s last card is forced.&rdquo; The formalism is what scrutiny appeals to when an argument is contested. To rehearse the discipline, work the worked example in the <a href="#caps">Caps</a> section above through these steps:</p>
-          <ol>
-            <li><strong>Inventory.</strong> List the cards still unaccounted for &mdash; the cards in the pack minus your hand minus the public record (and, if you are the Trumper, minus what you saw face-down).</li>
-            <li><strong>Constrain.</strong> Apply suit-exhaustion. Drop any seat-suit pair that the public record forbids.</li>
-            <li><strong>Witness.</strong> Pick the order you would announce. For each card in that order, ask: &ldquo;in <em>every</em> remaining world, what could legally beat this play?&rdquo; If the answer is &ldquo;nothing&rdquo;, you have your witness for that round.</li>
-            <li><strong>Stress-test.</strong> If any step depends on a partner&rsquo;s <em>choice</em> rather than a <em>forced</em> play, you are not yet obligated. Wait for the next observation event and try again.</li>
-          </ol>
-          <p>If you can name the witness order and survive every &ldquo;but what if the opponent holds <em>X</em>&rdquo; challenge by pointing to a rule (suit-exhaustion, the closed-trump fold rule, hand size, or a deduction chain through forced follows), you have Caps. If you cannot, you don&rsquo;t yet.</p>
-
-          <h3>Two ways to lose a Caps argument under scrutiny</h3>
-          <p>In practice, contested Caps calls fail in one of two ways:</p>
-          <ul>
-            <li><strong>A consistent world breaks the witness.</strong> The opposition produces a card distribution that respects everything publicly known and in which the announced order loses a round. The call collapses. (This is most common when the caller has tacitly assumed the location of a key card &mdash; e.g. the last trump &mdash; that the public record does not pin down.)</li>
-            <li><strong>A legal opponent strategy breaks the witness.</strong> The world is fixed but the opponent demonstrates a legal play that beats a round &mdash; typically a discard or a fold the caller did not consider. (This is more common in External Caps, where the caller has less visibility and may have miscounted exhaustion.)</li>
-          </ul>
-          <p>Both failures point at the same root cause: the witness was a <em>plausible</em> sweep rather than a <em>guaranteed</em> one. The formal test is the difference.</p>
-
-          <h3>Further reading</h3>
-          <p>The internal companion document is <code>docs/caps_formalism.md</code> in the project repository, which gives the same predicate in mathematical notation along with the algorithmic decomposition used by the engine. In the broader literature, this is known as <strong>single-dummy claim adjudication</strong>: the contract-bridge analogue is Law 70 of the <em>Laws of Duplicate Bridge</em>, and the canonical algorithmic treatment is Frank, Basin &amp; Bundy, <em>&ldquo;Single-Dummy Solving&rdquo;</em> (AAAI 1992). 304 is stricter than bridge: bridge requires a claim to hold against any <em>reasonable</em> line; 304 requires it to hold against any line whatsoever.</p>
-
-        </div>
-      </div>
+    <!-- Caps Formalism moved to caps-formalism.html. The empty stub keeps
+         the legacy #caps-formalism anchor working for old bookmarks. -->
+    <section id="caps-formalism" class="article-stub-anchor">
+      <p class="article-pointer"><strong>Caps Formalism &mdash; moved to its own page.</strong> The advanced article on what &ldquo;deducible certainty&rdquo; means under scrutiny now lives at <a href="caps-formalism.html">caps-formalism.html &rarr;</a>.</p>
     </section>
 
     <hr>
@@ -977,96 +885,10 @@
 
     <hr>
 
-    <!-- ===== Quick-reference cheat sheet ===== -->
-    <section id="cheatsheet">
-      <h2>Cheat Sheet</h2>
-      <p class="cheatsheet-intro">A one-page reference. Print, fold in half, bring to a session. The principle is the rule, not the list — when in doubt, the full sections above govern.</p>
-
-      <div class="cheatsheet-grid">
-
-        <div class="cheatsheet-card">
-          <h3>Card Ranks &amp; Points</h3>
-          <ol class="cheatsheet-ranks">
-            <li><strong>J</strong> — 30</li>
-            <li><strong>9</strong> — 20</li>
-            <li><strong>A</strong> — 11</li>
-            <li><strong>10</strong> — 10</li>
-            <li><strong>K</strong> — 3</li>
-            <li><strong>Q</strong> — 2</li>
-            <li><strong>8</strong> — 0</li>
-            <li><strong>7</strong> — 0</li>
-          </ol>
-          <p class="cheatsheet-foot">Total per suit: 76. Total in pack: 304.</p>
-        </div>
-
-        <div class="cheatsheet-card">
-          <h3>Your Turn — What can I play?</h3>
-          <ul class="cheatsheet-decision">
-            <li><strong>You lead?</strong> Any card (Trumper R1: not Trump unless Open).</li>
-            <li><strong>Following:</strong> Same suit as led if you have one.</li>
-            <li><strong>Can&rsquo;t follow (Closed):</strong> Fold a card.
-              <ul>
-                <li><strong>Cut:</strong> Trump-suit, face-down (guess).</li>
-                <li><strong>Minus:</strong> non-Trump, face-down (concede).</li>
-              </ul>
-            </li>
-            <li><strong>Can&rsquo;t follow (Open):</strong> Any card, face-up.</li>
-            <li><strong>Trumper</strong> never folds in-hand trumps (§T-4).</li>
-          </ul>
-        </div>
-
-        <div class="cheatsheet-card">
-          <h3>Bidding Quick Reference</h3>
-          <ul class="cheatsheet-list">
-            <li>Min open: <strong>160</strong> (4-card), <strong>220</strong> (8-card)</li>
-            <li>Increments: <strong>10</strong> (&lt;200), <strong>5</strong> (≥200)</li>
-            <li>Below-200/250: first speech only, no undercut partner</li>
-            <li>Termination: all 4 spoke + 3 consecutive passes</li>
-            <li>Partner: 4-card only, dealer&rsquo;s right or opposite, first speech, no return</li>
-            <li>Pass-on: no bid (4-card) or hand &lt; 25 (8-card)</li>
-            <li>Redeal: 4 cards &lt; 15 points (priority or partnered partner)</li>
-          </ul>
-        </div>
-
-        <div class="cheatsheet-card">
-          <h3>Stone — Win &amp; Loss</h3>
-          <table class="cheatsheet-table">
-            <thead><tr><th>Bid</th><th>Win</th><th>Loss</th></tr></thead>
-            <tbody>
-              <tr><td>160–190</td><td>1</td><td>2</td></tr>
-              <tr><td>200–215</td><td>2</td><td>3</td></tr>
-              <tr><td>220–245</td><td>2</td><td>3</td></tr>
-              <tr><td>250</td><td>3</td><td>4</td></tr>
-              <tr><td>PCC</td><td>5</td><td>5</td></tr>
-            </tbody>
-          </table>
-          <p class="cheatsheet-foot">Giving stone = good (closer to winning the match).</p>
-        </div>
-
-        <div class="cheatsheet-card">
-          <h3>Caps Outcomes</h3>
-          <ul class="cheatsheet-list">
-            <li><strong>Correct, before R7:</strong> win + 1 stone bonus</li>
-            <li><strong>Correct, R7+:</strong> normal win</li>
-            <li><strong>Late Caps:</strong> loss + 1 stone (game flipped)</li>
-            <li><strong>Wrong/Early:</strong> 5 stone penalty</li>
-            <li><strong>External Caps:</strong> mirrors above, framed against betting team&rsquo;s loss</li>
-            <li><strong>PCC:</strong> stake decided on all-8 only; no Caps bonus</li>
-          </ul>
-        </div>
-
-        <div class="cheatsheet-card">
-          <h3>Pass-on / Void Triggers</h3>
-          <ul class="cheatsheet-list">
-            <li>4-card betting ends with no bid</li>
-            <li>8-card hand &lt; 25 points (first speech)</li>
-            <li>Spoilt Trumps (opp. holds zero Trump from deal)</li>
-            <li>Absolute Hand (goodwill or accepted claim)</li>
-          </ul>
-          <p class="cheatsheet-foot">Redeal: same dealer reshuffles. Pass-on: deal moves anticlockwise.</p>
-        </div>
-
-      </div>
+    <!-- Cheat sheet moved to cheatsheet.html. The empty stub keeps the
+         legacy #cheatsheet anchor working for old bookmarks. -->
+    <section id="cheatsheet" class="article-stub-anchor">
+      <p class="article-pointer"><strong>Cheat Sheet &mdash; moved to its own page.</strong> The one-page printable reference (with a Print / Save as PDF button) now lives at <a href="cheatsheet.html">cheatsheet.html &rarr;</a>.</p>
     </section>
 
     <hr>
@@ -1209,6 +1031,7 @@
 <button class="sidebar-toggle" aria-label="Toggle table of contents">&#9776;</button>
 
 <script type="module" src="js/theme.js"></script>
+<script src="js/site-nav.js"></script>
 <script type="module" src="js/rules.js"></script>
 </body>
 </html>

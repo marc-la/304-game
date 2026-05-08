@@ -30,7 +30,17 @@
   <div class="site-nav-inner">
     <a href="./" class="site-nav-brand">3<span class="brand-zero">0</span>4</a>
     <nav class="site-nav-links">
-      <a href="rules.html">Rules</a>
+      <span class="site-nav-rules">
+        <a href="rules.html">Rules</a>
+        <button type="button" class="site-nav-rules-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Open rules submenu">
+          <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <ul class="site-nav-rules-menu" role="menu">
+          <li role="none"><a role="menuitem" href="rules.html">Full Ruleset</a></li>
+          <li role="none"><a role="menuitem" href="cheatsheet.html">Cheat Sheet<span class="menu-meta">One-page printable reference</span></a></li>
+          <li role="none"><a role="menuitem" href="caps-formalism.html">Caps Formalism<span class="menu-meta">Advanced article</span></a></li>
+        </ul>
+      </span>
       <a href="practice.html">Daily</a>
       <a href="stats.html" class="site-nav-cta">Leaderboard</a>
     </nav>
@@ -41,6 +51,7 @@
 <div id="root"></div>
 
 <script type="module" src="js/theme.js"></script>
+<script src="js/site-nav.js"></script>
 <script type="module" src="/frontend/src/play-app.tsx"></script>
 </body>
 </html>

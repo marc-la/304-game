@@ -330,6 +330,134 @@ body {
   color: var(--clr-accent);
 }
 
+/* ===== Rules dropdown =====
+   The "Rules" entry is a split control: clicking the label still navigates
+   to rules.html (the full ruleset), while a chevron exposes a submenu of
+   companion articles (cheat sheet, advanced caps formalism). Reveal is
+   :hover/:focus-within for desktop; a JS toggle (data-open) handles touch
+   and explicit click. */
+.site-nav-rules {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+}
+
+.site-nav-rules > a {
+  /* Pin the right edge so the chevron tucks against the link without a gap. */
+  padding-right: 8px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.site-nav-rules-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--clr-text-muted);
+  font: inherit;
+  cursor: pointer;
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.site-nav-rules-toggle:hover,
+.site-nav-rules:hover .site-nav-rules-toggle,
+.site-nav-rules:focus-within .site-nav-rules-toggle {
+  background: var(--clr-row-hover);
+  color: var(--clr-text);
+}
+
+.site-nav-rules-toggle svg {
+  width: 10px;
+  height: 10px;
+  display: block;
+  transition: transform 0.15s;
+}
+
+.site-nav-rules:hover .site-nav-rules-toggle svg,
+.site-nav-rules:focus-within .site-nav-rules-toggle svg,
+.site-nav-rules[data-open="true"] .site-nav-rules-toggle svg {
+  transform: rotate(180deg);
+}
+
+.site-nav-rules-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 220px;
+  padding: 6px;
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.10);
+  list-style: none;
+  margin: 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.12s, transform 0.12s, visibility 0.12s;
+  z-index: 1001;
+}
+
+.site-nav-rules:hover .site-nav-rules-menu,
+.site-nav-rules:focus-within .site-nav-rules-menu,
+.site-nav-rules[data-open="true"] .site-nav-rules-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.site-nav-rules-menu li {
+  margin: 0;
+}
+
+.site-nav-rules-menu a {
+  display: block;
+  padding: 8px 12px;
+  border-radius: 4px;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--clr-text);
+  text-decoration: none;
+}
+
+.site-nav-rules-menu a:hover,
+.site-nav-rules-menu a:focus-visible {
+  background: var(--clr-row-hover);
+  color: var(--clr-text);
+}
+
+.site-nav-rules-menu a.active {
+  background: var(--clr-accent-light);
+  color: var(--clr-accent);
+}
+
+.site-nav-rules-menu .menu-meta {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--clr-text-muted);
+  font-weight: 400;
+  margin-top: 2px;
+  letter-spacing: 0.01em;
+}
+
+@media (max-width: 500px) {
+  .site-nav-rules-toggle {
+    padding: 0 6px 0 2px;
+  }
+  .site-nav-rules-menu {
+    min-width: 200px;
+    right: 0;
+    left: auto;
+  }
+}
+
 /* Primary call-to-action in the nav. Promoted from a plain link to a
    pill so Play reads as the main user flow on every page. No arrow —
    the pill itself carries the affordance. */
@@ -399,6 +527,72 @@ body {
 .page-wrapper {
   display: flex;
   min-height: calc(100vh - var(--nav-height));
+}
+
+/* Article pages (cheat sheet, caps formalism) — narrower than the full
+   ruleset, no sidebar, with breadcrumb and footer navigation. */
+.article-page {
+  max-width: 720px;
+  padding: 40px 32px 96px;
+}
+
+.article-breadcrumb {
+  font-family: var(--font-heading);
+  font-size: 0.82rem;
+  color: var(--clr-text-muted);
+  margin-bottom: 24px;
+}
+
+.article-breadcrumb a {
+  color: var(--clr-text-muted);
+  text-decoration: none;
+}
+
+.article-breadcrumb a:hover {
+  color: var(--clr-accent);
+}
+
+.article-breadcrumb-sep {
+  margin: 0 8px;
+  opacity: 0.5;
+}
+
+.article-breadcrumb [aria-current="page"] {
+  color: var(--clr-text);
+  font-weight: 600;
+}
+
+.article-footer-nav {
+  margin-top: 56px;
+  padding-top: 20px;
+  border-top: 1px solid var(--clr-border);
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+}
+
+.article-footer-nav a {
+  color: var(--clr-link);
+  text-decoration: none;
+}
+
+.article-footer-nav a:hover {
+  color: var(--clr-accent);
+  text-decoration: underline;
+}
+
+/* Inline pointer paragraph linking to a spun-out article from rules.html.
+   Visually distinct from body copy without being shouty. */
+.article-pointer {
+  background: var(--clr-accent-light);
+  border-left: 3px solid var(--clr-accent);
+  padding: 14px 18px;
+  border-radius: 4px;
+  margin: 24px 0;
+  font-size: 0.95rem;
+}
+
+.article-pointer strong {
+  color: var(--clr-accent);
 }
 
 .sidebar {

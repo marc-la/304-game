@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>304 Game — Cheat Sheet</title>
+  <meta name="description" content="A printable one-page reference for 304 (house rules): card ranks, bidding, scoring, Caps outcomes, and pass-on triggers.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#fbf6e8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#251812" media="(prefers-color-scheme: dark)">
+  <script>
+    (function () {
+      try {
+        var qp = new URL(location.href).searchParams.get('theme');
+        var t = (qp === 'dark' || qp === 'light') ? qp : localStorage.getItem('theme');
+        if (qp) localStorage.setItem('theme', qp);
+        if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* Page-local: the print button row and a print stylesheet that reduces
+       the cheat-sheet to a single-page artefact. The grid drops to 2 columns
+       to fit A4 portrait without overflow. */
+    .cheatsheet-page-actions {
+      display: flex;
+      gap: 8px;
+      margin: 0 0 24px;
+    }
+    .cheatsheet-print-btn {
+      font-family: var(--font-heading);
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 9px 18px;
+      background: var(--clr-accent);
+      color: #fff;
+      border: 0;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(156, 47, 29, 0.18);
+      transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+    }
+    .cheatsheet-print-btn:hover {
+      background: #b0432a;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(156, 47, 29, 0.32);
+    }
+    .cheatsheet-page .article-page-intro {
+      color: var(--clr-text-muted);
+      margin-bottom: 8px;
+    }
+    .cheatsheet-page .cheatsheet-grid {
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+
+    @media print {
+      @page { margin: 12mm; }
+      .site-nav,
+      .article-breadcrumb,
+      .article-footer-nav,
+      .cheatsheet-page-actions { display: none !important; }
+      .cheatsheet-page {
+        max-width: none !important;
+        padding: 0 !important;
+      }
+      h1 { font-size: 18pt; margin-bottom: 4pt; }
+      .article-page-intro { font-size: 9pt; margin-bottom: 8pt; }
+      .cheatsheet-page .cheatsheet-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6mm;
+      }
+      .cheatsheet-card {
+        break-inside: avoid;
+        background: #fff !important;
+        border: 1px solid #888 !important;
+        padding: 6pt 8pt !important;
+      }
+      .cheatsheet-card h3 {
+        font-size: 10pt;
+        color: #000 !important;
+        border-bottom: 1px solid #888 !important;
+      }
+      .cheatsheet-card,
+      .cheatsheet-card li,
+      .cheatsheet-card p,
+      .cheatsheet-card td,
+      .cheatsheet-card th { color: #000 !important; }
+      .cheatsheet-card ul,
+      .cheatsheet-card ol { font-size: 8.5pt; line-height: 1.35; }
+      .cheatsheet-foot { font-size: 7.5pt; }
+      body { font-size: 10pt; background: #fff; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="site-nav">
+  <div class="site-nav-inner">
+    <a href="./" class="site-nav-brand">3<span class="brand-zero">0</span>4</a>
+    <nav class="site-nav-links">
+      <span class="site-nav-rules">
+        <a href="rules.html" class="active">Rules</a>
+        <button type="button" class="site-nav-rules-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Open rules submenu">
+          <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <ul class="site-nav-rules-menu" role="menu">
+          <li role="none"><a role="menuitem" href="rules.html">Full Ruleset</a></li>
+          <li role="none"><a role="menuitem" href="cheatsheet.html" class="active">Cheat Sheet<span class="menu-meta">One-page printable reference</span></a></li>
+          <li role="none"><a role="menuitem" href="caps-formalism.html">Caps Formalism<span class="menu-meta">Advanced article</span></a></li>
+        </ul>
+      </span>
+      <a href="practice.html">Daily</a>
+      <a href="stats.html" class="site-nav-cta">Leaderboard</a>
+    </nav>
+  </div>
+</header>
+
+<main class="main-content article-page cheatsheet-page">
+
+  <nav class="article-breadcrumb" aria-label="Breadcrumb">
+    <a href="rules.html">&larr; Full Ruleset</a>
+    <span class="article-breadcrumb-sep">&middot;</span>
+    <span aria-current="page">Cheat Sheet</span>
+    <span class="article-breadcrumb-sep">&middot;</span>
+    <a href="caps-formalism.html">Caps Formalism</a>
+  </nav>
+
+  <h1>Cheat Sheet</h1>
+  <p class="article-page-intro">A one-page reference. Print, fold in half, bring to a session. The principle is the rule, not the list &mdash; when in doubt, the <a href="rules.html">full ruleset</a> governs.</p>
+
+  <div class="cheatsheet-page-actions">
+    <button type="button" class="cheatsheet-print-btn" onclick="window.print()">Print / Save as PDF</button>
+  </div>
+
+  <div class="cheatsheet-grid">
+
+    <div class="cheatsheet-card">
+      <h3>Card Ranks &amp; Points</h3>
+      <ol class="cheatsheet-ranks">
+        <li><strong>J</strong> &mdash; 30</li>
+        <li><strong>9</strong> &mdash; 20</li>
+        <li><strong>A</strong> &mdash; 11</li>
+        <li><strong>10</strong> &mdash; 10</li>
+        <li><strong>K</strong> &mdash; 3</li>
+        <li><strong>Q</strong> &mdash; 2</li>
+        <li><strong>8</strong> &mdash; 0</li>
+        <li><strong>7</strong> &mdash; 0</li>
+      </ol>
+      <p class="cheatsheet-foot">Total per suit: 76. Total in pack: 304.</p>
+    </div>
+
+    <div class="cheatsheet-card">
+      <h3>Your Turn &mdash; What can I play?</h3>
+      <ul class="cheatsheet-decision">
+        <li><strong>You lead?</strong> Any card (Trumper R1: not Trump unless Open).</li>
+        <li><strong>Following:</strong> Same suit as led if you have one.</li>
+        <li><strong>Can&rsquo;t follow (Closed):</strong> Fold a card.
+          <ul>
+            <li><strong>Cut:</strong> Trump-suit, face-down (guess).</li>
+            <li><strong>Minus:</strong> non-Trump, face-down (concede).</li>
+          </ul>
+        </li>
+        <li><strong>Can&rsquo;t follow (Open):</strong> Any card, face-up.</li>
+        <li><strong>Trumper</strong> never folds in-hand trumps (&sect;T-4).</li>
+      </ul>
+    </div>
+
+    <div class="cheatsheet-card">
+      <h3>Bidding Quick Reference</h3>
+      <ul class="cheatsheet-list">
+        <li>Min open: <strong>160</strong> (4-card), <strong>220</strong> (8-card)</li>
+        <li>Increments: <strong>10</strong> (&lt;200), <strong>5</strong> (&ge;200)</li>
+        <li>Below-200/250: first speech only, no undercut partner</li>
+        <li>Termination: all 4 spoke + 3 consecutive passes</li>
+        <li>Partner: 4-card only, dealer&rsquo;s right or opposite, first speech, no return</li>
+        <li>Pass-on: no bid (4-card) or hand &lt; 25 (8-card)</li>
+        <li>Redeal: 4 cards &lt; 15 points (priority or partnered partner)</li>
+      </ul>
+    </div>
+
+    <div class="cheatsheet-card">
+      <h3>Stone &mdash; Win &amp; Loss</h3>
+      <table class="cheatsheet-table">
+        <thead><tr><th>Bid</th><th>Win</th><th>Loss</th></tr></thead>
+        <tbody>
+          <tr><td>160&ndash;190</td><td>1</td><td>2</td></tr>
+          <tr><td>200&ndash;215</td><td>2</td><td>3</td></tr>
+          <tr><td>220&ndash;245</td><td>2</td><td>3</td></tr>
+          <tr><td>250</td><td>3</td><td>4</td></tr>
+          <tr><td>PCC</td><td>5</td><td>5</td></tr>
+        </tbody>
+      </table>
+      <p class="cheatsheet-foot">Giving stone = good (closer to winning the match).</p>
+    </div>
+
+    <div class="cheatsheet-card">
+      <h3>Caps Outcomes</h3>
+      <ul class="cheatsheet-list">
+        <li><strong>Correct, before R7:</strong> win + 1 stone bonus</li>
+        <li><strong>Correct, R7+:</strong> normal win</li>
+        <li><strong>Late Caps:</strong> loss + 1 stone (game flipped)</li>
+        <li><strong>Wrong/Early:</strong> 5 stone penalty</li>
+        <li><strong>External Caps:</strong> mirrors above, framed against betting team&rsquo;s loss</li>
+        <li><strong>PCC:</strong> stake decided on all-8 only; no Caps bonus</li>
+      </ul>
+    </div>
+
+    <div class="cheatsheet-card">
+      <h3>Pass-on / Void Triggers</h3>
+      <ul class="cheatsheet-list">
+        <li>4-card betting ends with no bid</li>
+        <li>8-card hand &lt; 25 points (first speech)</li>
+        <li>Spoilt Trumps (opp. holds zero Trump from deal)</li>
+        <li>Absolute Hand (goodwill or accepted claim)</li>
+      </ul>
+      <p class="cheatsheet-foot">Redeal: same dealer reshuffles. Pass-on: deal moves anticlockwise.</p>
+    </div>
+
+  </div>
+
+  <nav class="article-footer-nav" aria-label="Related">
+    <a href="rules.html">&larr; Back to the full ruleset</a>
+  </nav>
+
+</main>
+
+<script type="module" src="js/theme.js"></script>
+<script src="js/site-nav.js"></script>
+</body>
+</html>
