@@ -478,16 +478,12 @@ body[data-page="caps-formalism"] .site-nav-rules-menu a[href="caps-formalism.htm
   .site-nav-rules-toggle {
     padding: 0 6px 0 2px;
   }
-  /* Pin to the viewport (not to .site-nav-rules) so the 200px+ panel can't
-     run off either edge. The rules pill sits early in the nav row, so the
-     prior `right: 0` anchor on absolute positioning pushed the menu's left
-     edge off-screen on small phones. Fixed positioning under the sticky
-     nav, flush with the body gutter, with width clamped to the viewport. */
+  /* Keep the menu anchored to the Rules pill (default `left: 0` from the
+     base rule above); just clamp max-width so a 220px panel can't overflow
+     the viewport on narrow phones. The earlier `right: 0` flip pushed the
+     menu's right edge to the pill's right edge, which on a phone left a
+     wide gap to the right of the trigger and read as detached. */
   .site-nav-rules-menu {
-    position: fixed;
-    top: var(--nav-height);
-    right: 16px;
-    left: auto;
     min-width: min(220px, calc(100vw - 32px));
     max-width: calc(100vw - 32px);
   }
