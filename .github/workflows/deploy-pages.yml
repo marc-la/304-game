@@ -32,6 +32,14 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      # Mirror the local dev setup documented in .claude/directory.md: the
+      # repo-root node_modules is a symlink into frontend/node_modules so
+      # Vite/Vitest resolve packages from anywhere under the layered tree
+      # (apps/, engine/, tools/). Git doesn't track symlinks here, so CI
+      # has to recreate it before tests/build run.
+      - name: Link node_modules at repo root
+        run: ln -s frontend/node_modules node_modules
+
       - name: Run engine tests
         working-directory: frontend
         run: npm test
