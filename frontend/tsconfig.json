@@ -3,5 +3,15 @@
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }
-  ]
+  ],
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "@engine": ["../engine/index.ts"],
+      "@engine/*": ["../engine/*"],
+      "@apps/*": ["../apps/*"]
+    }
+  }
 }

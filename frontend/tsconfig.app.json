@@ -15,12 +15,27 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
+    /* Path aliases — mirror vite.config.ts resolve.alias.
+       Paths are relative to this tsconfig's directory (frontend/),
+       so ../engine resolves to engine/ at the repo root. */
+    "paths": {
+      "@engine": ["../engine/index.ts"],
+      "@engine/*": ["../engine/*"],
+      "@apps/*": ["../apps/*"]
+    },
+
     /* Linting */
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"],
-  "exclude": ["src/**/__tests__/**", "src/**/*.test.ts", "src/**/*.test.tsx"]
+  "include": ["../engine", "../apps"],
+  "exclude": [
+    "../engine/**/__tests__/**",
+    "../engine/**/*.test.ts",
+    "../apps/**/__tests__/**",
+    "../apps/**/*.test.ts",
+    "../apps/**/*.test.tsx"
+  ]
 }

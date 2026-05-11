@@ -10,10 +10,10 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "puzzles:generate": "tsx ../tools/generate-puzzles.ts",
-    "pool:curate": "tsx ../tools/curate-pool.ts",
-    "pool:select": "tsx ../tools/select-from-pool.ts",
-    "pool:inspect": "tsx ../tools/inspect-pool.ts"
+    "puzzles:generate": "tsx ../tools/puzzles/generate.ts",
+    "pool:curate": "tsx ../tools/curator/bin/curate-pool.ts",
+    "pool:select": "tsx ../tools/curator/bin/select-from-pool.ts",
+    "pool:inspect": "tsx ../tools/curator/bin/inspect-pool.ts"
   },
   "dependencies": {
     "framer-motion": "^12.38.0",

@@ -6,9 +6,13 @@ A four-player partnership trick-taking card game from Sri Lanka — playable as 
 
 ## What's in here
 
-- **Static site** — landing, [rules](rules.html), daily 304dle puzzle, leaderboard. Built with Vite, deployed to GitHub Pages.
-- **TypeScript engine** — pure 304 rules engine in [frontend/src/304dle/engine/](frontend/src/304dle/engine/).
-- **FastAPI backend** *(local dev only)* — multiplayer server in [backend/](backend/), not part of the public site.
+- **Static site** ([site/](site/)) — landing, [rules](site/rules.html), daily 304dle puzzle, leaderboard. Built with Vite, deployed to GitHub Pages.
+- **TypeScript engine** ([engine/](engine/)) — pure 304 rules engine, shared by both React apps.
+- **React apps** ([apps/304dle/](apps/304dle/), [apps/play/](apps/play/)) — the daily puzzle and the vs-bots / multiplayer flow.
+- **Curator + generator** ([tools/](tools/)) — Node CLIs that produce the pre-baked puzzle JSON.
+- **FastAPI backend** *(local dev only, exiled from production)* — see [multiplayer/](multiplayer/).
+
+For a layered tour of the tree, read [`.claude/directory.md`](.claude/directory.md).
 
 ## Host it yourself
 
@@ -38,7 +42,15 @@ Then serve `frontend/dist/` from any static host (Netlify, Vercel, S3, nginx, `p
 cd frontend
 npm ci
 npm run dev     # http://localhost:5173 with HMR
-npm test        # vitest engine tests
+npm test        # vitest engine + app tests
+```
+
+The puzzle generator and curator CLIs are wired up as npm scripts:
+
+```bash
+npm run puzzles:generate -- --year 2027
+npm run pool:curate -- ...
+npm run pool:inspect -- ../site/public/puzzles/pool.jsonl
 ```
 
 ## License

@@ -10,6 +10,7 @@ __pycache__/
 .pytest_cache/
 
 # Node / Vite / TypeScript
+node_modules
 node_modules/
 .vite/
 *.tsbuildinfo
@@ -41,7 +42,7 @@ Thumbs.db
 
 # Hard-caps curator work-in-progress (pool generation streams here;
 # committed pool/selection JSONs should be force-added explicitly).
-frontend/public/puzzles/pool*.jsonl
-frontend/public/puzzles/pool*.meta.json
+site/public/puzzles/pool*.jsonl
+site/public/puzzles/pool*.meta.json
 
 CLAUDE.md
