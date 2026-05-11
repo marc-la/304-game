@@ -276,14 +276,6 @@ body {
   pointer-events: none;
 }
 
-/* The clip-path lozenge is ~3.5×6.4px at 2rem and rasterises poorly on
-   mobile DPIs. Drop it once the wordmark starts shrinking. */
-@media (max-width: 700px) {
-  .site-nav-brand .brand-zero::after {
-    display: none;
-  }
-}
-
 .site-nav-links {
   display: flex;
   align-items: center;
