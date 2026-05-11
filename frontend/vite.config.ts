@@ -59,6 +59,30 @@ const copyRepoAssets = (): Plugin => ({
   },
 });
 
+// Dev-only: make /apps/, /engine/, /docs/ URLs reachable even though
+// they live outside the Vite root (site/). We rewrite the request to
+// Vite's /@fs/<absolute-path> escape hatch — server.fs.allow already
+// permits the repo root, so the .tsx/.ts files go through Vite's
+// transform pipeline like any in-root source.
+//
+// In production this is a no-op: the build bundles the @engine imports
+// via Rollup, and the copyRepoAssets plugin already places docs/ at the
+// right URL in dist/.
+const externalDirsServe = (): Plugin => ({
+  name: '304-external-dirs-serve',
+  apply: 'serve',
+  configureServer(server) {
+    server.middlewares.use((req, _res, next) => {
+      const url = req.url ?? '';
+      const path = url.split('?')[0];
+      if (/^\/(apps|engine|docs)\//.test(path)) {
+        req.url = '/@fs' + repoRoot + url;
+      }
+      next();
+    });
+  },
+});
+
 // HTML partial includes. Replaces `<!-- @include partials/foo.html -->` in
 // every served/built HTML page with the contents of `site/partials/foo.html`.
 // Runs in both dev and build via `transformIndexHtml`, so the header (and
@@ -97,7 +121,7 @@ if (!excludePlay) {
 }
 
 export default defineConfig({
-  plugins: [htmlPartials(), react(), copyRepoAssets()],
+  plugins: [htmlPartials(), react(), copyRepoAssets(), externalDirsServe()],
   root: siteRoot,
   // Relative asset paths so the build can be served from any subpath
   // (e.g. ``user.github.io/304-game/``) without rewriting hrefs.
