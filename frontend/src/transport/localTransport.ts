@@ -4,7 +4,11 @@
 import type { CardId } from '../304dle/engine/card';
 import { pointsOf, rankOf, suitOf } from '../304dle/engine/card';
 import { Match } from '../304dle/engine/match';
-import { autoPlayBots, SimpleBot } from '../304dle/engine/simple-bot';
+import {
+  autoPlayBots,
+  playOneBotTurn,
+  SimpleBot,
+} from '../304dle/engine/simple-bot';
 import { SEATS } from '../304dle/engine/seating';
 import type { Seat } from '../304dle/engine/seating';
 import type {
@@ -56,7 +60,9 @@ const view = (matchId: string): GameView => {
 
 const advanceBots = (ms: LocalMatchState): void => {
   if (ms.match.currentGame === null) return;
-  autoPlayBots(ms.match.currentGame, ms.bots);
+  // Fast-forward setup phases (dealing/bidding/trump/pre-play); stop
+  // at PLAYING so the frontend can pace card plays one at a time.
+  autoPlayBots(ms.match.currentGame, ms.bots, { stopAtPlay: true });
 };
 
 const toCardData = (c: CardId): CardData => ({
@@ -225,5 +231,24 @@ export const localTransport: Transport = {
     if (!ms) throw new Error(`Local match not found: ${matchId}`);
     const cards = ms.match.currentGame!.validPlays(seat).map(toCardData);
     return { cards };
+  },
+
+  async botStep(matchId: string, playerId: string): Promise<GameView> {
+    const ms = getMatch(matchId, playerId);
+    const game = ms.match.currentGame!;
+    const beforeCount = game.state.play?.completedRounds.length ?? 0;
+    playOneBotTurn(game, ms.bots);
+    const afterCount = game.state.play?.completedRounds.length ?? 0;
+    // Note: we don't pass completedRound through to the GameView here
+    // because the LocalTransport's `view` helper doesn't synthesize a
+    // GameView.completedRound payload. The frontend instead detects
+    // round resolution by comparing the completed_rounds.length across
+    // successive views — the same fallback used for the backend
+    // transport when a play is recorded by getState polling.
+    void beforeCount;
+    void afterCount;
+    // Stop at play (don't continue with other bots) so the frontend
+    // controls timing.
+    return view(matchId);
   },
 };

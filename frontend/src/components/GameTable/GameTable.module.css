@@ -27,6 +27,16 @@
   align-items: flex-start;
   flex: 0 0 auto;
   min-height: 120px;
+  position: relative;
+}
+
+/* Pin the stone scoreboard to the top-left without disturbing the
+   centered top-seat. */
+.stoneSlot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 5;
 }
 
 .middleArea {

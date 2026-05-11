@@ -16,6 +16,14 @@ interface Props {
   onCardClick?: (card: CardData) => void;
   showPoints?: boolean;
   interactive?: boolean;
+  /** The card.str of the folded trump card if it's currently
+   *  showing in this hand (engine reports it as a valid play for the
+   *  trumper even though it isn't strictly "in hand"). Gets the
+   *  gold TRUMP tag in the visualisation. */
+  trumpCardStr?: string | null;
+  /** Suit of the trump for the round, used to subtly mark in-hand
+   *  cards of the trump suit. */
+  trumpSuit?: 'c' | 'd' | 'h' | 's' | null;
 }
 
 export default function CardHand({
@@ -27,9 +35,24 @@ export default function CardHand({
   onCardClick,
   showPoints = true,
   interactive = false,
+  trumpCardStr = null,
+  trumpSuit = null,
 }: Props) {
   const sorted = sortHand(cards);
   const total = handPoints(cards);
+
+  // Card spacing:
+  // - Face-down stacks (opponents): heavy overlap so the stack is compact.
+  // - Opponent face-up (peek/scrutiny): light overlap, still small.
+  // - Player's own face-up hand (small=false): NO overlap — cards laid
+  //   out side-by-side with a small positive gap so each card is fully
+  //   readable.
+  const overlapFor = (i: number): number => {
+    if (i === 0) return 0;
+    if (!faceUp) return small ? -30 : -40;
+    if (small) return -20;
+    return 6;
+  };
 
   if (!faceUp) {
     const n = count ?? cards.length;
@@ -40,7 +63,7 @@ export default function CardHand({
             <div
               key={i}
               className={styles.cardSlot}
-              style={{ marginLeft: i > 0 ? (small ? -30 : -40) : 0 }}
+              style={{ marginLeft: overlapFor(i) }}
             >
               <CardBack small={small} />
             </div>
@@ -61,7 +84,7 @@ export default function CardHand({
             <div
               key={card.str}
               className={styles.cardSlot}
-              style={{ marginLeft: i > 0 ? (small ? -20 : -15) : 0 }}
+              style={{ marginLeft: overlapFor(i) }}
             >
               <PlayingCard
                 card={card}
@@ -70,6 +93,8 @@ export default function CardHand({
                 onClick={() => onCardClick?.(card)}
                 small={small}
                 showPoints={showPoints}
+                isTrump={trumpCardStr !== null && card.str === trumpCardStr}
+                isTrumpSuit={trumpSuit !== null && card.suit === trumpSuit}
               />
             </div>
           );

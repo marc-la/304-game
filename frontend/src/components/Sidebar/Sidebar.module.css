@@ -8,6 +8,25 @@
   overflow: hidden;
 }
 
+.settings {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--clr-border);
+  flex-shrink: 0;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--clr-text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+.toggle input {
+  cursor: pointer;
+}
+
 .tabs {
   display: flex;
   border-bottom: 1px solid var(--clr-border);

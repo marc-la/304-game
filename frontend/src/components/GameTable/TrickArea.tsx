@@ -19,6 +19,8 @@ export default function TrickArea() {
   const gameState = useGameStore(s => s.gameState);
   const play = gameState?.play;
   const lastCompletedRound = useGameStore(s => s.lastCompletedRound);
+  const pendingRoundContinue = useGameStore(s => s.pendingRoundContinue);
+  const continueRound = useGameStore(s => s.continueRound);
 
   const orient = mySeat ?? 'south';
 
@@ -26,9 +28,23 @@ export default function TrickArea() {
   const roundNumber = play?.round_number ?? 0;
   const priority = play?.priority;
 
-  // Show current round cards, or last completed if current is empty
-  const displayEntries: RoundEntry[] = currentRound.length > 0 ? currentRound : (lastCompletedRound?.cards ?? []);
-  const isLastRound = currentRound.length === 0 && lastCompletedRound != null;
+  // While paused, force-display the last completed round's cards
+  // (engine state has already moved on, but UX-wise the user is still
+  // looking at the round they just saw).
+  const completedRoundFromState =
+    play?.completed_rounds && play.completed_rounds.length > 0
+      ? play.completed_rounds[play.completed_rounds.length - 1]
+      : null;
+  const completedToShow =
+    completedRoundFromState ?? lastCompletedRound ?? null;
+  const showCompleted =
+    pendingRoundContinue ||
+    (currentRound.length === 0 && completedToShow != null);
+
+  const displayEntries: RoundEntry[] = showCompleted
+    ? (completedToShow?.cards ?? [])
+    : currentRound;
+  const isLastRound = showCompleted;
 
   return (
     <div className={styles.trickArea}>
@@ -79,6 +95,21 @@ export default function TrickArea() {
           <span className="team-a">A: {play.points_won.team_a}</span>
           {' / '}
           <span className="team-b">B: {play.points_won.team_b}</span>
+        </div>
+      )}
+      {pendingRoundContinue && completedToShow && (
+        <div className={styles.continuePrompt}>
+          <div className={styles.continueText}>
+            {SEAT_NAMES[completedToShow.winner]} wins round{' '}
+            {completedToShow.round_number} (+{completedToShow.points_won} pts)
+          </div>
+          <button
+            type="button"
+            className={styles.continueButton}
+            onClick={continueRound}
+          >
+            Continue →
+          </button>
         </div>
       )}
     </div>

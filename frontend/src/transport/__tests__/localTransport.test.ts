@@ -44,21 +44,38 @@ describe('LocalTransport', () => {
     view = await localTransport.bid(view.matchId, 'p1', 'pass');
     expect(view.phase).toBe('pre_play');
 
-    // Closed trump.
+    // Closed trump. Dealer=north → west has priority for round 1.
+    // After my pacing change, bot turns during PLAYING are NOT
+    // auto-played by the transport — the frontend uses `botStep` to
+    // step them one at a time for animation.
     view = await localTransport.closedTrump(view.matchId, 'p1');
+    expect(view.phase).toBe('playing');
+
+    // Step bots until it's south's turn or the game ends.
+    let guard = 100;
+    while (
+      view.phase === 'playing' &&
+      view.whoseTurn !== 'south' &&
+      guard-- > 0
+    ) {
+      view = await localTransport.botStep(view.matchId, 'p1');
+    }
     expect(view.phase).toBe('playing');
     expect(view.whoseTurn).toBe('south');
 
-    // Play out 8 rounds.
-    let guard = 50;
+    // Play out the rest by alternating south plays with bot stepping.
     while (view.phase === 'playing' && guard-- > 0) {
-      const valid = view.validPlays.south;
-      expect(valid.length).toBeGreaterThan(0);
-      view = await localTransport.playCard(
-        view.matchId,
-        'p1',
-        valid[0].str,
-      );
+      if (view.whoseTurn === 'south') {
+        const valid = view.validPlays.south;
+        expect(valid.length).toBeGreaterThan(0);
+        view = await localTransport.playCard(
+          view.matchId,
+          'p1',
+          valid[0].str,
+        );
+      } else {
+        view = await localTransport.botStep(view.matchId, 'p1');
+      }
     }
     expect(view.phase).toBe('complete');
     expect(view.state.result).not.toBeNull();

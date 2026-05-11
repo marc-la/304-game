@@ -2,7 +2,6 @@ import { useGameStore } from '../../store/gameStore';
 import SeatPosition from './SeatPosition';
 import TrickArea from './TrickArea';
 import StoneDisplay from './StoneDisplay';
-import TrumpIndicator from './TrumpIndicator';
 import type { Seat } from '../../types/game';
 import { SEATS } from '../../types/game';
 import { getVisualPosition } from '../../utils/seatUtils';
@@ -32,6 +31,9 @@ export default function GameTable() {
   return (
     <div className={styles.table}>
       <div className={styles.topArea}>
+        <div className={styles.stoneSlot}>
+          <StoneDisplay />
+        </div>
         <SeatPosition seat={seatsByPosition.top} position="top" />
       </div>
       <div className={styles.middleArea}>
@@ -39,9 +41,7 @@ export default function GameTable() {
           <SeatPosition seat={seatsByPosition.left} position="left" />
         </div>
         <div className={styles.centerArea}>
-          <StoneDisplay />
           <TrickArea />
-          <TrumpIndicator />
         </div>
         <div className={styles.rightArea}>
           <SeatPosition seat={seatsByPosition.right} position="right" />

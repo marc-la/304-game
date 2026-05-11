@@ -30,7 +30,7 @@ from game304 import (
     Match,
     Seat,
 )
-from game304.bot import Bot, auto_play_bots
+from game304.bot import Bot, auto_play_bots, play_one_bot_turn
 from game304.errors import (
     CapsError,
     GameError,
@@ -215,7 +215,11 @@ def _respond(
     bots = bot_instances.get(match_id)
     if bots and game.phase not in (Phase.COMPLETE, Phase.SCRUTINY):
         try:
-            auto_play_bots(game, bots)
+            # Fast-forward bot turns through setup (dealing / bidding /
+            # trump / pre-play), but stop as soon as the PLAYING phase
+            # starts. Frontend paces individual card plays via
+            # ``/api/game/{id}/bot-step`` for animation.
+            auto_play_bots(game, bots, stop_at_play=True)
         except GameError as exc:
             raise _game_error_to_http(exc)
     view = serialize_game_view(game, viewer)
@@ -455,6 +459,53 @@ def play_card(match_id: str, req: PlayRequest) -> dict[str, Any]:
         raise _game_error_to_http(exc)
 
     viewer = _viewer_for(match_id, req.playerId) or seat
+    response = _respond(match_id, game, viewer)
+    if completed_round:
+        response["completedRound"] = serialize_completed_round(
+            completed_round, viewer
+        )
+    return response
+
+
+class BotStepRequest(BaseModel):
+    playerId: str | None = None
+
+
+@app.post("/api/game/{match_id}/bot-step")
+def bot_step(match_id: str, req: BotStepRequest) -> dict[str, Any]:
+    """Play one bot turn during the PLAYING phase.
+
+    Used by the frontend to pace bot card plays for animation. If the
+    current actor isn't a bot, or the phase isn't PLAYING, this is a
+    no-op (returns the current state unchanged). If the bot's play
+    resolves a round, the resulting ``completedRound`` is included so
+    the frontend can flag the pause-and-continue moment.
+    """
+    game = _get_game(match_id)
+    bots = bot_instances.get(match_id)
+    if not bots:
+        raise HTTPException(400, detail="Not a bot match.")
+
+    completed_round = None
+    if game.phase == Phase.PLAYING:
+        turn_seat = game.whose_turn()
+        if turn_seat is not None and turn_seat in bots:
+            # Track completedRounds count to detect a round resolution
+            # caused by this bot's play.
+            before_count = (
+                len(game.state.play.completed_rounds) if game.state.play else 0
+            )
+            try:
+                play_one_bot_turn(game, bots)
+            except GameError as exc:
+                raise _game_error_to_http(exc)
+            after_count = (
+                len(game.state.play.completed_rounds) if game.state.play else 0
+            )
+            if after_count > before_count and game.state.play:
+                completed_round = game.state.play.completed_rounds[-1]
+
+    viewer = _viewer_for(match_id, req.playerId)
     response = _respond(match_id, game, viewer)
     if completed_round:
         response["completedRound"] = serialize_completed_round(

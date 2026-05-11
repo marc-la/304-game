@@ -20,7 +20,12 @@ export default function App() {
   // For Vs Bots flow we generate the playerId locally; lobbyStore.playerId
   // is used for the room flow. App tracks the active playerId either way.
   const [activePlayerId, setActivePlayerId] = useState<string | null>(null);
+  // 'bots' for Vs Bots flow, 'room' for Create/Join Room. Affects how
+  // we enter the game (bot match flag for paced bot animation vs the
+  // existing multiplayer poll loop).
+  const [matchKind, setMatchKind] = useState<'bots' | 'room' | null>(null);
   const enterGame = useGameStore(s => s.enterGame);
+  const enterBotMatch = useGameStore(s => s.enterBotMatch);
   const exitGame = useGameStore(s => s.exitGame);
   // When the game store clears its matchId (via ControlBar's "Menu" button
   // or any other exit path), drop App's local state so PlayLanding renders.
@@ -30,6 +35,7 @@ export default function App() {
       setMatchId(null);
       setMySeat(null);
       setActivePlayerId(null);
+      setMatchKind(null);
       setMode('landing');
     }
   }, [storeMatchId, matchId]);
@@ -41,6 +47,7 @@ export default function App() {
 
   const handleBotMatchStart = useCallback(
     (id: string, seat: 'south', playerId: string) => {
+      setMatchKind('bots');
       setMatchId(id);
       setMySeat(seat);
       setActivePlayerId(playerId);
@@ -49,6 +56,7 @@ export default function App() {
   );
 
   const handleRoomGameStart = useCallback((id: string, seat: string) => {
+    setMatchKind('room');
     setMatchId(id);
     setMySeat(seat as Seat);
     // For room flow, the lobbyStore's playerId is the source of truth.
@@ -59,12 +67,24 @@ export default function App() {
   // start polling. Cleanup on unmount.
   useEffect(() => {
     if (matchId && mySeat && activePlayerId) {
-      void enterGame(matchId, mySeat, activePlayerId);
+      if (matchKind === 'bots') {
+        void enterBotMatch(matchId, mySeat, activePlayerId);
+      } else {
+        void enterGame(matchId, mySeat, activePlayerId);
+      }
     }
     return () => {
       exitGame();
     };
-  }, [matchId, mySeat, activePlayerId, enterGame, exitGame]);
+  }, [
+    matchId,
+    mySeat,
+    activePlayerId,
+    matchKind,
+    enterGame,
+    enterBotMatch,
+    exitGame,
+  ]);
 
   // Identity not yet resolved → show the mode-select or lobby.
   if (!matchId || !mySeat || !activePlayerId) {

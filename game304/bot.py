@@ -137,7 +137,12 @@ def _led_suit_from_game(game: Game) -> Suit | None:
 # ---------------------------------------------------------------------------
 
 
-def auto_play_bots(game: Game, bots: dict[Seat, Bot]) -> int:
+def auto_play_bots(
+    game: Game,
+    bots: dict[Seat, Bot],
+    *,
+    stop_at_play: bool = False,
+) -> int:
     """Advance ``game`` by playing every bot turn until a human acts.
 
     Walks the phase machine: applies the appropriate bot decision in
@@ -152,6 +157,10 @@ def auto_play_bots(game: Game, bots: dict[Seat, Bot]) -> int:
     Args:
         game: The active game (mutated in place).
         bots: Mapping from bot-occupied seats to ``Bot`` instances.
+        stop_at_play: If True, do NOT take bot card-plays during the
+            PLAYING phase — return as soon as PLAYING is reached.
+            Used by ``_respond`` so the frontend can pace card plays
+            one at a time for animation (via :func:`play_one_bot_turn`).
 
     Returns:
         The number of bot actions performed.
@@ -184,6 +193,10 @@ def auto_play_bots(game: Game, bots: dict[Seat, Bot]) -> int:
             actions += 1
             continue
 
+        # Animation guard: leave the play phase to the per-turn helper.
+        if phase == Phase.PLAYING and stop_at_play:
+            return actions
+
         turn_seat = game.whose_turn()
         if turn_seat is None:
             return actions
@@ -212,3 +225,33 @@ def auto_play_bots(game: Game, bots: dict[Seat, Bot]) -> int:
         actions += 1
 
     raise RuntimeError("auto_play_bots: guard limit exceeded")
+
+
+def play_one_bot_turn(game: Game, bots: dict[Seat, Bot]) -> bool:
+    """Play a single bot turn during the PLAYING phase.
+
+    Used by ``/api/game/{id}/bot-step`` to step the play phase one
+    card at a time so the frontend can animate bot plays. Returns
+    True if a bot card was played, False otherwise (game completed,
+    or it's a human's turn).
+
+    Outside the PLAYING phase this is a no-op — for setup phases
+    (dealing/bidding/trump/pre-play) the frontend uses ``_respond``'s
+    fast-forward via :func:`auto_play_bots`.
+
+    Args:
+        game: The active game (mutated in place).
+        bots: Mapping from bot-occupied seats to ``Bot`` instances.
+
+    Returns:
+        True if a bot played a card; False otherwise.
+    """
+    if game.phase != Phase.PLAYING:
+        return False
+    turn_seat = game.whose_turn()
+    if turn_seat is None or turn_seat not in bots:
+        return False
+    bot = bots[turn_seat]
+    card = bot.choose_play(game)
+    game.play_card(turn_seat, card)
+    return True

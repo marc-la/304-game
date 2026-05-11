@@ -457,25 +457,44 @@ class TestBotMatch:
         )
         assert r.status_code == 200, r.text
         body = r.json()
-        # Phase = playing; current_turn = priority (dealer's right = west).
-        # Bots will play, so by the time we see it, it's south's turn.
+        # Phase = playing. With paced play (bots don't auto-play during
+        # PLAYING in _respond), the current turn is the priority seat
+        # — west (dealer=north, priority=dealer's right=west).
         assert body["phase"] == "playing"
-        assert body["whoseTurn"] == "south"
 
-        # Play out the game. South picks any valid card; bots respond.
-        guard = 50
-        while body["phase"] == "playing" and guard > 0:
-            r = client.get(
-                f"/api/game/{match_id}/valid-plays/south",
-                params={"playerId": player_id},
+        # Step bots one at a time until south's turn or game end.
+        guard = 100
+        while (
+            body["phase"] == "playing"
+            and body["whoseTurn"] != "south"
+            and guard > 0
+        ):
+            r = client.post(
+                f"/api/game/{match_id}/bot-step",
+                json={"playerId": player_id},
             )
             assert r.status_code == 200, r.text
-            valid = r.json()["cards"]
-            assert valid, "no valid plays for south"
-            r = client.post(
-                f"/api/game/{match_id}/play",
-                json={"playerId": player_id, "card": valid[0]["str"]},
-            )
+            body = r.json()
+            guard -= 1
+
+        # Play out the game alternating south plays + bot-step.
+        while body["phase"] == "playing" and guard > 0:
+            if body["whoseTurn"] == "south":
+                r = client.get(
+                    f"/api/game/{match_id}/valid-plays/south",
+                    params={"playerId": player_id},
+                )
+                valid = r.json()["cards"]
+                assert valid, "no valid plays for south"
+                r = client.post(
+                    f"/api/game/{match_id}/play",
+                    json={"playerId": player_id, "card": valid[0]["str"]},
+                )
+            else:
+                r = client.post(
+                    f"/api/game/{match_id}/bot-step",
+                    json={"playerId": player_id},
+                )
             assert r.status_code == 200, r.text
             body = r.json()
             guard -= 1

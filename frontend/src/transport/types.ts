@@ -78,4 +78,10 @@ export interface Transport {
     playerId: string,
     seat: Seat,
   ): Promise<{ cards: CardData[] }>;
+
+  /** Play one bot card during PLAYING phase (no-op otherwise). The
+   *  frontend calls this on a timer to pace bot plays for animation.
+   *  The response includes ``completedRound`` if this bot's play
+   *  resolved a round. */
+  botStep(matchId: string, playerId: string): Promise<GameView>;
 }

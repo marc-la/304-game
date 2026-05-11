@@ -99,10 +99,16 @@ const ledSuitFromGame = (game: Game): Suit | null => {
 // (or the game completes). Returns the number of bot actions taken.
 // Caller is responsible for `game.dealFour()` at the start of each game;
 // dealing the second 4 happens inside `selectTrump`.
+//
+// `stopAtPlay`: if true, return as soon as the PLAYING phase begins;
+// don't take any bot card-plays. Used by LocalTransport so the
+// frontend can pace play-phase animations one card at a time.
 export const autoPlayBots = (
   game: Game,
   bots: Map<Seat, SimpleBot>,
+  opts: { stopAtPlay?: boolean } = {},
 ): number => {
+  const stopAtPlay = opts.stopAtPlay ?? false;
   let actions = 0;
   let guard = 200;
   while (guard-- > 0) {
@@ -120,6 +126,8 @@ export const autoPlayBots = (
       actions++;
       continue;
     }
+
+    if (phase === 'playing' && stopAtPlay) return actions;
 
     const turnSeat = game.whoseTurn();
     if (turnSeat === null) return actions;
@@ -145,4 +153,20 @@ export const autoPlayBots = (
     actions++;
   }
   throw new Error('autoPlayBots: guard limit exceeded');
+};
+
+// Play a single bot card during the PLAYING phase. Returns true if a
+// bot played, false otherwise (game complete, human's turn, etc.).
+// Mirrors game304.bot.play_one_bot_turn.
+export const playOneBotTurn = (
+  game: Game,
+  bots: Map<Seat, SimpleBot>,
+): boolean => {
+  if (game.phase !== 'playing') return false;
+  const turnSeat = game.whoseTurn();
+  if (turnSeat === null) return false;
+  const bot = bots.get(turnSeat);
+  if (bot === undefined) return false;
+  game.playCard(turnSeat, bot.choosePlay(game));
+  return true;
 };

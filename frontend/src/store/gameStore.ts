@@ -14,6 +14,10 @@ import type {
 import { SEAT_NAMES, SEAT_TEAM, BID_NAMES, SUIT_SYMBOLS } from '../types/game';
 
 const POLL_INTERVAL_MS = 1500;
+// Delay between automatic bot card-plays during animation. Long enough
+// for the user to read each card; short enough that a round still
+// completes in 2-3 seconds.
+const BOT_TURN_DELAY_MS = 700;
 
 interface GameStore {
   // Identity (set by enterGame; null in solo mode)
@@ -64,11 +68,46 @@ interface GameStore {
   togglePeekMode: () => void;
   peekMode: boolean;
 
+  // Display preferences (persisted in localStorage)
+  showPoints: boolean;
+  toggleShowPoints: () => void;
+
+  // Bot-match pacing
+  isBotMatch: boolean;
+  pendingRoundContinue: boolean;
+  continueRound: () => void;
+  enterBotMatch: (matchId: string, mySeat: Seat, playerId: string) => Promise<void>;
+
   clearError: () => void;
 }
 
 let logIdCounter = 0;
 let pollHandle: ReturnType<typeof setInterval> | null = null;
+let botStepTimer: ReturnType<typeof setTimeout> | null = null;
+
+function cancelBotStep() {
+  if (botStepTimer !== null) {
+    clearTimeout(botStepTimer);
+    botStepTimer = null;
+  }
+}
+
+// Display preferences — persisted across sessions.
+const SHOW_POINTS_KEY = '304:showPoints';
+const loadShowPoints = (): boolean => {
+  try {
+    return localStorage.getItem(SHOW_POINTS_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+const saveShowPoints = (v: boolean): void => {
+  try {
+    localStorage.setItem(SHOW_POINTS_KEY, v ? '1' : '0');
+  } catch {
+    // ignore (private mode etc.)
+  }
+};
 
 function stopPolling() {
   if (pollHandle) {
@@ -136,6 +175,102 @@ export const useGameStore = create<GameStore>((set, get) => {
     }, POLL_INTERVAL_MS);
   }
 
+  /**
+   * Apply a view returned by any action, and either pause for
+   * round-continue OR schedule the next bot-step. Returns the
+   * partial state to merge.
+   *
+   * Round-resolution detection: completed_rounds.length grew vs the
+   * previous view. When this happens during PLAYING phase, we pause
+   * so the user can see the four cards from the resolved round before
+   * the next round starts.
+   *
+   * Bot scheduling: if we're in a bot match and it's currently a
+   * bot's turn during PLAYING phase, schedule the next bot-step
+   * after BOT_TURN_DELAY_MS.
+   */
+  function applyViewAndPace(view: GameView, extraLog?: LogEntry[]) {
+    const prev = get();
+    const prevCount =
+      prev.gameState?.play?.completed_rounds.length ?? 0;
+    const newCount = view.state.play?.completed_rounds.length ?? 0;
+    const roundJustResolved =
+      newCount > prevCount && view.phase === 'playing';
+
+    cancelBotStep();
+    set({
+      ...applyView(view),
+      ...(extraLog ? { log: extraLog } : {}),
+      pendingRoundContinue: roundJustResolved,
+    });
+
+    if (!roundJustResolved) {
+      scheduleBotStepIfNeeded();
+    }
+  }
+
+  function scheduleBotStepIfNeeded() {
+    cancelBotStep();
+    const s = get();
+    if (!s.isBotMatch) return;
+    if (s.pendingRoundContinue) return;
+    if (s.phase !== 'playing') return;
+    if (!s.matchId || !s.playerId) return;
+    if (s.whoseTurn === null || s.whoseTurn === s.mySeat) return;
+
+    botStepTimer = setTimeout(async () => {
+      botStepTimer = null;
+      const cur = get();
+      // Re-validate — state may have changed during the timer.
+      if (!cur.isBotMatch) return;
+      if (cur.pendingRoundContinue) return;
+      if (cur.phase !== 'playing') return;
+      if (!cur.matchId || !cur.playerId) return;
+      if (cur.whoseTurn === null || cur.whoseTurn === cur.mySeat) return;
+
+      try {
+        const view = await api.botStep(cur.matchId, cur.playerId);
+        // Log the bot's card play, if visible from the view diff.
+        const prevRound = cur.gameState?.play?.current_round ?? [];
+        const newRound = view.state.play?.current_round ?? [];
+        const newCompleted =
+          view.state.play?.completed_rounds.length ?? 0;
+        const prevCompleted =
+          cur.gameState?.play?.completed_rounds.length ?? 0;
+        let extraLog: LogEntry[] | undefined;
+        if (newRound.length > prevRound.length) {
+          // A bot played a card visible in current_round.
+          const newest = newRound[newRound.length - 1];
+          const seat = newest.seat;
+          const cardStr = newest.card?.str ?? 'face-down';
+          extraLog = addLog(
+            cur.log,
+            `${SEAT_NAMES[seat]} plays ${cardStr}`,
+            'play',
+            seat,
+          );
+        } else if (newCompleted > prevCompleted) {
+          // A round just resolved on this bot's play.
+          const completed =
+            view.state.play?.completed_rounds[newCompleted - 1];
+          if (completed) {
+            extraLog = addLog(
+              cur.log,
+              `${SEAT_NAMES[completed.winner]} wins Round ${
+                completed.round_number
+              } (${completed.points_won} pts)`,
+              'result',
+              completed.winner,
+            );
+          }
+        }
+        applyViewAndPace(view, extraLog);
+      } catch (e) {
+        set({ error: (e as Error).message });
+      }
+    }, BOT_TURN_DELAY_MS);
+  }
+
   return {
     matchId: null,
     mySeat: null,
@@ -155,24 +290,37 @@ export const useGameStore = create<GameStore>((set, get) => {
     loading: false,
     seed: null,
     peekMode: false,
+    showPoints: loadShowPoints(),
+    isBotMatch: false,
+    pendingRoundContinue: false,
 
     async enterGame(matchId, mySeat, playerId) {
       logIdCounter = 0;
       set({ matchId, mySeat, playerId, loading: true, log: [], error: null });
       try {
         const view = await api.getState(matchId, playerId);
-        set({
-          ...applyView(view),
-          log: addLog([], `You are ${SEAT_NAMES[mySeat]}`, 'info', mySeat),
-        });
-        startPolling();
+        const initialLog = addLog([], `You are ${SEAT_NAMES[mySeat]}`, 'info', mySeat);
+        applyViewAndPace(view, initialLog);
+        // Lobby matches need polling to pick up remote moves. Bot
+        // matches don't (they're stateless wrt other clients), so
+        // skip polling for them — it's a wasted round trip every
+        // POLL_INTERVAL_MS and can race the bot-step scheduling.
+        if (!get().isBotMatch) {
+          startPolling();
+        }
       } catch (e) {
         set({ loading: false, error: (e as Error).message });
       }
     },
 
+    async enterBotMatch(matchId, mySeat, playerId) {
+      set({ isBotMatch: true });
+      await get().enterGame(matchId, mySeat, playerId);
+    },
+
     exitGame() {
       stopPolling();
+      cancelBotStep();
       set({
         matchId: null,
         mySeat: null,
@@ -190,7 +338,14 @@ export const useGameStore = create<GameStore>((set, get) => {
         log: [],
         error: null,
         loading: false,
+        isBotMatch: false,
+        pendingRoundContinue: false,
       });
+    },
+
+    continueRound() {
+      set({ pendingRoundContinue: false });
+      scheduleBotStepIfNeeded();
     },
 
     async refresh() {
@@ -287,10 +442,8 @@ export const useGameStore = create<GameStore>((set, get) => {
         else if (action === 'bet_for_partner') msg = `${SEAT_NAMES[actor]} bids ${bidName} for partner`;
         else if (action === 'pass_for_partner') msg = `${SEAT_NAMES[actor]} passes for partner`;
         else if (action === 'pcc') msg = `${SEAT_NAMES[actor]} calls PCC!`;
-        set(state => ({
-          ...applyView(view),
-          log: addLog(state.log, msg, 'bid', actor),
-        }));
+        const newLog = addLog(get().log, msg, 'bid', actor);
+        applyViewAndPace(view, newLog);
       } catch (e) {
         set(state => ({
           loading: false,
@@ -344,10 +497,13 @@ export const useGameStore = create<GameStore>((set, get) => {
         const view = await api.selectTrump(matchId, id?.playerId ?? '', card);
         const suit = view.state.trump.trump_suit;
         const suitSym = suit ? SUIT_SYMBOLS[suit] : '?';
-        set(state => ({
-          ...applyView(view),
-          log: addLog(state.log, `${actor ? SEAT_NAMES[actor] : 'Trumper'} selects trump (${suitSym})`, 'trump', actor ?? undefined),
-        }));
+        const newLog = addLog(
+          get().log,
+          `${actor ? SEAT_NAMES[actor] : 'Trumper'} selects trump (${suitSym})`,
+          'trump',
+          actor ?? undefined,
+        );
+        applyViewAndPace(view, newLog);
       } catch (e) {
         set({ loading: false, error: (e as Error).message });
       }
@@ -361,10 +517,13 @@ export const useGameStore = create<GameStore>((set, get) => {
       set({ loading: true });
       try {
         const view = await api.openTrump(matchId, id?.playerId ?? '', revealCard);
-        set(state => ({
-          ...applyView(view),
-          log: addLog(state.log, `${actor ? SEAT_NAMES[actor] : 'Trumper'} declares Open Trump`, 'trump', actor ?? undefined),
-        }));
+        const newLog = addLog(
+          get().log,
+          `${actor ? SEAT_NAMES[actor] : 'Trumper'} declares Open Trump`,
+          'trump',
+          actor ?? undefined,
+        );
+        applyViewAndPace(view, newLog);
       } catch (e) {
         set({ loading: false, error: (e as Error).message });
       }
@@ -378,10 +537,13 @@ export const useGameStore = create<GameStore>((set, get) => {
       set({ loading: true });
       try {
         const view = await api.closedTrump(matchId, id?.playerId ?? '');
-        set(state => ({
-          ...applyView(view),
-          log: addLog(state.log, `${actor ? SEAT_NAMES[actor] : 'Trumper'} proceeds with Closed Trump`, 'trump', actor ?? undefined),
-        }));
+        const newLog = addLog(
+          get().log,
+          `${actor ? SEAT_NAMES[actor] : 'Trumper'} proceeds with Closed Trump`,
+          'trump',
+          actor ?? undefined,
+        );
+        applyViewAndPace(view, newLog);
       } catch (e) {
         set({ loading: false, error: (e as Error).message });
       }
@@ -408,13 +570,10 @@ export const useGameStore = create<GameStore>((set, get) => {
           const winMsg = `${SEAT_NAMES[cr.winner]} wins Round ${cr.round_number} (${cr.points_won} pts)`;
           newLog = addLog(newLog, winMsg, 'result', cr.winner);
         }
-        set({ ...applyView(view), log: newLog });
         if (view.phase === 'complete' && view.state.result) {
-          const r = view.state.result;
-          set(state => ({
-            log: addLog(state.log, r.description, 'result'),
-          }));
+          newLog = addLog(newLog, view.state.result.description, 'result');
         }
+        applyViewAndPace(view, newLog);
       } catch (e) {
         set(state => ({
           loading: false,
@@ -480,6 +639,14 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     togglePeekMode() {
       set(state => ({ peekMode: !state.peekMode }));
+    },
+
+    toggleShowPoints() {
+      set(state => {
+        const next = !state.showPoints;
+        saveShowPoints(next);
+        return { showPoints: next };
+      });
     },
 
     clearError() {

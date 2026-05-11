@@ -157,4 +157,11 @@ export const backendTransport: Transport = {
       `/game/${matchId}/valid-plays/${seat}?${q}`,
     );
   },
+
+  botStep(matchId: string, playerId: string) {
+    return request<GameView>(`/game/${matchId}/bot-step`, {
+      method: 'POST',
+      body: JSON.stringify({ playerId }),
+    });
+  },
 };
