@@ -30,6 +30,7 @@ from game304 import (
     Match,
     Seat,
 )
+from game304.bot import Bot, auto_play_bots
 from game304.errors import (
     CapsError,
     GameError,
@@ -64,6 +65,12 @@ lobby_store: LobbyStore = LobbyStore()
 # When absent (solo/test path), endpoints fall back to reading ``seat``
 # from the request body — no auth, but tests and solo dev keep working.
 match_rosters: dict[str, dict[Seat, str]] = {}
+
+# matchId → {seat: Bot}. Populated when a match is created via
+# /api/match/new-bots. When present, _respond auto-plays bot turns
+# after each human action so the client only sees state at human
+# decision points.
+bot_instances: dict[str, dict[Seat, Bot]] = {}
 
 
 def _resolve_seat(
@@ -199,7 +206,18 @@ def _bid_action(value: str) -> BidAction:
 def _respond(
     match_id: str, game: Game, viewer: Seat | None = None
 ) -> dict[str, Any]:
-    """Build the standard response: session ID + per-viewer game view."""
+    """Build the standard response: session ID + per-viewer game view.
+
+    If the match has bots registered (via ``/api/match/new-bots``),
+    fast-forward bot turns before serialising. The client only sees
+    state at human decision points.
+    """
+    bots = bot_instances.get(match_id)
+    if bots and game.phase not in (Phase.COMPLETE, Phase.SCRUTINY):
+        try:
+            auto_play_bots(game, bots)
+        except GameError as exc:
+            raise _game_error_to_http(exc)
     view = serialize_game_view(game, viewer)
     view["matchId"] = match_id
     # Include match-level info
@@ -234,6 +252,48 @@ def new_match(req: NewMatchRequest) -> dict[str, Any]:
 
     game = match.new_game()
     return _respond(match_id, game)
+
+
+class NewBotMatchRequest(BaseModel):
+    playerId: str
+    seat: str = "south"
+    seed: int | None = None
+    dealer: str = "north"
+
+
+@app.post("/api/match/new-bots")
+def new_bot_match(req: NewBotMatchRequest) -> dict[str, Any]:
+    """Create a match against bots.
+
+    The human takes ``seat`` (default south); the other three seats are
+    populated with simple ``Bot`` instances. After creation, the engine
+    is dealt and bot turns are auto-played until it's the human's turn
+    (or the game ends).
+    """
+    human_seat = _seat(req.seat)
+    rng = random.Random(req.seed) if req.seed is not None else None
+    dealer = _seat(req.dealer)
+    match_id = str(uuid.uuid4())
+
+    match = Match(first_dealer=dealer, rng=rng)
+    sessions[match_id] = match
+    game = match.new_game()
+    # No manual deal_four() — auto_play_bots inside _respond will
+    # handle DEALING_4 → deal → BETTING_4 → bot bids → human turn.
+
+    bots = {seat: Bot(seat) for seat in Seat if seat != human_seat}
+    bot_instances[match_id] = bots
+    match_rosters[match_id] = {human_seat: req.playerId}
+
+    return _respond(match_id, game, human_seat)
+
+
+@app.get("/api/health")
+def health() -> dict[str, Any]:
+    """Liveness probe. The frontend pings this to decide between the
+    backend transport and the local-engine fallback.
+    """
+    return {"status": "ok", "service": "304-game"}
 
 
 @app.post("/api/match/{match_id}/game/new")

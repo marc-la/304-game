@@ -21,7 +21,13 @@ sys.path.insert(0, os.path.join(ROOT, "backend"))
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-from main import app, lobby_store, sessions  # noqa: E402
+from main import (  # noqa: E402
+    app,
+    bot_instances,
+    lobby_store,
+    match_rosters,
+    sessions,
+)
 
 
 @pytest.fixture
@@ -29,6 +35,8 @@ def client():
     """Fresh app state for every test."""
     lobby_store.reset()
     sessions.clear()
+    match_rosters.clear()
+    bot_instances.clear()
     with TestClient(app) as c:
         yield c
 
@@ -343,3 +351,133 @@ class TestStaticServing:
         # And a 404 on a non-existent API route shouldn't be swallowed by static
         r = client.get("/api/lobby/ZZZZZ")
         assert r.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Bot match
+# ---------------------------------------------------------------------------
+
+
+class TestBotMatch:
+    """End-to-end smoke test for /api/match/new-bots.
+
+    With simple bots that always pass, creating a bot match should yield
+    a state where bidding has reached the human seat (south) and west
+    has already passed.
+    """
+
+    def test_health_endpoint(self, client):
+        r = client.get("/api/health")
+        assert r.status_code == 200
+        body = r.json()
+        assert body["status"] == "ok"
+
+    def test_create_bot_match_yields_human_turn(self, client):
+        player_id = _identity(client)
+        r = client.post(
+            "/api/match/new-bots",
+            json={"playerId": player_id, "seat": "south", "dealer": "north"},
+        )
+        assert r.status_code == 200, r.text
+        body = r.json()
+        match_id = body["matchId"]
+        # Dealer=north → priority=west → west bot passes → south's turn.
+        assert body["phase"] == "betting_4"
+        assert body["whoseTurn"] == "south"
+        # South sees their own 4 cards, others redacted.
+        hands = body["hands"]
+        assert len(hands["south"]) == 4
+        # Other seats: count revealed cards. Should be 0 (closed).
+        for seat in ("north", "west", "east"):
+            assert hands.get(seat, []) == [] or all(
+                c is None or c == "?" for c in hands[seat]
+            )
+        # The match should be registered.
+        assert match_id in sessions
+        assert match_id in bot_instances
+        assert set(bot_instances[match_id].keys()) == {
+            __import__("game304").Seat.NORTH,
+            __import__("game304").Seat.WEST,
+            __import__("game304").Seat.EAST,
+        }
+
+    def test_bot_match_full_play(self, client):
+        """Play a full bot match end-to-end. User bids 160 and plays
+        through 8 rounds; bots fill the rest.
+        """
+        player_id = _identity(client)
+        r = client.post(
+            "/api/match/new-bots",
+            json={"playerId": player_id, "seat": "south", "dealer": "north"},
+        )
+        match_id = r.json()["matchId"]
+
+        # South bids 160.
+        r = client.post(
+            f"/api/game/{match_id}/bid",
+            json={
+                "playerId": player_id,
+                "action": "bet",
+                "value": 160,
+            },
+        )
+        assert r.status_code == 200, r.text
+        body = r.json()
+        # After south's bet, bots all pass → trump selection. South is trumper.
+        assert body["phase"] == "trump_selection"
+
+        # Pick a trump from south's first-4 hand. Cards serialize as
+        # objects with a "str" field — that's what the API expects.
+        south_hand = body["hands"]["south"]
+        trump_card = south_hand[0]["str"]
+        r = client.post(
+            f"/api/game/{match_id}/trump",
+            json={"playerId": player_id, "card": trump_card},
+        )
+        assert r.status_code == 200, r.text
+        body = r.json()
+        # After trump select, 8-card betting; bots pass → south's turn.
+        assert body["phase"] == "betting_8"
+        assert body["whoseTurn"] == "south"
+
+        # South passes on 8-card.
+        r = client.post(
+            f"/api/game/{match_id}/bid",
+            json={"playerId": player_id, "action": "pass"},
+        )
+        assert r.status_code == 200, r.text
+        body = r.json()
+        # After bots pass too → pre_play → south's turn.
+        assert body["phase"] == "pre_play"
+
+        # South proceeds closed trump.
+        r = client.post(
+            f"/api/game/{match_id}/closed-trump",
+            json={"playerId": player_id},
+        )
+        assert r.status_code == 200, r.text
+        body = r.json()
+        # Phase = playing; current_turn = priority (dealer's right = west).
+        # Bots will play, so by the time we see it, it's south's turn.
+        assert body["phase"] == "playing"
+        assert body["whoseTurn"] == "south"
+
+        # Play out the game. South picks any valid card; bots respond.
+        guard = 50
+        while body["phase"] == "playing" and guard > 0:
+            r = client.get(
+                f"/api/game/{match_id}/valid-plays/south",
+                params={"playerId": player_id},
+            )
+            assert r.status_code == 200, r.text
+            valid = r.json()["cards"]
+            assert valid, "no valid plays for south"
+            r = client.post(
+                f"/api/game/{match_id}/play",
+                json={"playerId": player_id, "card": valid[0]["str"]},
+            )
+            assert r.status_code == 200, r.text
+            body = r.json()
+            guard -= 1
+        assert body["phase"] == "complete"
+        assert body["state"]["result"] is not None

@@ -7,13 +7,10 @@ import { resolve } from 'node:path';
  * Multi-page Vite setup with the repo root as the project root.
  *
  * - Build entries are the static pages at the repo root: index, rules,
- *   stats. ``play.html`` (the React multiplayer app) is intentionally
- *   excluded from the production build — the game isn't ready for
- *   public exposure. It is still served by ``npm run dev`` locally
- *   because the Vite dev server serves any HTML at the project root,
- *   independent of the build's input list.
- * - To temporarily include /play in a build (e.g. for a private
- *   deployment), set ``INCLUDE_PLAY=1`` in the environment.
+ *   stats, plus ``play.html`` (the vs-bots / multiplayer React app).
+ *   ``play.html`` is included by default; set ``EXCLUDE_PLAY=1`` in
+ *   the environment to drop it from a build (e.g. for an emergency
+ *   rollback that hides the Play entry until a bug is fixed).
  * - Output goes to ``frontend/dist/`` (relative to the repo root).
  * - Dev server (``npm run dev``) serves all pages at
  *   ``localhost:5173/`` with HMR for the React parts. ``/api`` is
@@ -24,7 +21,10 @@ import { resolve } from 'node:path';
  */
 
 const repoRoot = resolve(__dirname, '..');
-const includePlay = process.env.INCLUDE_PLAY === '1';
+// play.html is now built by default. Set EXCLUDE_PLAY=1 to drop it
+// from the production build (e.g. for a deployment where the bot
+// flow isn't wanted yet).
+const excludePlay = process.env.EXCLUDE_PLAY === '1';
 
 // Copy non-Vite-managed assets that the multi-page site references via
 // repo-root-relative URLs. When deploying via GitHub Actions we ship
@@ -93,7 +93,7 @@ const buildInputs: Record<string, string> = {
   stats: resolve(repoRoot, 'stats.html'),
   practice: resolve(repoRoot, 'practice.html'),
 };
-if (includePlay) {
+if (!excludePlay) {
   buildInputs.play = resolve(repoRoot, 'play.html');
 }
 

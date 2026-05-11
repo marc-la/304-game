@@ -1,0 +1,483 @@
+{
+  "actions": [
+    {
+      "action": "pass",
+      "seat": "west",
+      "type": "bid"
+    },
+    {
+      "action": "pass",
+      "seat": "south",
+      "type": "bid"
+    },
+    {
+      "action": "pass",
+      "seat": "east",
+      "type": "bid"
+    },
+    {
+      "action": "pass",
+      "seat": "north",
+      "type": "bid"
+    }
+  ],
+  "checkpoints": [
+    {
+      "bidding": {
+        "consecutivePasses": 1,
+        "currentBidder": "south",
+        "fourCardBid": null,
+        "fourCardBidder": null,
+        "highestBid": 0,
+        "highestBidder": null,
+        "isFourCard": true,
+        "isPcc": false,
+        "pendingPartner": null,
+        "playerState": {
+          "east": {
+            "hasPartnered": false,
+            "partnerUsedBy": null,
+            "skipped": false,
+            "speechCount": 0
+          },
+          "north": {
+            "hasPartnered": false,
+            "partnerUsedBy": null,
+            "skipped": false,
+            "speechCount": 0
+          },
+          "south": {
+            "hasPartnered": false,
+            "partnerUsedBy": null,
+            "skipped": false,
+            "speechCount": 0
+          },
+          "west": {
+            "hasPartnered": false,
+            "partnerUsedBy": null,
+            "skipped": false,
+            "speechCount": 1
+          }
+        },
+        "speeches": [
+          {
+            "action": "pass",
+            "onBehalfOf": null,
+            "seat": "west",
+            "speechNumber": 1,
+            "value": null
+          }
+        ]
+      },
+      "consecutiveReshuffles": 0,
+      "dealer": "north",
+      "gameNumber": 1,
+      "hands": {
+        "east": [
+          "9s",
+          "As",
+          "10s",
+          "Ks"
+        ],
+        "north": [
+          "9h",
+          "Ah",
+          "10h",
+          "Kh"
+        ],
+        "south": [
+          "10c",
+          "9d",
+          "Ad",
+          "10d"
+        ],
+        "west": [
+          "Jc",
+          "9c",
+          "Ac",
+          "Kc"
+        ]
+      },
+      "pccPartnerOut": null,
+      "phase": "betting_4",
+      "play": null,
+      "result": null,
+      "stone": {
+        "team_a": 10,
+        "team_b": 10
+      },
+      "trump": {
+        "isOpen": false,
+        "isRevealed": false,
+        "trumpCard": null,
+        "trumpCardInHand": false,
+        "trumpSuit": null,
+        "trumperSeat": null
+      }
+    },
+    {
+      "bidding": {
+        "consecutivePasses": 2,
+        "currentBidder": "east",
+        "fourCardBid": null,
+        "fourCardBidder": null,
+        "highestBid": 0,
+        "highestBidder": null,
+        "isFourCard": true,
+        "isPcc": false,
+        "pendingPartner": null,
+        "playerState": {
+          "east": {
+            "hasPartnered": false,
+            "partnerUsedBy": null,
+            "skipped": false,
+            "speechCount": 0
+          },
+          "north": {
+            "hasPartnered": false,
+            "partnerUsedBy": null,
+            "skipped": false,
+            "speechCount": 0
+          },
+          "south": {
+            "hasPartnered": false,
+            "partnerUsedBy": null,
+            "skipped": false,
+            "speechCount": 1
+          },
+          "west": {
+            "hasPartnered": false,
+            "partnerUsedBy": null,
+            "skipped": false,
+            "speechCount": 1
+          }
+        },
+        "speeches": [
+          {
+            "action": "pass",
+            "onBehalfOf": null,
+            "seat": "west",
+            "speechNumber": 1,
+            "value": null
+          },
+          {
+            "action": "pass",
+            "onBehalfOf": null,
+            "seat": "south",
+            "speechNumber": 1,
+            "value": null
+          }
+        ]
+      },
+      "consecutiveReshuffles": 0,
+      "dealer": "north",
+      "gameNumber": 1,
+      "hands": {
+        "east": [
+          "9s",
+          "As",
+          "10s",
+          "Ks"
+        ],
+        "north": [
+          "9h",
+          "Ah",
+          "10h",
+          "Kh"
+        ],
+        "south": [
+          "10c",
+          "9d",
+          "Ad",
+          "10d"
+        ],
+        "west": [
+          "Jc",
+          "9c",
+          "Ac",
+          "Kc"
+        ]
+      },
+      "pccPartnerOut": null,
+      "phase": "betting_4",
+      "play": null,
+      "result": null,
+      "stone": {
+        "team_a": 10,
+        "team_b": 10
+      },
+      "trump": {
+        "isOpen": false,
+        "isRevealed": false,
+        "trumpCard": null,
+        "trumpCardInHand": false,
+        "trumpSuit": null,
+        "trumperSeat": null
+      }
+    },
+    {
+      "bidding": {
+        "consecutivePasses": 3,
+        "currentBidder": "north",
+        "fourCardBid": null,
+        "fourCardBidder": null,
+        "highestBid": 0,
+        "highestBidder": null,
+        "isFourCard": true,
+        "isPcc": false,
+        "pendingPartner": null,
+        "playerState": {
+          "east": {
+            "hasPartnered": false,
+            "partnerUsedBy": null,
+            "skipped": false,
+            "speechCount": 1
+          },
+          "north": {
+            "hasPartnered": false,
+            "partnerUsedBy": null,
+            "skipped": false,
+            "speechCount": 0
+          },
+          "south": {
+            "hasPartnered": false,
+            "partnerUsedBy": null,
+            "skipped": false,
+            "speechCount": 1
+          },
+          "west": {
+            "hasPartnered": false,
+            "partnerUsedBy": null,
+            "skipped": false,
+            "speechCount": 1
+          }
+        },
+        "speeches": [
+          {
+            "action": "pass",
+            "onBehalfOf": null,
+            "seat": "west",
+            "speechNumber": 1,
+            "value": null
+          },
+          {
+            "action": "pass",
+            "onBehalfOf": null,
+            "seat": "south",
+            "speechNumber": 1,
+            "value": null
+          },
+          {
+            "action": "pass",
+            "onBehalfOf": null,
+            "seat": "east",
+            "speechNumber": 1,
+            "value": null
+          }
+        ]
+      },
+      "consecutiveReshuffles": 0,
+      "dealer": "north",
+      "gameNumber": 1,
+      "hands": {
+        "east": [
+          "9s",
+          "As",
+          "10s",
+          "Ks"
+        ],
+        "north": [
+          "9h",
+          "Ah",
+          "10h",
+          "Kh"
+        ],
+        "south": [
+          "10c",
+          "9d",
+          "Ad",
+          "10d"
+        ],
+        "west": [
+          "Jc",
+          "9c",
+          "Ac",
+          "Kc"
+        ]
+      },
+      "pccPartnerOut": null,
+      "phase": "betting_4",
+      "play": null,
+      "result": null,
+      "stone": {
+        "team_a": 10,
+        "team_b": 10
+      },
+      "trump": {
+        "isOpen": false,
+        "isRevealed": false,
+        "trumpCard": null,
+        "trumpCardInHand": false,
+        "trumpSuit": null,
+        "trumperSeat": null
+      }
+    },
+    {
+      "bidding": null,
+      "consecutiveReshuffles": 0,
+      "dealer": "west",
+      "gameNumber": 1,
+      "hands": {
+        "east": [],
+        "north": [],
+        "south": [],
+        "west": []
+      },
+      "pccPartnerOut": null,
+      "phase": "dealing_4",
+      "play": null,
+      "result": null,
+      "stone": {
+        "team_a": 10,
+        "team_b": 10
+      },
+      "trump": {
+        "isOpen": false,
+        "isRevealed": false,
+        "trumpCard": null,
+        "trumpCardInHand": false,
+        "trumpSuit": null,
+        "trumperSeat": null
+      }
+    }
+  ],
+  "dealer": "north",
+  "hands": {
+    "east": [
+      "9s",
+      "As",
+      "10s",
+      "Ks",
+      "Qs",
+      "8s",
+      "7s",
+      "Qc"
+    ],
+    "north": [
+      "9h",
+      "Ah",
+      "10h",
+      "Kh",
+      "Qh",
+      "8h",
+      "7h",
+      "Js"
+    ],
+    "south": [
+      "10c",
+      "9d",
+      "Ad",
+      "10d",
+      "Kd",
+      "Jd",
+      "8d",
+      "7d"
+    ],
+    "west": [
+      "Jc",
+      "9c",
+      "Ac",
+      "Kc",
+      "Qd",
+      "8c",
+      "7c",
+      "Jh"
+    ]
+  },
+  "initialSnapshot": {
+    "bidding": {
+      "consecutivePasses": 0,
+      "currentBidder": "west",
+      "fourCardBid": null,
+      "fourCardBidder": null,
+      "highestBid": 0,
+      "highestBidder": null,
+      "isFourCard": true,
+      "isPcc": false,
+      "pendingPartner": null,
+      "playerState": {
+        "east": {
+          "hasPartnered": false,
+          "partnerUsedBy": null,
+          "skipped": false,
+          "speechCount": 0
+        },
+        "north": {
+          "hasPartnered": false,
+          "partnerUsedBy": null,
+          "skipped": false,
+          "speechCount": 0
+        },
+        "south": {
+          "hasPartnered": false,
+          "partnerUsedBy": null,
+          "skipped": false,
+          "speechCount": 0
+        },
+        "west": {
+          "hasPartnered": false,
+          "partnerUsedBy": null,
+          "skipped": false,
+          "speechCount": 0
+        }
+      },
+      "speeches": []
+    },
+    "consecutiveReshuffles": 0,
+    "dealer": "north",
+    "gameNumber": 1,
+    "hands": {
+      "east": [
+        "9s",
+        "As",
+        "10s",
+        "Ks"
+      ],
+      "north": [
+        "9h",
+        "Ah",
+        "10h",
+        "Kh"
+      ],
+      "south": [
+        "10c",
+        "9d",
+        "Ad",
+        "10d"
+      ],
+      "west": [
+        "Jc",
+        "9c",
+        "Ac",
+        "Kc"
+      ]
+    },
+    "pccPartnerOut": null,
+    "phase": "betting_4",
+    "play": null,
+    "result": null,
+    "stone": {
+      "team_a": 10,
+      "team_b": 10
+    },
+    "trump": {
+      "isOpen": false,
+      "isRevealed": false,
+      "trumpCard": null,
+      "trumpCardInHand": false,
+      "trumpSuit": null,
+      "trumperSeat": null
+    }
+  },
+  "name": "pass_on_4_card"
+}

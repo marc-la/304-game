@@ -21,6 +21,21 @@
   color: var(--clr-accent);
 }
 
+.menuLink {
+  appearance: none;
+  border: 1px solid var(--clr-border);
+  background: transparent;
+  color: var(--clr-text-muted);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  cursor: pointer;
+}
+.menuLink:hover {
+  color: var(--clr-text);
+  border-color: var(--clr-text-muted);
+}
+
 .gameNum {
   font-family: var(--font-heading);
   font-size: 11px;

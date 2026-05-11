@@ -27,3 +27,15 @@ export const teamOf = (seat: Seat): Team =>
 
 export const sameTeam = (a: Seat, b: Seat): boolean =>
   teamOf(a) === teamOf(b);
+
+// Dealing/play order starting with the player to the dealer's right.
+// Mirrors game304.seating.deal_order. Cards are dealt anticlockwise,
+// dealer last.
+export const dealOrder = (dealer: Seat): Seat[] => {
+  const first = nextSeat(dealer);
+  const startIdx = SEAT_INDEX[first];
+  return [0, 1, 2, 3].map(i => ANTICLOCKWISE[(startIdx + i) % 4]);
+};
+
+// Player who cuts the deck — to the dealer's left (clockwise neighbour).
+export const cutterSeat = (dealer: Seat): Seat => prevSeat(dealer);

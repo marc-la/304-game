@@ -5,6 +5,7 @@ import styles from './ControlBar.module.css';
 
 export default function ControlBar() {
   const newMatch = useGameStore(s => s.newMatch);
+  const exitGame = useGameStore(s => s.exitGame);
   const seed = useGameStore(s => s.seed);
   const setSeed = useGameStore(s => s.setSeed);
   const peekMode = useGameStore(s => s.peekMode);
@@ -34,6 +35,16 @@ export default function ControlBar() {
   return (
     <div className={styles.bar}>
       <div className={styles.left}>
+        {matchId && (
+          <button
+            type="button"
+            className={styles.menuLink}
+            onClick={exitGame}
+            title="Back to menu"
+          >
+            ← Menu
+          </button>
+        )}
         <span className={styles.title}>304 Card Game</span>
         {matchId && <span className={styles.gameNum}>Game #{gameCount}</span>}
         {mySeat && (
