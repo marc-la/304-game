@@ -197,6 +197,13 @@ body {
   line-height: 1.7;
   color: var(--clr-text);
   background: var(--clr-bg);
+  /* Stray child width (a long nav row, a wide table outside a scroller)
+     mustn't extend the document and bleed horizontal scroll into the
+     sticky chrome — sticky elements that ride the viewport then appear
+     to "cut off" at the right edge as the page scrolls sideways. Clip
+     contains the overflow without creating a new scroll container, so
+     position: sticky on descendants still ties to the viewport. */
+  overflow-x: clip;
 }
 
 /* React mount points reserve viewport height so the page doesn't snap when
@@ -279,7 +286,11 @@ body {
 
 .site-nav-links {
   display: flex;
+  align-items: center;
   gap: 4px;
+  /* min-width: 0 lets the row participate in flex shrinking instead of
+     forcing the parent wider than the viewport on narrow phones. */
+  min-width: 0;
 }
 
 .site-nav-links a {
@@ -515,9 +526,11 @@ body[data-page="caps-formalism"] .site-nav-rules-menu a[href="caps-formalism.htm
   background: var(--clr-accent);
 }
 
-/* On phone widths the row (brand + 3 links + CTA pill) collides at default
-   sizing — at 360px it sums to ~360px with zero slack. Tighten gutters,
-   shrink the brand, and trim link/CTA padding so the row breathes. */
+/* On phone widths the row (brand + 3 links + CTA pill + theme) collides
+   at default sizing — at 375px it overruns by ~80px and Play / theme
+   slide off the right of the viewport. The cascade below progressively
+   tightens font, padding, and gutters so the full row stays on one line
+   down to ~340px without compromising tap targets. */
 @media (max-width: 700px) {
   .site-nav-inner {
     padding: 0 20px;
@@ -525,32 +538,82 @@ body[data-page="caps-formalism"] .site-nav-rules-menu a[href="caps-formalism.htm
 }
 
 @media (max-width: 500px) {
-  /* 16px gutter matches `.main-content` and `.stats-content` so the brand
-     and the body H1 align at the same x-coordinate. */
+  /* Below 500px the row (brand + 3 links + chevron + CTA pill + theme)
+     can't fit on a single line without shaving tap targets below 36px,
+     so it stacks: wordmark centred on top, full link row centred below.
+     --nav-height grows so every consumer (sticky offsets on .stats-jump,
+     .sidebar, html scroll-padding) tracks the new header height. */
+  :root {
+    --nav-height: 86px;
+  }
+  .site-nav {
+    height: auto;
+    min-height: var(--nav-height);
+  }
+  /* 14px gutter aligns with .stats-content's 16px gutter within rounding
+     so the row stays comfortably inside the viewport. */
   .site-nav-inner {
-    padding: 0 16px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: auto;
+    padding: 8px 14px;
+    gap: 4px;
   }
   .site-nav-brand {
-    font-size: 1.6rem;
+    font-size: 1.5rem;
     letter-spacing: 0.02em;
   }
   .site-nav-links {
-    gap: 0;
+    /* Constrain the row's flex container to the viewport so flex-wrap
+       can engage. Without an explicit width the container is sized by
+       its content, so wrap never triggers and items overflow into
+       overflow-x:clip on the body, hiding tap targets. */
+    width: 100%;
+    gap: 2px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
   }
   .site-nav-links a {
-    padding: 8px 8px;
-    font-size: 0.74rem;
+    padding: 6px 8px;
+    font-size: 0.72rem;
     letter-spacing: 0.03em;
   }
+  .site-nav-rules > a {
+    padding-right: 4px;
+  }
+  .site-nav-rules-toggle {
+    padding: 0 4px 0 0;
+  }
+  .site-nav-rules-toggle svg {
+    width: 9px;
+    height: 9px;
+  }
   .site-nav-links a.site-nav-cta {
-    padding: 8px 12px;
-    margin-left: 2px;
+    padding: 7px 14px;
+    margin-left: 4px;
   }
   /* theme.js injects a button into .site-nav-links — leave room for it. */
   .theme-toggle {
-    width: 32px;
-    height: 32px;
-    margin-left: 2px;
+    width: 30px;
+    height: 30px;
+    margin-left: 4px;
+  }
+}
+
+/* Below ~360px (older iPhone SE, narrow Androids), drop one more notch
+   of padding/font so the link row still ends inside the viewport. */
+@media (max-width: 360px) {
+  .site-nav-inner {
+    padding: 8px 10px;
+  }
+  .site-nav-links a {
+    padding: 6px 6px;
+    font-size: 0.68rem;
+  }
+  .site-nav-links a.site-nav-cta {
+    padding: 6px 11px;
   }
 }
 
@@ -2605,10 +2668,29 @@ details[open] > summary .tree-chevron {
     width: 200px;
   }
 
-  /* The stats-jump bar is itself sticky and adds ~50px of chrome under the
-     site nav. Bump scroll-padding so anchor jumps land below it. */
+  /* Keep the section nav as a single sticky strip on phone widths.
+     With flex-wrap on, five labels stack two-deep at narrow widths and
+     the resulting tall block fights the page H1 underneath it. Forcing
+     nowrap + internal scroll keeps the pinned bar one row tall and
+     contains horizontal overflow to the strip itself (no page-level
+     sideways scroll, which previously made the sticky bar appear to
+     "cut off" at the right edge when the viewport was dragged). */
+  .stats-jump {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .stats-jump::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* The stats-jump bar is itself sticky and adds a single ~40px row of
+     chrome under the site nav on phone widths. Scroll-padding lands
+     anchor jumps below it. */
   html:has(.stats-jump) {
-    scroll-padding-top: calc(var(--nav-height) + 64px);
+    scroll-padding-top: calc(var(--nav-height) + 52px);
   }
 }
 
