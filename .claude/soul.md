@@ -311,7 +311,7 @@ The puzzle should **rush the player without explicitly rushing them.** No countd
 1. **A casual card game.** It is a daily ritual, not a pastime.
 2. **A tutorial.** No hand-holding hints, no "did you forget about the J of hearts?" prompts.
 3. **Skinned poker.** Tempo and tells are borrowed; the genre is not.
-4. **A retelling of the rules.** The rules live in `frontend/src/304dle/...`. This file is the soul.
+4. **A retelling of the rules.** The rules live in `site/rules.html` (player-facing) and `apps/304dle/` (interactive UX) — see [`.claude/directory.md`](directory.md). This file is the soul.
 5. **Sanitized.** Base 304 is ruthless. House rules introduce grace deliberately. Grace is a *choice*, not a default.
 6. **Impatient in the wrong way.** It must rush the player *without explicitly rushing them.*
 7. **Generic deduction.** It is specifically *304-shaped* deduction — trump, suits, partnership-line plays, caps. A general-purpose card-puzzle engine will lose the soul.

@@ -2,7 +2,7 @@
 // day, simulates the game with the bot playing all four seats, runs
 // the caps classifier, and writes the puzzles to JSON.
 //
-// Usage: tsx tools/generate-puzzles.ts --year 2026 --out frontend/public/puzzles/2026.json
+// Usage: tsx tools/puzzles/generate.ts --year 2026 --out site/public/puzzles/2026.json
 //
 // Re-running with the same args is deterministic.
 
@@ -292,16 +292,16 @@ const datesInYear = (year: number): string[] => {
 };
 
 // Always resolve relative to the repo root, not cwd.
-const REPO_ROOT = resolve(__dirname, '..');
+const REPO_ROOT = resolve(__dirname, '../..');
 
 const parseArgs = (): { year: number; out: string } => {
   const args = process.argv.slice(2);
   let year = new Date().getUTCFullYear();
-  let out = resolve(REPO_ROOT, `frontend/public/puzzles/${year}.json`);
+  let out = resolve(REPO_ROOT, `site/public/puzzles/${year}.json`);
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--year' && i + 1 < args.length) {
       year = parseInt(args[++i], 10);
-      out = resolve(REPO_ROOT, `frontend/public/puzzles/${year}.json`);
+      out = resolve(REPO_ROOT, `site/public/puzzles/${year}.json`);
     } else if (args[i] === '--out' && i + 1 < args.length) {
       out = resolve(args[++i]);
     }

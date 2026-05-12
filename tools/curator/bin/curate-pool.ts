@@ -6,8 +6,8 @@
 // resumable / killable; partial output is durable via fsync.
 //
 // Usage:
-//   tsx tools/curate-pool.ts \
-//     --out frontend/public/puzzles/pool.jsonl \
+//   tsx tools/curator/bin/curate-pool.ts \
+//     --out site/public/puzzles/pool.jsonl \
 //     --master-seed 42 \
 //     [--max-accepted 5000]   [--max-attempts 1000000]
 //     [--max-wall-seconds 86400]
@@ -35,11 +35,11 @@ interface CliArgs {
   uniqueSouthHands: boolean;
 }
 
-const REPO_ROOT = resolve(__dirname, '..');
+const REPO_ROOT = resolve(__dirname, '../../..');
 
 const parseArgs = (): CliArgs => {
   const args = process.argv.slice(2);
-  let outPath = resolve(REPO_ROOT, 'frontend/public/puzzles/pool.jsonl');
+  let outPath = resolve(REPO_ROOT, 'site/public/puzzles/pool.jsonl');
   let masterSeed = 42;
   let maxAccepted: number | undefined;
   let maxAttempts: number | undefined;

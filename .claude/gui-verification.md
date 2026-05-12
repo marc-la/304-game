@@ -1,7 +1,7 @@
 ---
 title: GUI Verification
 status: standing instruction
-applies_to: any change that touches rendered UI (HTML/CSS/JS in /, /css, /js, /partials, or anything under frontend/src that produces visible output)
+applies_to: any change that touches rendered UI — `site/` (HTML, partials, classic JS/CSS) or the React apps under `apps/304dle/` and `apps/play/`. See [`.claude/directory.md`](directory.md) for the layered layout.
 ---
 
 # GUI Verification

@@ -1,15 +1,14 @@
 /* 304dle stylesheet — imported once by App.tsx, scoped by the `.dle-*`
  * class prefix.
  *
- * Why a single file (not per-component CSS modules like the rest of
- * frontend/src/components/): 304dle is a small self-contained app, and
- * several visual elements (buttons, modal frame) are shared across
- * components. Splitting them into per-component modules would force
- * awkward shared-styles plumbing for limited gain. The `.dle-*` prefix
- * is the isolation strategy.
+ * Why a single file (not per-component CSS modules): 304dle is a small
+ * self-contained app, and several visual elements (buttons, modal frame)
+ * are shared across components. Splitting them into per-component modules
+ * would force awkward shared-styles plumbing for limited gain. The
+ * `.dle-*` prefix is the isolation strategy.
  *
- * All colour and font tokens are inherited from /css/styles.css via
- * the host HTML page (practice.html), so dark mode flips automatically.
+ * All colour and font tokens are inherited from site/css/styles.css via
+ * the host HTML page (site/practice.html), so dark mode flips automatically.
  *
  * Mobile-first single-column layout. */
 
