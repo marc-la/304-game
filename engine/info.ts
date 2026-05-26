@@ -19,6 +19,18 @@ export interface HiddenSlot {
   // that reveal is still pending so the slot *can* be the trump
   // suit. See caps_formalism.md §4 W4.
   inProgress: boolean;
+  // True iff the seat that played this face-down is the trumper.
+  // Combined with `foldedOnTableAtPlayTime`, drives the W4 case
+  // dispatch (caps_formalism.md §4 W4-a..W4-e).
+  seatIsTrumper: boolean;
+  // True iff the folded trump card was still on the table at the
+  // moment this face-down was played. Distinguishes W4-d (trumper
+  // played a minus from hand while the folded trump remained on the
+  // table — trump-suit forbidden per §T-4) from W4-e (trumper played
+  // the folded trump itself face-down — slot identity is trump-suit).
+  // Meaningful only for in-progress trumper face-downs; completed
+  // rounds collapse to W4-a/W4-c regardless.
+  foldedOnTableAtPlayTime: boolean;
   // When set, the slot's card must be of this exact suit. Used by
   // tools that build relaxed information sets where the player saw
   // *which* suit was played but is being asked counterfactually to
@@ -133,6 +145,13 @@ export const buildInfoSet = (
   // Known-played identities + hidden slots from V's perspective
   const knownPlayed = new Set<CardId>();
   const hiddenSlots: HiddenSlot[] = [];
+  // For in-progress trumper face-downs: was the folded trump still
+  // on the table at the moment the trumper played? Equivalent to
+  // "trumpCard is currently on the table" (if the trumper had played
+  // the folded card face-down this round, trump.trumpCard would be
+  // null per play-engine.ts:103). See W4-d vs W4-e in §4.
+  const foldedCurrentlyOnTable =
+    trump.trumpCard !== null && !trump.trumpCardInHand;
   const absorbRound = (
     roundNumber: number,
     cards: ReadonlyArray<RoundEntry>,
@@ -149,6 +168,8 @@ export const buildInfoSet = (
           roundNumber,
           ledSuit: led,
           inProgress: !inCompleted,
+          seatIsTrumper: entry.seat === trump.trumperSeat,
+          foldedOnTableAtPlayTime: foldedCurrentlyOnTable,
         });
       }
     }
@@ -160,19 +181,38 @@ export const buildInfoSet = (
     absorbRound(play.roundNumber, play.currentRound, false);
   }
 
-  // Publicly-known cards in specific hands. Currently the only source
-  // is the §T9-lifted folded trump card — public to all viewers from
-  // the moment of lift (rules.md "shown to all players, then picked
-  // up and added to the Trumper's hand").
+  // Publicly-known cards in specific hands. Sources today:
+  //   (a) The §T9-lifted folded trump card — public to all viewers
+  //       from the moment of lift (rules.md "shown to all players,
+  //       then picked up and added to the Trumper's hand").
+  //   (b) The open-trump pre-play reveal — when the trumper does not
+  //       have R1 priority, they reveal one trump-suit card before R1
+  //       (rules.md "Open Trump Games"). The card returns to the
+  //       trumper's hand and remains publicly known until played.
+  // See caps_formalism.md §3 clause 4 / §4 W6.
   const knownInHand = new Map<Seat, Set<CardId>>();
+  const addToKnownInHand = (seat: Seat, card: CardId) => {
+    let set = knownInHand.get(seat);
+    if (set === undefined) {
+      set = new Set<CardId>();
+      knownInHand.set(seat, set);
+    }
+    set.add(card);
+  };
   if (
     trump.foldedCardLifted === true &&
     trump.trumpCardInHand &&
     trump.trumpCard !== null &&
     trump.trumperSeat !== null
   ) {
-    const set = new Set<CardId>([trump.trumpCard]);
-    knownInHand.set(trump.trumperSeat, set);
+    addToKnownInHand(trump.trumperSeat, trump.trumpCard);
+  }
+  if (
+    trump.revealedTrumpCardId != null &&
+    trump.trumperSeat !== null &&
+    !knownPlayed.has(trump.revealedTrumpCardId)
+  ) {
+    addToKnownInHand(trump.trumperSeat, trump.revealedTrumpCardId);
   }
 
   const myTeam = teamOf(viewer);
@@ -221,6 +261,51 @@ const slotPriority = (s: Slot): number => {
   return s.size * 10 - restrictiveness;
 };
 
+// §4 W4 case dispatch for a hidden slot's per-world suit constraints.
+// Five cases by (round completion, seat=trumper?, folded trump on
+// table at play time?). See caps_formalism.md §4 W4 case table:
+//
+//   W4-a / W4-c — completed round, any seat: §T9 would have already
+//     revealed any face-down trump → forbidden = {ledSuit, trumpSuit}.
+//   W4-b — in-progress, non-trumper: face-down can be a cut → forbidden
+//     = {ledSuit}.
+//   W4-d — in-progress, trumper, folded card still on table: must be a
+//     minus from hand (§T-4 forbids folding in-hand trump) → forbidden
+//     = {ledSuit, trumpSuit}.
+//   W4-e — in-progress, trumper, folded card already played in this
+//     round: the slot identity is the folded trump itself → forbidden
+//     = {ledSuit} and allowedSuits = {trumpSuit} (the play *is* the
+//     folded trump). A future optimisation could pre-force this slot
+//     to the unique unaccounted-for trump-suit card via W1 conservation
+//     (the handoff calls this out as optional); kept generic here.
+const w4Bounds = (
+  hs: HiddenSlot,
+  trumpSuit: Suit,
+): { forbidden: Set<Suit>; allowedSuits: Set<Suit> | null } => {
+  if (!hs.inProgress) {
+    return {
+      forbidden: new Set<Suit>([hs.ledSuit, trumpSuit]),
+      allowedSuits: null,
+    };
+  }
+  if (!hs.seatIsTrumper) {
+    return {
+      forbidden: new Set<Suit>([hs.ledSuit]),
+      allowedSuits: null,
+    };
+  }
+  if (hs.foldedOnTableAtPlayTime) {
+    return {
+      forbidden: new Set<Suit>([hs.ledSuit, trumpSuit]),
+      allowedSuits: null,
+    };
+  }
+  return {
+    forbidden: new Set<Suit>([hs.ledSuit]),
+    allowedSuits: new Set<Suit>([trumpSuit]),
+  };
+};
+
 const slotAccepts = (slot: Slot, c: CardId): boolean => {
   const su = suitOf(c);
   if (slot.allowedSuits !== null && !slot.allowedSuits.has(su)) return false;
@@ -266,18 +351,13 @@ function* enumerateForTrump(
         allowedSuits: new Set([hs.knownSuit]),
       });
     } else {
-      // §4 W4: trumpSuit is forbidden only for completed-round
-      // face-downs (a trump fold would have been revealed at §T9).
-      // For in-progress face-downs the §T9 reveal is still pending,
-      // so a trump cut is still possible. See caps_formalism.md §4.
-      const forbidden = hs.inProgress
-        ? new Set<Suit>([hs.ledSuit])
-        : new Set<Suit>([hs.ledSuit, trumpSuit]);
+      // §4 W4 case dispatch — see caps_formalism.md §4.
+      const { forbidden, allowedSuits } = w4Bounds(hs, trumpSuit);
       slots.push({
         key: `hidden:${hs.seat}:${hs.roundNumber}`,
         size: 1,
         forbiddenSuits: forbidden,
-        allowedSuits: null,
+        allowedSuits,
       });
     }
   }
@@ -453,7 +533,15 @@ export const worldIsConsistent = (
   for (const [seat, suits] of info.exhaustedSuits) {
     const hand = world.hands[SEAT_INDEX[seat]];
     if (!hand) continue;
+    // §T9 lift adds a publicly-observed card to the trumper's hand
+    // *after* any earlier exhaustion was observed. The exhaustion at
+    // time T and a card-of-exhausted-suit appearing in the hand at
+    // time T+k are not contradictory — clause 5 is not retracted on
+    // a later reveal. Match `enumerateForTrump`, which already excludes
+    // forced cards from the slot's exhaustion-bound pool.
+    const forced = info.knownInHand.get(seat);
     for (const c of hand) {
+      if (forced?.has(c)) continue;
       if (suits.has(suitOf(c))) return false;
     }
   }
@@ -469,9 +557,10 @@ export const worldIsConsistent = (
     if (slot.knownSuit !== undefined) {
       if (suitOf(c) !== slot.knownSuit) return false;
     } else {
-      if (suitOf(c) === slot.ledSuit) return false;
-      // §4 W4: trumpSuit forbidden only for completed-round slots.
-      if (!slot.inProgress && suitOf(c) === world.trumpSuit) return false;
+      const { forbidden, allowedSuits } = w4Bounds(slot, world.trumpSuit);
+      const su = suitOf(c);
+      if (forbidden.has(su)) return false;
+      if (allowedSuits !== null && !allowedSuits.has(su)) return false;
     }
   }
 

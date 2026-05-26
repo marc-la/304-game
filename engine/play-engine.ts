@@ -344,7 +344,10 @@ export const resolveCurrentRound = (state: GameState): CompletedRound => {
           }
           state.hands[trump.trumperSeat].push(trump.trumpCard);
           trump.trumpCardInHand = true;
-          trump.trumpCard = null;
+          // Preserve trump.trumpCard so its identity remains in
+          // EngineTrumpState and feeds knownInHand via §3 clause 4 /
+          // §4 W6. foldedCardLifted marks the public §T9 reveal.
+          trump.foldedCardLifted = true;
         }
       }
 

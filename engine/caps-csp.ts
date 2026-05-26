@@ -140,6 +140,16 @@ const initCtx = (state: EngineGameState, callerSeat: Seat): CSPCtx | null => {
     }
   }
 
+  // B2: pigeonhole pre-pass. For each pool card, narrow eligible
+  // seats to those where (a) the opp is not exhausted in the card's
+  // suit and (b) the opp has any unknown slot capacity left
+  // (size - forced.size > 0). If exactly one seat is eligible, the
+  // card MUST live there — move it from the shared pool into that
+  // opp's `forced` set (same machinery as the §T9-lifted card path
+  // in v2-A). Iterate to a fixed point: each forced move reduces an
+  // opp's free capacity and can pigeonhole another card.
+  pigeonholePrePass(pool, opps);
+
   return {
     callerSeat,
     callerHand,
@@ -152,6 +162,37 @@ const initCtx = (state: EngineGameState, callerSeat: Seat): CSPCtx | null => {
     pccPartnerOut: state.pccPartnerOut,
     budget: { remaining: DEFAULT_NODE_BUDGET, exhausted: false },
   };
+};
+
+// Iterate until no card is pigeonhole-forced. In-place updates to
+// `pool` and `opps`. Cheap: O(|pool| * |opps|) per pass, ~constant
+// rounds in practice (the search space contracts quickly).
+const pigeonholePrePass = (
+  pool: Set<CardId>,
+  opps: Map<Seat, OppConstraint>,
+): void => {
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const card of [...pool]) {
+      const suit = suitOf(card);
+      let only: Seat | null = null;
+      let count = 0;
+      for (const [seat, o] of opps) {
+        if (o.exhausted.has(suit)) continue;
+        if (o.size - o.forced.size <= 0) continue;
+        only = seat;
+        count++;
+        if (count > 1) break;
+      }
+      if (count === 1 && only !== null) {
+        pool.delete(card);
+        const o = opps.get(only)!;
+        o.forced.add(card);
+        changed = true;
+      }
+    }
+  }
 };
 
 const entryKnowableToCaller = (
@@ -168,29 +209,60 @@ const entryKnowableToCaller = (
   return false;
 };
 
+// Tri-valued result for the obligation predicate. `obligated` is the
+// proven outcome; `exhausted` is true when the adaptive search ran
+// out of search budget before deciding (callers may interpret this
+// as "we don't know — trust the player" or "fail closed", per their
+// policy). When `exhausted` is true, `obligated` is conservatively
+// false (the search bailed without confirmation).
+//
+// Caller policy in 304dle (chosen 2026-05-26): trust the player —
+// `exhausted: true` does not auto-stamp obligation, does not auto-
+// reject a caps call, and lets scrutiny resolve on actual play.
+export interface CapsObligationResult {
+  obligated: boolean;
+  exhausted: boolean;
+}
+
+const obligationDone = (
+  obligated: boolean,
+  exhausted = false,
+): CapsObligationResult => ({ obligated, exhausted });
+
+export interface CheckCapsObligationOptions {
+  // Override the per-call node-budget. Defaults to DEFAULT_NODE_BUDGET.
+  // Lower budgets are useful for testing the exhausted code path and
+  // for tight-deadline callers that prefer a fast tri-valued answer.
+  budget?: number;
+}
+
 // Public entry point — does south's team have an adaptive winning
 // strategy that sweeps all remaining rounds in every consistent
-// world?
+// world? Returns the tri-valued result; see CapsObligationResult.
 export const checkCapsObligationCSP = (
   state: EngineGameState,
   callerSeat: Seat,
-): boolean => {
-  if (state.pccPartnerOut === callerSeat) return false;
+  options: CheckCapsObligationOptions = {},
+): CapsObligationResult => {
+  if (state.pccPartnerOut === callerSeat) return obligationDone(false);
 
   let info;
   try {
     info = buildInfoSet(state, callerSeat);
   } catch {
-    return false;
+    return obligationDone(false);
   }
-  if (!info.teamWonAllCompleted) return false;
-  if (info.ownHand.length === 0) return false;
-  if (state.play.completedRounds.length >= 8) return false;
+  if (!info.teamWonAllCompleted) return obligationDone(false);
+  if (info.ownHand.length === 0) return obligationDone(false);
+  if (state.play.completedRounds.length >= 8) return obligationDone(false);
 
   const ctx = initCtx(state, callerSeat);
-  if (ctx === null) return false;
+  if (ctx === null) return obligationDone(false);
 
-  return adaptiveSweep(ctx);
+  if (options.budget !== undefined) ctx.budget.remaining = options.budget;
+
+  const obligated = adaptiveSweep(ctx);
+  return obligationDone(obligated, ctx.budget.exhausted);
 };
 
 // Find one canonical witness line — the sequence of cards the
@@ -201,7 +273,8 @@ export const findWitnessLine = (
   state: EngineGameState,
   callerSeat: Seat,
 ): CardId[] | null => {
-  if (!checkCapsObligationCSP(state, callerSeat)) return null;
+  const result = checkCapsObligationCSP(state, callerSeat);
+  if (result.exhausted || !result.obligated) return null;
   const ctx = initCtx(state, callerSeat);
   if (ctx === null) return null;
   const line: CardId[] = [];

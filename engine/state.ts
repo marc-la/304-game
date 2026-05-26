@@ -71,6 +71,16 @@ export interface EngineTrumpState {
   // hand). Optional/defaulting-to-false so engine call sites that
   // don't construct post-lift states need no change.
   foldedCardLifted?: boolean;
+  // Open-trump-non-priority reveal: when the trumper does not have R1
+  // priority, they reveal one trump-suit card to all players before R1
+  // and return it to their hand (rules.md "Open Trump Games"). The
+  // revealed card's identity is in I_V for every viewer from that
+  // moment onward — see caps_formalism.md §3 clause 4(c). Null in:
+  // closed trump (no public reveal), open trump where the trumper has
+  // R1 priority (just declares the suit), and PCC (caps-excluded
+  // anyway). When set, buildInfoSet adds this card to
+  // knownInHand[trumperSeat] until it is played.
+  revealedTrumpCardId?: CardId | null;
 }
 
 export interface EnginePlayState {
@@ -147,6 +157,12 @@ export interface TrumpState {
   isRevealed: boolean;
   isOpen: boolean;
   trumpCardInHand: boolean;
+  // Mirrors EngineTrumpState.foldedCardLifted — see that field's
+  // comment for the §T9 closed-trump-reveal semantics.
+  foldedCardLifted?: boolean;
+  // Mirrors EngineTrumpState.revealedTrumpCardId — see that field's
+  // comment for the open-trump-non-priority reveal semantics.
+  revealedTrumpCardId?: CardId | null;
 }
 
 export const newTrumpState = (): TrumpState => ({
@@ -156,6 +172,8 @@ export const newTrumpState = (): TrumpState => ({
   isRevealed: false,
   isOpen: false,
   trumpCardInHand: false,
+  foldedCardLifted: false,
+  revealedTrumpCardId: null,
 });
 
 export interface CapsCall {

@@ -92,6 +92,8 @@ export const toEngineState = (state: GameState): EngineGameState => {
     trumpCardInHand: trump.trumpCardInHand,
     isRevealed: trump.isRevealed,
     isOpen: trump.isOpen,
+    foldedCardLifted: trump.foldedCardLifted ?? false,
+    revealedTrumpCardId: trump.revealedTrumpCardId ?? null,
   };
 
   const play = state.play!;

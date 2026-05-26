@@ -55,6 +55,11 @@ export interface TrumpState {
   // publicly shown — the trumper revealed a different trump-suit
   // card per the open-trump reveal mechanic).
   foldedCardLifted: boolean;
+  // Open-trump pre-play reveal (mirrors EngineTrumpState). Set when
+  // the puzzle's trumper does not have R1 priority and the curator
+  // declared which trump-suit card was shown before R1. Null in all
+  // other modes.
+  revealedTrumpCardId: CardId | null;
 }
 
 export interface RuntimeOptions {
@@ -68,6 +73,10 @@ export interface RuntimeOptions {
   // 'closed' = trumpCardInHand starts false (card on table),
   //   isOpen/isRevealed false until §T9 fires.
   mode: 'open' | 'closed';
+  // Open-trump-non-priority puzzles authored with an explicit pre-play
+  // reveal card. Optional; defaults to null (trumper had R1 priority,
+  // or the curator chose not to author a reveal).
+  revealedTrumpCardId?: CardId | null;
 }
 
 export interface Runtime {
@@ -102,6 +111,7 @@ export const newRuntime = (opts: RuntimeOptions): Runtime => {
       isRevealed: isOpen,
       isOpen,
       foldedCardLifted: false,
+      revealedTrumpCardId: opts.revealedTrumpCardId ?? null,
     },
     roundNumber: 1,
     priority: opts.priority,
@@ -127,6 +137,7 @@ export const toEngineState = (rt: Runtime): EngineGameState => {
       isRevealed: rt.trump.isRevealed,
       isOpen: rt.trump.isOpen,
       foldedCardLifted: rt.trump.foldedCardLifted,
+      revealedTrumpCardId: rt.trump.revealedTrumpCardId,
     },
     play: {
       roundNumber: rt.roundNumber,

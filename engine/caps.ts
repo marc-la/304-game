@@ -12,6 +12,7 @@ import { orderMinPointsInWorld, orderSweepsWorld } from './dd';
 import type { Seat } from './seating';
 import { SEATS_BY_INDEX, teamOf } from './seating';
 import type { CapsObligation, EngineGameState, EnginePlayState } from './state';
+import type { CapsObligationResult } from './caps-csp';
 import { checkCapsObligationCSP } from './caps-csp';
 
 export const MAX_WORLDS = 5000;
@@ -24,14 +25,33 @@ export const MAX_PERMUTATIONS = 5040; // 7!
 export const checkCapsObligation = (
   state: EngineGameState,
   seat: Seat,
-): boolean => checkCapsObligationCSP(state, seat);
+): boolean => {
+  // PCC: caps mechanics do not apply (rules.md §C-10; spec §6 / §12).
+  if (state.pccPartnerOut !== null) return false;
+  // 304dle policy "Trust the player" (handoff §5): on engine budget
+  // exhaustion (`exhausted: true`), do NOT auto-stamp obligation —
+  // let the player decide; scrutiny resolves on actual play.
+  return checkCapsObligationCSP(state, seat).obligated;
+};
+
+// Detailed obligation predicate exposing the tri-valued result for
+// callers that need to distinguish "proven not obligated" from
+// "engine budget exhausted." See CapsObligationResult.
+export const checkCapsObligationDetailed = (
+  state: EngineGameState,
+  seat: Seat,
+): CapsObligationResult => {
+  if (state.pccPartnerOut !== null) return { obligated: false, exhausted: false };
+  return checkCapsObligationCSP(state, seat);
+};
 
 export const validateCapsCall = (
   state: EngineGameState,
   seat: Seat,
   playOrder: ReadonlyArray<CardId>,
 ): boolean => {
-  if (state.pccPartnerOut === seat) return false;
+  // PCC: caps mechanics do not apply (rules.md §C-10; spec §6 / §12).
+  if (state.pccPartnerOut !== null) return false;
 
   let info: InformationSet;
   try {
@@ -52,8 +72,11 @@ export const validateCapsCall = (
   const roundsRemaining = 8 - state.play.completedRounds.length;
   if (roundsRemaining <= 0) return false;
 
-  const worlds = enumerateOrAbort(info);
-  if (worlds === null) return false;
+  const { worlds, exhausted } = enumerateOrAbort(info);
+  // "Trust the player": engine couldn't enumerate fully → accept the
+  // call. Scrutiny resolves on actual play (handoff §5 policy).
+  if (exhausted) return true;
+  if (worlds.length === 0) return false;
 
   return orderWinsAllWorlds({
     info,
@@ -73,7 +96,8 @@ export const explainCapsFailure = (
   seat: Seat,
   playOrder: ReadonlyArray<CardId>,
 ): { world: World; reason: 'lost-round' | 'illegal-order' } | null => {
-  if (state.pccPartnerOut === seat) {
+  // PCC: caps mechanics do not apply (rules.md §C-10; spec §6 / §12).
+  if (state.pccPartnerOut !== null) {
     return { world: anyWorld(state), reason: 'illegal-order' };
   }
   let info: InformationSet;
@@ -96,8 +120,13 @@ export const explainCapsFailure = (
   }
 
   const roundsRemaining = 8 - state.play.completedRounds.length;
-  const worlds = enumerateOrAbort(info);
-  if (worlds === null) return { world: anyWorld(state), reason: 'illegal-order' };
+  const { worlds, exhausted } = enumerateOrAbort(info);
+  // "Trust the player": engine couldn't enumerate fully → no failure
+  // to explain (the call goes through; scrutiny resolves on play).
+  if (exhausted) return null;
+  if (worlds.length === 0) {
+    return { world: anyWorld(state), reason: 'illegal-order' };
+  }
 
   for (const world of worlds) {
     const snap = resolveSnapshot(state.play, info, world, seat);
@@ -152,9 +181,10 @@ export const trackCapsObligation = (
   target: Map<Seat, CapsObligation>,
   opts: TrackCapsObligationOptions = {},
 ): void => {
+  // PCC: caps mechanics do not apply (rules.md §C-10; spec §6 / §12).
+  if (state.pccPartnerOut !== null) return;
   const play = state.play;
-  const expectedRoundSize =
-    opts.expectedRoundSize ?? (state.pccPartnerOut !== null ? 3 : 4);
+  const expectedRoundSize = opts.expectedRoundSize ?? 4;
   // §rules: caps cannot be called after the final card of round 8.
   // Obligations arising precisely at that final state are not
   // stamped; earlier stamps remain.
@@ -165,7 +195,6 @@ export const trackCapsObligation = (
   const seats = opts.seats ?? (['south'] as const);
   for (const seat of seats) {
     if (target.has(seat)) continue;
-    if (state.pccPartnerOut === seat) continue;
     let obligated = false;
     try {
       obligated = checkCapsObligation(state, seat);
@@ -215,7 +244,9 @@ export const checkClaimBalance = (
   seat: Seat,
   threshold: number,
 ): boolean => {
-  if (state.pccPartnerOut === seat) return false;
+  // PCC: claim balance is moot when caps cannot be called
+  // (rules.md §C-10). Match the caps API surface.
+  if (state.pccPartnerOut !== null) return false;
   let info: InformationSet;
   try {
     info = buildInfoSet(state, seat);
@@ -230,8 +261,12 @@ export const checkClaimBalance = (
   const roundsRemaining = 8 - state.play.completedRounds.length;
   if (roundsRemaining <= 0) return false;
 
-  const worlds = enumerateOrAbort(info);
-  if (worlds === null) return false;
+  const { worlds, exhausted } = enumerateOrAbort(info);
+  // Claim balance is a positive ASK from the caller's defensive side;
+  // unlike a caps call we have no asymmetric "trust" rationale, so
+  // stay conservative on exhaustion (caller didn't prove threshold).
+  if (exhausted) return false;
+  if (worlds.length === 0) return false;
   const gap = threshold - pointsSoFar;
 
   return hasBalanceWitness({
@@ -242,14 +277,23 @@ export const checkClaimBalance = (
 
 // Internals --------------------------------------------------------------
 
-const enumerateOrAbort = (info: InformationSet): World[] | null => {
+// Tri-valued enumeration. `exhausted: true` means we exceeded
+// MAX_WORLDS and bailed (the worlds set is empty; the truth value
+// is unknown). `exhausted: false` with empty worlds means the info-
+// set has no consistent extension (a real contradiction). Otherwise
+// `worlds` is the full enumeration. See handoff §5 (B5/B6).
+interface EnumResult {
+  worlds: World[];
+  exhausted: boolean;
+}
+
+const enumerateOrAbort = (info: InformationSet): EnumResult => {
   const worlds: World[] = [];
   for (const w of enumerateWorlds(info, { maxWorlds: MAX_WORLDS + 1 })) {
     worlds.push(w);
-    if (worlds.length > MAX_WORLDS) return null;
+    if (worlds.length > MAX_WORLDS) return { worlds: [], exhausted: true };
   }
-  if (worlds.length === 0) return null;
-  return worlds;
+  return { worlds, exhausted: false };
 };
 
 const resolveSnapshot = (
@@ -332,7 +376,8 @@ export const findWitnessOrder = (
   state: EngineGameState,
   seat: Seat,
 ): CardId[] | null => {
-  if (state.pccPartnerOut === seat) return null;
+  // PCC: caps mechanics do not apply (rules.md §C-10; spec §6 / §12).
+  if (state.pccPartnerOut !== null) return null;
 
   let info: InformationSet;
   try {
@@ -347,8 +392,12 @@ export const findWitnessOrder = (
   const roundsRemaining = 8 - state.play.completedRounds.length;
   if (roundsRemaining <= 0) return null;
 
-  const worlds = enumerateOrAbort(info);
-  if (worlds === null) return null;
+  const { worlds, exhausted } = enumerateOrAbort(info);
+  // findWitnessOrder is for tooling that wants a proven witness; if
+  // we couldn't enumerate fully or no consistent world exists, there
+  // is no proven witness to return.
+  if (exhausted) return null;
+  if (worlds.length === 0) return null;
 
   return firstWitnessOrder({
     info,
@@ -375,8 +424,11 @@ export const orderSurvivesInfo = (args: {
   const roundsRemaining = 8 - args.play.completedRounds.length;
   if (roundsRemaining <= 0) return false;
 
-  const worlds = enumerateOrAbort(args.info);
-  if (worlds === null) return false;
+  const { worlds, exhausted } = enumerateOrAbort(args.info);
+  // orderSurvivesInfo is for curator tooling that needs a proven
+  // "this order sweeps every world." Exhaustion or empty → not proven.
+  if (exhausted) return false;
+  if (worlds.length === 0) return false;
 
   return orderWinsAllWorlds({
     info: args.info,
