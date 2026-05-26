@@ -1,7 +1,8 @@
 ---
-title: 304 — Bot Speed & Ultimate-Strongest-Bot Handoff
+title: 304 — Bot Speed & Ultimate-Strongest-Bot Handoff (original)
 purpose: A self-contained brief for the next session — make a 304 bot that is both faster than B6 and stronger than B6, suitable for tournament inclusion and for high-volume puzzle generation.
-status: handoff, 2026-05-26
+status: partially shipped, 2026-05-26
+followup: Tier 2 algorithmic fixes (alpha-beta, bitmask hands, bound TT, killer, move ordering) are DONE. See [bot-speed-tier2-changes.md](bot-speed-tier2-changes.md) for what shipped and [bot-speed-tier3-handoff.md](bot-speed-tier3-handoff.md) for the current handoff (Tier 1 engine refactor, PVS, history heuristic, suit equivalence, strength experiment, WASM escape hatch). This document remains the canonical reference for the original problem statement, fixture seeds, and constraints.
 ---
 
 # Where we are now

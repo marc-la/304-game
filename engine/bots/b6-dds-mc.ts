@@ -2,158 +2,87 @@
 //   1. Sample N consistent worlds from the bot's information set.
 //   2. For each (legalPlay, world) pair, run full double-dummy from
 //      this point assuming all four hands are known (the sampled world).
-//      Score = +1 if our team wins ≥ 5 of the remaining rounds, else
-//      −1 (round-majority proxy for stone outcome).
+//      Score = number of remaining tricks won by our team.
 //   3. Pick the play with the highest mean score across the sample.
 //
-// Double-dummy here is a recursive maximizing search over the actual
-// (sampled) deal. Transposition-cached on (hand-multiset, leader,
-// in-progress).
+// The heavy lifting (alpha-beta, bitmask hands, transposition table,
+// move ordering, killer heuristic) lives in `dds-core.ts`. B6's
+// distinguishing trait is that all candidate moves are scored against
+// the *same* sampled world set, which lets the TT be shared across
+// candidates within a world — its main per-bot speedup over B7.
 
-import { pointsOf, suitOf } from '../card';
+import { suitOf } from '../card';
 import type { CardId, Suit } from '../card';
 import { buildInfoSet, enumerateWorlds } from '../info';
-import { roundTurnOrder, roundWinner } from '../play';
 import type { Seat } from '../seating';
-import { teamOf, partnerSeat } from '../seating';
+import { teamOf } from '../seating';
 import {
   inProgressTuples,
   legalPlaysFor,
   stableSort,
 } from './common';
+import {
+  cardToIdx,
+  evalDDS,
+  seatIdx,
+  worldHandsToMasks,
+} from './dds-core';
 import type { BotChoice, BotContext } from './types';
 
-const SAMPLE_CAP = 8;            // 8 worlds × 8 candidates × DDS
-const DDS_BUDGET = 20_000;       // nodes per call
+const SAMPLE_CAP = 8;
+const DDS_BUDGET = 200_000;
 
-interface DDState {
-  hands: Map<Seat, CardId[]>;
-  leader: Seat;
-  trump: Suit;
-  myTeam: ReturnType<typeof teamOf>;
-  inProgress: Array<readonly [Seat, CardId]>;
-  budget: { remaining: number };
-}
-
-const handKey = (hand: ReadonlyArray<CardId>): string =>
-  [...hand].sort().join(',');
-
-const stateKey = (s: DDState): string => {
-  const parts: string[] = [];
-  for (const seat of ['north', 'west', 'south', 'east'] as Seat[]) {
-    parts.push(seat[0] + ':' + handKey(s.hands.get(seat) ?? []));
-  }
-  parts.push('l:' + s.leader);
-  parts.push('p:' + s.inProgress.map(([se, c]) => se[0] + c).join('|'));
-  return parts.join(';');
-};
-
-// Maximize: number of remaining tricks won by `myTeam`. The seat to
-// play is determined by leader + length(inProgress). Each seat chooses
-// the play that is best for *their* team — this is the standard
-// double-dummy assumption (perfect play by all sides on a known deal).
-const dds = (
-  s: DDState,
-  cache: Map<string, number>,
-): number => {
-  if (s.budget.remaining <= 0) {
-    // Budget exhausted: conservative estimate = 0 future tricks for me.
-    return 0;
-  }
-  s.budget.remaining--;
-
-  const order = roundTurnOrder(s.leader, null);
-  // If all hands are empty, no more tricks.
-  const totalCards = order.reduce(
-    (acc, seat) => acc + (s.hands.get(seat)?.length ?? 0),
-    0,
-  );
-  if (totalCards === 0) return 0;
-
-  const seatToPlay = order[s.inProgress.length];
-  const hand = s.hands.get(seatToPlay) ?? [];
-  if (hand.length === 0) return 0;
-
-  const k = stateKey(s);
-  const memo = cache.get(k);
-  if (memo !== undefined) return memo;
-
-  // Compute legal plays for seatToPlay in this state.
-  const ledSuit = s.inProgress.length > 0 ? suitOf(s.inProgress[0][1]) : null;
-  let legal: CardId[];
-  if (ledSuit === null) {
-    legal = [...hand];
-  } else {
-    const matches = hand.filter(c => suitOf(c) === ledSuit);
-    legal = matches.length > 0 ? matches : [...hand];
-  }
-  legal.sort(); // determinism
-
-  const playForMyTeam = teamOf(seatToPlay) === s.myTeam;
-  let best = playForMyTeam ? -Infinity : Infinity;
-
-  for (const card of legal) {
-    const newInProgress: Array<readonly [Seat, CardId]> = [
-      ...s.inProgress,
-      [seatToPlay, card],
-    ];
-    let nextLeader = s.leader;
-    let value: number;
-    if (newInProgress.length === order.length) {
-      // Round resolves.
-      const winner = roundWinner(newInProgress, s.trump);
-      const wonByMe = teamOf(winner) === s.myTeam ? 1 : 0;
-      const newHands = new Map<Seat, CardId[]>();
-      for (const [se, cs] of s.hands) newHands.set(se, [...cs]);
-      const h = newHands.get(seatToPlay)!;
-      const idx = h.indexOf(card);
-      if (idx >= 0) h.splice(idx, 1);
-      nextLeader = winner;
-      const sub: DDState = {
-        ...s,
-        hands: newHands,
-        leader: nextLeader,
-        inProgress: [],
-      };
-      value = wonByMe + dds(sub, cache);
-    } else {
-      const newHands = new Map<Seat, CardId[]>();
-      for (const [se, cs] of s.hands) newHands.set(se, [...cs]);
-      const h = newHands.get(seatToPlay)!;
-      const idx = h.indexOf(card);
-      if (idx >= 0) h.splice(idx, 1);
-      const sub: DDState = {
-        ...s,
-        hands: newHands,
-        inProgress: newInProgress,
-      };
-      value = dds(sub, cache);
-    }
-    if (playForMyTeam) {
-      if (value > best) best = value;
-    } else {
-      if (value < best) best = value;
-    }
-  }
-  if (best === -Infinity || best === Infinity) best = 0;
-  cache.set(k, best);
-  return best;
-};
+const SUIT_TO_IDX: Record<Suit, number> = { c: 0, d: 1, h: 2, s: 3 };
+const NEXT_SEAT_IDX = [1, 2, 3, 0]; // anticlockwise N→W→S→E→N
 
 interface Sample {
-  hands: Map<Seat, CardId[]>;
+  hands: ReadonlyMap<Seat, ReadonlyArray<CardId>>;
 }
 
 const sampleWorlds = (ctx: BotContext, cap: number): Sample[] => {
   const info = buildInfoSet(ctx.state, ctx.seat);
   const out: Sample[] = [];
   for (const w of enumerateWorlds(info, { maxWorlds: cap })) {
-    const hands = new Map<Seat, CardId[]>();
-    for (const [s, cs] of w.hands) hands.set(s, [...cs]);
-    out.push({ hands });
+    out.push({ hands: w.hands });
     if (out.length >= cap) break;
   }
   return out;
+};
+
+// Winner of a complete 4-card trick, given the leader seat. Mirrors
+// engine/play.ts:roundWinner using packed card-idx encoding.
+const resolveTrick = (
+  cards: ReadonlyArray<number>,
+  leaderIdx: number,
+  ledSuitIdx: number,
+  trumpSuitIdx: number,
+): number => {
+  let bestSeat = leaderIdx;
+  const c0 = cards[0];
+  let bestPow = c0 & 7;
+  let bestIsTrump = (c0 >> 3) === trumpSuitIdx;
+  let seat = leaderIdx;
+  for (let i = 1; i < cards.length; i++) {
+    seat = NEXT_SEAT_IDX[seat];
+    const c = cards[i];
+    const csuit = c >> 3;
+    const cpow = c & 7;
+    const isTrump = csuit === trumpSuitIdx;
+    if (bestIsTrump) {
+      if (isTrump && cpow < bestPow) {
+        bestSeat = seat;
+        bestPow = cpow;
+      }
+    } else if (isTrump) {
+      bestSeat = seat;
+      bestPow = cpow;
+      bestIsTrump = true;
+    } else if (csuit === ledSuitIdx && cpow < bestPow) {
+      bestSeat = seat;
+      bestPow = cpow;
+    }
+  }
+  return bestSeat;
 };
 
 export const chooseDDSMC = (ctx: BotContext): BotChoice => {
@@ -164,63 +93,96 @@ export const chooseDDSMC = (ctx: BotContext): BotChoice => {
   const samples = sampleWorlds(ctx, SAMPLE_CAP);
   if (samples.length === 0) return { card: legal[0] };
 
-  const trump = ctx.state.trump.trumpSuit;
+  const trumpSuit = ctx.state.trump.trumpSuit;
+  const trumpSuitIdx = SUIT_TO_IDX[trumpSuit];
   const myTeam = teamOf(ctx.seat);
   const leader = ctx.state.play.priority;
+  const leaderIdx = seatIdx(leader);
+  const mySeatIdx = seatIdx(ctx.seat);
+
   const inProg = inProgressTuples(ctx.state);
+  const inProgCardsIdx = inProg.map(([, c]) => cardToIdx(c));
+  const ledSuitFromInProg: Suit | null =
+    inProg.length > 0 ? suitOf(inProg[0][1]) : null;
+
+  // Per-world base hand-bitmasks (with our seat's hand pinned to
+  // ctx.hand, overriding what the world sampler put there) + a shared
+  // TT cache (re-used across all candidates in the same world).
+  const worldStates: Array<{
+    handsMask: Uint32Array;
+    cache: Map<string, number>;
+  }> = samples.map(sample => {
+    const handsForWorld = new Map<Seat, ReadonlyArray<CardId>>();
+    for (const [s, cs] of sample.hands) {
+      handsForWorld.set(s, s === ctx.seat ? ctx.hand : cs);
+    }
+    return {
+      handsMask: worldHandsToMasks(handsForWorld),
+      cache: new Map<string, number>(),
+    };
+  });
 
   let bestCard: CardId | null = null;
   let bestScore = -Infinity;
 
-  for (const c of legal) {
+  for (const candidate of legal) {
+    const candIdx = cardToIdx(candidate);
+    // ledSuit of the trick we're currently completing/continuing.
+    const ledSuit: Suit = ledSuitFromInProg ?? suitOf(candidate);
+    const ledSuitIdx = SUIT_TO_IDX[ledSuit];
+
     let total = 0;
-    for (const sample of samples) {
-      const hands = new Map<Seat, CardId[]>();
-      for (const [s, cs] of sample.hands) {
-        hands.set(s, s === ctx.seat ? [...ctx.hand] : [...cs]);
-      }
-      // Apply our candidate now: it adds to in-progress; if it
-      // completes the round, resolve immediately.
-      let newInProg: Array<readonly [Seat, CardId]> = [
-        ...inProg,
-        [ctx.seat, c],
-      ];
-      const myHand = hands.get(ctx.seat)!;
-      const idx = myHand.indexOf(c);
-      if (idx >= 0) myHand.splice(idx, 1);
 
-      let nextLeader = leader;
-      let preWonByMe = 0;
-      const order = roundTurnOrder(leader, null);
-      if (newInProg.length === order.length) {
-        const winner = roundWinner(newInProg, trump);
-        if (teamOf(winner) === myTeam) preWonByMe = 1;
-        nextLeader = winner;
-        newInProg = [];
+    for (const ws of worldStates) {
+      const hands = new Uint32Array(4);
+      hands[0] = ws.handsMask[0];
+      hands[1] = ws.handsMask[1];
+      hands[2] = ws.handsMask[2];
+      hands[3] = ws.handsMask[3];
+      hands[mySeatIdx] = (hands[mySeatIdx] & ~(1 << candIdx)) >>> 0;
+
+      const trickCards = inProgCardsIdx.slice();
+      trickCards.push(candIdx);
+
+      let preWon = 0;
+      let nextLeaderIdx = leaderIdx;
+      let nextLedSuit: number;
+      let nextTrickCards: number[];
+
+      if (trickCards.length === 4) {
+        const winnerIdx = resolveTrick(
+          trickCards, leaderIdx, ledSuitIdx, trumpSuitIdx,
+        );
+        const winnerTeam =
+          winnerIdx === 0 || winnerIdx === 2 ? 'team_a' : 'team_b';
+        if (winnerTeam === myTeam) preWon = 1;
+        nextLeaderIdx = winnerIdx;
+        nextTrickCards = [];
+        nextLedSuit = -1;
+      } else {
+        nextTrickCards = trickCards;
+        nextLedSuit = ledSuitIdx;
       }
 
-      const dd: DDState = {
-        hands,
-        leader: nextLeader,
-        trump,
-        myTeam,
-        inProgress: newInProg,
-        budget: { remaining: DDS_BUDGET },
-      };
-      const cache = new Map<string, number>();
-      const future = dds(dd, cache);
-      total += preWonByMe + future;
+      const { tricksByMyTeam } = evalDDS(
+        {
+          hands,
+          trickCards: nextTrickCards,
+          leader: nextLeaderIdx,
+          ledSuit: nextLedSuit,
+        },
+        { trumpSuit, myTeam, budget: DDS_BUDGET },
+        ws.cache,
+      );
+      total += preWon + tricksByMyTeam;
     }
-    const mean = total / samples.length;
+
+    const mean = total / worldStates.length;
     if (mean > bestScore) {
       bestScore = mean;
-      bestCard = c;
+      bestCard = candidate;
     }
   }
 
   return { card: bestCard ?? legal[0] };
 };
-
-// silence unused imports
-void pointsOf;
-void partnerSeat;
