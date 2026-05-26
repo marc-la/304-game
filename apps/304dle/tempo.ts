@@ -29,14 +29,14 @@ export const tempoForBotPlay = (rt: Runtime, seat: Seat): BotTempo => {
   for (const s of ['north', 'west', 'south', 'east'] as Seat[]) {
     handsMap.set(s, rt.hands[s]);
   }
-  const trumpHolders = seatsHoldingTrump(handsMap, rt.trumpSuit);
+  const trumpHolders = seatsHoldingTrump(handsMap, rt.trump.trumpSuit);
   const ledSuitNow = runtimeLedSuit(rt);
   const isLead = rt.currentRound.length === 0;
 
   const legals = legalPlays({
     hand: rt.hands[seat],
     ledSuit: ledSuitNow,
-    trumpSuit: rt.trumpSuit,
+    trumpSuit: rt.trump.trumpSuit,
     isLead,
     seatsWithTrumps: trumpHolders,
     seat,
@@ -53,7 +53,7 @@ export const tempoForBotPlay = (rt: Runtime, seat: Seat): BotTempo => {
       .filter(e => e.card !== null)
       .map(e => [e.seat, e.card!] as const);
     if (inProgress.length > 0) {
-      const winSoFar = roundWinner(inProgress, rt.trumpSuit);
+      const winSoFar = roundWinner(inProgress, rt.trump.trumpSuit);
       if (winSoFar === partnerSeat(seat)) {
         return { delayMs: jitter(420), reason: 'partner-winning-sluff' };
       }
@@ -62,9 +62,9 @@ export const tempoForBotPlay = (rt: Runtime, seat: Seat): BotTempo => {
 
   // 3) Trump cut decision — bot must follow off-suit but holds
   //    trump and is on a trick they don't otherwise win.
-  if (!isLead && ledSuitNow !== null && ledSuitNow !== rt.trumpSuit) {
+  if (!isLead && ledSuitNow !== null && ledSuitNow !== rt.trump.trumpSuit) {
     const hasOffLed = rt.hands[seat].some(c => suitOf(c) === ledSuitNow);
-    const holdsTrump = rt.hands[seat].some(c => suitOf(c) === rt.trumpSuit);
+    const holdsTrump = rt.hands[seat].some(c => suitOf(c) === rt.trump.trumpSuit);
     if (!hasOffLed && holdsTrump) {
       return { delayMs: jitter(1500), reason: 'trump-cut-decision' };
     }

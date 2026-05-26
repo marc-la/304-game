@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from './store';
-import type { CuratedPuzzleFile, DailyPuzzle, PuzzleFile } from './types';
+import type { ScriptedPuzzle, ScriptedPuzzleFile } from './types';
 import { Table } from './components/Table';
 import { Hand } from './components/Hand';
 import { PublicInfo } from './components/PublicInfo';
@@ -30,23 +30,15 @@ const todayDateString = (): string => {
   return `${y}-${m}-${day}`;
 };
 
-const loadDailyPuzzle = async (date: string): Promise<DailyPuzzle | null> => {
+const loadDailyPuzzle = async (date: string): Promise<ScriptedPuzzle | null> => {
   try {
-    const r = await fetch('./puzzles/curated.json');
-    if (r.ok) {
-      const file = (await r.json()) as CuratedPuzzleFile;
-      const sel = selectPuzzleForDate(date, file.puzzles);
-      if (sel) return { ...sel, date };
-    }
-  } catch {
-    // fall through to year file
-  }
-  try {
-    const year = date.slice(0, 4);
-    const r = await fetch(`./puzzles/${year}.json`);
+    const r = await fetch('./puzzles/scripts.json');
     if (!r.ok) return null;
-    const file = (await r.json()) as PuzzleFile;
-    return file.puzzles.find(p => p.date === date) ?? null;
+    const file = (await r.json()) as ScriptedPuzzleFile;
+    if (file.schemaVersion !== 2) return null;
+    const sel = selectPuzzleForDate(date, file.puzzles);
+    if (sel) return { ...sel, date };
+    return null;
   } catch {
     return null;
   }
@@ -81,13 +73,14 @@ export const App = () => {
   }
 
   if (state.kind === 'intro') {
-    const today = state.puzzle.date;
+    const today = state.date;
     if (isAlreadyPlayed(persisted, today) && persisted.todayResult) {
       const r = persisted.todayResult;
       return (
         <main className="dle-app">
           <ResultScreen
             puzzle={state.puzzle}
+            date={today}
             verdict={r.verdict}
             callRound={r.callRound}
             obligatedAtRound={r.obligatedAtRound}
@@ -104,9 +97,9 @@ export const App = () => {
       <main className="dle-app dle-intro">
         {showOnboarding && <Onboarding onClose={() => setShowOnboarding(false)} />}
         <h1>304dle</h1>
-        <p className="dle-intro-date">{state.puzzle.date}</p>
+        <p className="dle-intro-date">{state.date}</p>
         <p className="dle-intro-blurb">
-          You are South, the trumper. Eight rounds. Call Caps when the worlds collapse.
+          You are South. Plays are scripted — your only decision is when to call Caps.
         </p>
         <button
           type="button"
@@ -125,7 +118,7 @@ export const App = () => {
   if (state.kind === 'result') {
     if (
       persisted.todayResult === null ||
-      persisted.todayResult.date !== state.puzzle.date
+      persisted.todayResult.date !== state.date
     ) {
       const v = buildVerdict({
         verdict: state.verdict,
@@ -136,7 +129,7 @@ export const App = () => {
       const next = recordResult(
         persisted,
         {
-          date: state.puzzle.date,
+          date: state.date,
           verdict: state.verdict,
           callRound: state.callRound,
           obligatedAtRound: state.obligatedAtRound,
@@ -152,6 +145,7 @@ export const App = () => {
       <main className="dle-app">
         <ResultScreen
           puzzle={state.puzzle}
+          date={state.date}
           verdict={state.verdict}
           callRound={state.callRound}
           obligatedAtRound={state.obligatedAtRound}
@@ -186,15 +180,14 @@ interface ShellProps {
 }
 
 const PlayingShell = ({ runtime, appState }: ShellProps) => {
-  const playCard = useStore(s => s.playCard);
-  const advanceBots = useStore(s => s.advanceBots);
+  const playScripted = useStore(s => s.playScripted);
   const resolveCurrentRound = useStore(s => s.resolveCurrentRound);
   const openCapsConfirm = useStore(s => s.openCapsConfirm);
   const cancelCapsConfirm = useStore(s => s.cancelCapsConfirm);
   const submitCaps = useStore(s => s.submitCaps);
   const finishGame = useStore(s => s.finishGame);
   const skipCapsToResult = useStore(s => s.skipCapsToResult);
-  const legalPlaysForSouth = useStore(s => s.legalPlaysForSouth);
+  const scriptedCardForSouth = useStore(s => s.scriptedCardForSouth);
 
   const turn = whoseTurn(runtime);
   const order = turnOrder(runtime);
@@ -209,10 +202,10 @@ const PlayingShell = ({ runtime, appState }: ShellProps) => {
     }
     if (turn !== null && turn !== 'south') {
       const { delayMs } = tempoForBotPlay(runtime, turn);
-      const t = setTimeout(() => advanceBots(), delayMs);
+      const t = setTimeout(() => playScripted(), delayMs);
       return () => clearTimeout(t);
     }
-  }, [appState.kind, runtime.roundNumber, runtime.currentRound.length, turn, roundComplete, advanceBots, resolveCurrentRound, runtime]);
+  }, [appState.kind, runtime.roundNumber, runtime.currentRound.length, turn, roundComplete, playScripted, resolveCurrentRound, runtime]);
 
   useEffect(() => {
     if (appState.kind !== 'playing') return;
@@ -222,14 +215,18 @@ const PlayingShell = ({ runtime, appState }: ShellProps) => {
     }
   }, [appState.kind, runtime.roundNumber, skipCapsToResult, runtime]);
 
-  // Live worlds count, recomputed only on play boundaries.
   const worldsCount = useMemo(
     () => countWorlds(runtime),
     [runtime, runtime.roundNumber, runtime.currentRound.length],
   );
 
-  const legalSet = new Set(legalPlaysForSouth());
-  const dateLabel = 'puzzle' in appState ? appState.puzzle.date : '';
+  const scriptedCard = scriptedCardForSouth();
+  const legalSet = new Set(scriptedCard !== null ? [scriptedCard] : []);
+  const dateLabel = appState.kind === 'playing' ||
+    appState.kind === 'caps-confirm' ||
+    appState.kind === 'caps-reveal'
+    ? appState.date
+    : '';
 
   return (
     <>
@@ -242,8 +239,8 @@ const PlayingShell = ({ runtime, appState }: ShellProps) => {
       <Hand
         hand={runtime.hands.south}
         legalSet={legalSet}
-        trumpCard={runtime.trumpCard}
-        onPlay={turn === 'south' ? playCard : () => {}}
+        trumpCard={runtime.trump.trumpCard}
+        onPlay={turn === 'south' ? () => playScripted() : () => {}}
       />
       <div className="dle-actions">
         <button

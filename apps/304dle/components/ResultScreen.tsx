@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import type { DailyPuzzle } from '../types';
+import type { ScriptedPuzzle } from '../types';
 import type { CapsDifficulty, CapsVerdictKind } from '../scoring';
 import { buildShareGrid } from '../share';
 
 interface Props {
-  puzzle: DailyPuzzle;
+  puzzle: ScriptedPuzzle;
+  date: string;
   verdict: CapsVerdictKind;
   callRound: number | null;
   obligatedAtRound: number | null;
@@ -51,7 +52,7 @@ const formatWorldsValue = (n: number): string => {
 export const ResultScreen = (props: Props) => {
   const [copied, setCopied] = useState(false);
   const grid = buildShareGrid({
-    date: props.puzzle.date,
+    date: props.date,
     verdict: props.verdict,
     callRound: props.callRound,
     obligatedAtRound: props.obligatedAtRound,

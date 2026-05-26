@@ -1,9 +1,36 @@
 import { AnimatePresence, motion } from 'framer-motion';
+import { suitOf } from '@engine/card';
+import type { RoundEntry } from '@engine/state';
 import type { Runtime } from '../runtime';
-import { whoseTurn } from '../runtime';
+import { turnOrder, whoseTurn } from '../runtime';
 import { CardBack, CardView } from './CardView';
 import { SUIT_SYMBOLS } from '../types';
 import { teamOf, type Seat } from '@engine/seating';
+
+// Whether the viewer can see the identity of this round entry.
+// Mirrors engine info.ts:viewerKnowsIdentity but extended to the
+// in-progress round during the LINGER period (round-full but not yet
+// resolved): the trumper privately learns every face-down identity,
+// and any face-down trump triggers a public §T9 reveal that flips all
+// face-down trumps for everyone.
+const viewerKnowsEntry = (
+  e: RoundEntry,
+  viewer: Seat,
+  rt: Runtime,
+  roundFull: boolean,
+): boolean => {
+  if (!e.faceDown) return e.card !== null;
+  if (e.revealed) return e.card !== null;
+  if (e.seat === viewer) return e.card !== null;
+  if (viewer === rt.trump.trumperSeat && roundFull) return true;
+  if (roundFull && e.card !== null && suitOf(e.card) === rt.trump.trumpSuit) {
+    const anyFaceDownTrump = rt.currentRound.some(
+      x => x.faceDown && x.card !== null && suitOf(x.card) === rt.trump.trumpSuit,
+    );
+    if (anyFaceDownTrump) return true;
+  }
+  return false;
+};
 
 interface Props {
   runtime: Runtime;
@@ -34,6 +61,13 @@ export const Table = ({ runtime }: Props) => {
   };
   const inProgress = runtime.currentRound;
   const findEntry = (seat: Seat) => inProgress.find(e => e.seat === seat);
+  const roundFull = inProgress.length === turnOrder(runtime).length;
+  const viewer: Seat = 'south';
+  const isViewerTrumper = viewer === runtime.trump.trumperSeat;
+  const trumpModeLabel = runtime.trump.isOpen ? 'Open' : 'Closed';
+  const trumperLabel = isViewerTrumper
+    ? 'You'
+    : SEAT_LABELS[runtime.trump.trumperSeat];
 
   const tricksA = runtime.completedRounds.filter(r => teamOf(r.winner) === 'team_a').length;
   const tricksB = runtime.completedRounds.length - tricksA;
@@ -55,9 +89,19 @@ export const Table = ({ runtime }: Props) => {
           initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ type: 'spring', stiffness: 280, damping: 18, delay: 0.15 }}
-          title="You are the trumper. Your trump suit is below; the gold-bordered card in your hand is the one you committed."
+          title={
+            isViewerTrumper
+              ? `You are the trumper. ${trumpModeLabel} trump. ${runtime.trump.isOpen ? 'Suit shown.' : 'Folded face-down on the table; revealed when a face-down trump is played.'}`
+              : `${trumperLabel} is the trumper. ${trumpModeLabel} trump.`
+          }
         >
-          Your Trump <span aria-hidden>{SUIT_SYMBOLS[runtime.trumpSuit]}</span>
+          {trumperLabel === 'You' ? 'Your' : `${trumperLabel}'s`} Trump{' '}
+          <span aria-hidden>
+            {runtime.trump.isRevealed || isViewerTrumper
+              ? SUIT_SYMBOLS[runtime.trump.trumpSuit]
+              : '?'}
+          </span>{' '}
+          <span className="dle-trump-mode" aria-hidden>· {trumpModeLabel}</span>
         </motion.span>
         <span className="dle-points-readout">
           You/N <b>{runtime.pointsWon.team_a}</b>
@@ -125,10 +169,29 @@ export const Table = ({ runtime }: Props) => {
 
         {/* Centre — 4-petal flower */}
         <div className="dle-flower">
+          {/* Folded trump card on the table (closed-trump pre-reveal),
+              visible as a face-down card pinned to centre. Only the
+              trumper-viewer can see its identity; others see a back. */}
+          {!runtime.trump.trumpCardInHand && runtime.trump.trumpCard !== null && (
+            <div
+              className="dle-petal dle-petal-folded-trump"
+              style={{ gridRow: 2, gridColumn: 2 }}
+              title={
+                isViewerTrumper
+                  ? `Folded trump card (you committed ${runtime.trump.trumpCard})`
+                  : 'The trump card sits face-down on the table.'
+              }
+            >
+              {isViewerTrumper
+                ? <CardView card={runtime.trump.trumpCard} small />
+                : <CardBack small />}
+            </div>
+          )}
           <AnimatePresence>
             {orderedSeats.map(seat => {
               const e = findEntry(seat);
               if (!e?.card) return null;
+              const showFaceUp = viewerKnowsEntry(e, viewer, runtime, roundFull);
               const p = PETAL[seat];
               return (
                 <motion.div
@@ -144,7 +207,9 @@ export const Table = ({ runtime }: Props) => {
                   }}
                   transition={{ type: 'spring', stiffness: 320, damping: 24 }}
                 >
-                  <CardView card={e.card} small />
+                  {showFaceUp
+                    ? <CardView card={e.card} small />
+                    : <CardBack small />}
                 </motion.div>
               );
             })}

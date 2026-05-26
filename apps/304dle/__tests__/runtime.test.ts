@@ -2,12 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { dealForSeed, seedFromDate } from '@engine/dealing';
 import {
   applyPlay,
+  applyScriptedPlay,
   isGameOver,
   newRuntime,
-  playBotTurn,
   resolveRound,
   toEngineState,
-  turnOrder,
   whoseTurn,
 } from '../runtime';
 import { buildVerdict } from '../scoring';
@@ -15,51 +14,71 @@ import { buildShareGrid } from '../share';
 import { fixtureSimpleSweep } from '@engine/__tests__/fixtures';
 import type { Seat } from '@engine/seating';
 import type { CardId } from '@engine/card';
+import type { ScriptedPlay } from '../types';
+
+// Build a minimal script-driver runtime from a deal. The script is
+// supplied by the caller; tests that don't exercise the cursor pass
+// an empty script and just call applyPlay() directly.
+const newRuntimeFromDeal = (
+  deal: ReturnType<typeof dealForSeed>,
+  script: ScriptedPlay[] = [],
+) =>
+  newRuntime({
+    hands: deal.hands,
+    trumpSuit: deal.trumpSuit,
+    trumpCard: deal.trumpCard,
+    trumperSeat: 'south',
+    priority: 'south',
+    script,
+    mode: 'open',
+  });
 
 describe('runtime', () => {
-  it('plays a round when South + bots all move', () => {
+  it('applies a manual play and a round resolves to 4 cards', () => {
     const deal = dealForSeed(seedFromDate('2026-05-01'));
-    const rt = newRuntime({
-      hands: deal.hands,
-      trumpSuit: deal.trumpSuit,
-      trumpCard: deal.trumpCard,
-      botSeed: deal.botSeed,
-    });
+    const rt = newRuntimeFromDeal(deal);
     expect(whoseTurn(rt)).toBe('south');
-    const south0 = rt.hands.south[0];
-    applyPlay(rt, 'south', south0);
-    expect(whoseTurn(rt)).not.toBe('south');
-    while (whoseTurn(rt) !== null) {
-      const t = whoseTurn(rt)!;
-      playBotTurn(rt, t);
+    applyPlay(rt, 'south', rt.hands.south[0]);
+    // Build a "round" by manually playing the other seats; we don't
+    // care which card, just that the round resolves.
+    for (const seat of ['east', 'north', 'west'] as Seat[]) {
+      applyPlay(rt, seat, rt.hands[seat][0]);
     }
-    expect(rt.currentRound.length).toBe(turnOrder(rt).length);
+    expect(rt.currentRound.length).toBe(4);
     const cr = resolveRound(rt);
     expect(cr.cards.length).toBe(4);
     expect(rt.completedRounds.length).toBe(1);
     expect(rt.roundNumber).toBe(2);
   });
 
-  it('plays a complete game without error', () => {
+  it('applyScriptedPlay advances the cursor and applies in script order', () => {
+    const deal = dealForSeed(seedFromDate('2026-05-01'));
+    // Build a script of one round using the hands' first cards.
+    // (We just need *some* legal turn order — south leads, then
+    // east, north, west.)
+    const seats: Seat[] = ['south', 'east', 'north', 'west'];
+    const script: ScriptedPlay[] = seats.map(seat => ({
+      round: 1,
+      seat,
+      card: deal.hands[seat][0],
+      faceDown: false,
+    }));
+    const rt = newRuntimeFromDeal(deal, script);
+    for (let i = 0; i < 4; i++) applyScriptedPlay(rt);
+    expect(rt.currentRound.length).toBe(4);
+    expect(rt.cursor).toBe(4);
+  });
+
+  it('plays a complete game by manual application', () => {
     const deal = dealForSeed(seedFromDate('2026-08-15'));
-    const rt = newRuntime({
-      hands: deal.hands,
-      trumpSuit: deal.trumpSuit,
-      trumpCard: deal.trumpCard,
-      botSeed: deal.botSeed,
-    });
+    const rt = newRuntimeFromDeal(deal);
     while (!isGameOver(rt)) {
       const t = whoseTurn(rt);
       if (t === null) {
         resolveRound(rt);
         continue;
       }
-      if (t === 'south') {
-        // play any legal card (lowest first)
-        applyPlay(rt, 'south', rt.hands.south[0]);
-      } else {
-        playBotTurn(rt, t);
-      }
+      applyPlay(rt, t, rt.hands[t][0]);
     }
     expect(rt.completedRounds.length).toBe(8);
     expect(rt.pointsWon.team_a + rt.pointsWon.team_b).toBe(304);
@@ -69,22 +88,12 @@ describe('runtime', () => {
 describe('runtime caps obligation tracking', () => {
   it('exposes rt.capsObligations as the same map the engine writes to', () => {
     const deal = dealForSeed(seedFromDate('2026-05-01'));
-    const rt = newRuntime({
-      hands: deal.hands,
-      trumpSuit: deal.trumpSuit,
-      trumpCard: deal.trumpCard,
-      botSeed: deal.botSeed,
-    });
+    const rt = newRuntimeFromDeal(deal);
     expect(rt.capsObligations.size).toBe(0);
-    // Reference identity matters: the engine mutates this same map.
     expect(toEngineState(rt).play.capsObligations).toBe(rt.capsObligations);
   });
 
   it('stamps south obligation on the next applyPlay once a cappable end-state arises', () => {
-    // Mirror fixtureSimpleSweep (round 7 about to begin, south
-    // holds [Jh, 9h] = top two trumps, all 6 prior rounds won by
-    // team_a). After north opens round 7, the tracker should
-    // detect obligation and stamp it.
     const fx = fixtureSimpleSweep;
     const rt = newRuntime({
       hands: {
@@ -95,7 +104,10 @@ describe('runtime caps obligation tracking', () => {
       },
       trumpSuit: fx.state.trump.trumpSuit,
       trumpCard: fx.state.trump.trumpCard!,
-      botSeed: 0,
+      trumperSeat: 'south',
+      priority: fx.state.play.priority,
+      script: [],
+      mode: 'open',
     });
     rt.roundNumber = fx.state.play.roundNumber;
     rt.priority = fx.state.play.priority;
@@ -116,28 +128,6 @@ describe('runtime caps obligation tracking', () => {
       obligatedAtCard: 1,
       vPlaysAtObligation: 6,
     });
-  });
-
-  it('does not stamp south when team_a has lost a round (precondition fails)', () => {
-    const deal = dealForSeed(seedFromDate('2026-05-01'));
-    const rt = newRuntime({
-      hands: deal.hands,
-      trumpSuit: deal.trumpSuit,
-      trumpCard: deal.trumpCard,
-      botSeed: deal.botSeed,
-    });
-    // Play one full round; whoever wins, by R2 it will not be the
-    // case that team_a has won every round (probabilistically — and
-    // even if they did, this test only asserts the absence of a
-    // mid-game stamp on round 1, which the predicate cannot satisfy
-    // because south still has 7 trumpless cards left).
-    applyPlay(rt, 'south', rt.hands.south[0]);
-    while (whoseTurn(rt) !== null) {
-      const t = whoseTurn(rt)!;
-      playBotTurn(rt, t);
-    }
-    resolveRound(rt);
-    expect(rt.capsObligations.has('south' as Seat)).toBe(false);
   });
 });
 

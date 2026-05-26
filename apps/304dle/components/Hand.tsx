@@ -6,7 +6,10 @@ import { CardView } from './CardView';
 interface Props {
   hand: ReadonlyArray<CardId>;
   legalSet: ReadonlySet<CardId>;
-  trumpCard: CardId;          // the card folded as trump (highlighted)
+  // Card folded as trump, highlighted when still in hand. null once
+  // the trumper has played it (closed-trump end-state) or before
+  // a closed-trump §T9 reveal returns it to hand.
+  trumpCard: CardId | null;
   onPlay: (card: CardId) => void;
 }
 

@@ -1,7 +1,6 @@
 // End-to-end verdict tests for the submitCaps store action.
-// Adaptive caps (rules.md §C-1 rewrite): no order is committed by
-// the player. submitCaps verifies obligation via the CSP solver
-// and emits a verdict.
+// Adaptive caps (rules.md §C-1 rewrite): submitCaps verifies obligation
+// via the CSP solver and emits a verdict.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CardId } from '@engine/card';
@@ -12,7 +11,7 @@ import {
 } from '@engine/__tests__/fixtures';
 import { applyPlay, newRuntime, type Runtime } from '../runtime';
 import { useStore } from '../store';
-import type { DailyPuzzle } from '../types';
+import type { ScriptedPuzzle } from '../types';
 import type { Fixture } from '@engine/__tests__/fixtures';
 
 const runtimeFromFixture = (fx: Fixture): Runtime => {
@@ -25,7 +24,10 @@ const runtimeFromFixture = (fx: Fixture): Runtime => {
     },
     trumpSuit: fx.state.trump.trumpSuit,
     trumpCard: fx.state.trump.trumpCard!,
-    botSeed: 0,
+    trumperSeat: 'south',
+    priority: fx.state.play.priority,
+    script: [],
+    mode: 'open',
   });
   rt.roundNumber = fx.state.play.roundNumber;
   rt.priority = fx.state.play.priority;
@@ -37,8 +39,9 @@ const runtimeFromFixture = (fx: Fixture): Runtime => {
   return rt;
 };
 
-const stubPuzzle = (rt: Runtime): DailyPuzzle => ({
-  date: '2026-01-01',
+const stubPuzzle = (rt: Runtime): ScriptedPuzzle => ({
+  schemaVersion: 2,
+  id: 'fixture-stub',
   seed: 0,
   hands: {
     north: [...rt.hands.north],
@@ -46,21 +49,30 @@ const stubPuzzle = (rt: Runtime): DailyPuzzle => ({
     south: [...rt.hands.south],
     east: [...rt.hands.east],
   },
-  trump: { suit: rt.trumpSuit, card: rt.trumpCard, trumper: 'south' },
-  botSeed: 0,
-  difficulty: 'wednesday',
-  classification: {
-    capsAchievable: true,
-    optimalCallRound: 7,
-    parScore: 100,
+  trump: {
+    suit: rt.trump.trumpSuit,
+    card: rt.trump.trumpCard!,
+    trumper: 'south',
+    mode: 'open',
+    trumpCardInHand: true,
+  },
+  priority: rt.priority,
+  script: [],
+  obligation: { round: 7, afterCardIndex: 24 },
+  meta: {
+    bot: { id: 'fixture', rating: null },
+    capsType: 'internal',
+    labour: 0,
+    witnessSuitSpan: 1,
   },
 });
 
-const seedCapsConfirm = (rt: Runtime, puzzle?: DailyPuzzle) => {
+const seedCapsConfirm = (rt: Runtime, puzzle?: ScriptedPuzzle) => {
   useStore.setState({
     state: {
       kind: 'caps-confirm',
       puzzle: puzzle ?? stubPuzzle(rt),
+      date: '2026-01-01',
       runtime: rt,
     },
   });
@@ -125,18 +137,11 @@ describe('submitCaps verdict tree (adaptive)', () => {
     expect(verdict()).toBe('late');
   });
 
-  it('finishGame surfaces callRound and displayPar (par+1) when obligation just arose', () => {
+  it('finishGame surfaces callRound and obligatedAtRound', () => {
     const rt = runtimeFromFixture(fixtureSimpleSweep);
     applyPlay(rt, 'north', 'Ah' as CardId);
 
-    seedCapsConfirm(rt, {
-      ...stubPuzzle(rt),
-      classification: {
-        capsAchievable: true,
-        optimalCallRound: 6,
-        parScore: 100,
-      },
-    });
+    seedCapsConfirm(rt);
     useStore.getState().submitCaps();
     expect(verdict()).toBe('correct');
     useStore.getState().finishGame();
@@ -144,8 +149,6 @@ describe('submitCaps verdict tree (adaptive)', () => {
     const s = useStore.getState().state;
     if (s.kind !== 'result') throw new Error(`expected result, got ${s.kind}`);
     expect(s.callRound).toBe(7);
-    // Dynamic par: obligation arose in R7 (in this fixture's
-    // play, north's Ah triggered the stamp at start of R7).
     expect(s.obligatedAtRound).toBe(7);
     expect(s.verdict).toBe('correct');
   });

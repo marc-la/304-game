@@ -1,52 +1,47 @@
-// Zustand store driving the 304dle game session.
-//
-// Adaptive caps + dynamic-par + worlds-at-call difficulty.
-// Static puzzle.classification.optimalCallRound is no longer
-// part of the verdict — runtime's capsObligations stamp is the
-// dynamic par.
+// Zustand store driving the 304dle script-driven game session.
 
 import { create } from 'zustand';
 import type { CardId } from '@engine/card';
 import { checkCapsObligation, isCapsLate } from '@engine/caps';
 import { findWitnessLine } from '@engine/caps-csp';
-import { legalPlays } from '@engine/play';
-import type { Seat } from '@engine/seating';
 import type { CompletedRound } from '@engine/state';
-import type { DailyPuzzle } from './types';
+import type { ScriptedPuzzle } from './types';
 import {
-  applyPlay,
+  applyScriptedPlay,
   isGameOver,
   newRuntime,
-  playBotTurn,
   resolveRound,
+  scriptedCardForCurrentTurn,
   toEngineState,
   turnOrder,
   whoseTurn,
-  ledSuit as runtimeLedSuit,
 } from './runtime';
 import type { Runtime } from './runtime';
 import type { CapsDifficulty, CapsVerdictKind } from './scoring';
 import { gradeDifficulty } from './scoring';
-import { seatsHoldingTrump } from '@engine/play';
 import { countWorlds, measureForDifficulty } from './worlds-counter';
 
+// Each piece of state in the game session lifecycle.
 export type AppState =
   | { kind: 'loading' }
   | { kind: 'no-puzzle'; date: string; reason: string }
-  | { kind: 'intro'; puzzle: DailyPuzzle }
+  | { kind: 'intro'; puzzle: ScriptedPuzzle; date: string }
   | {
       kind: 'playing';
-      puzzle: DailyPuzzle;
+      puzzle: ScriptedPuzzle;
+      date: string;
       runtime: Runtime;
     }
   | {
       kind: 'caps-confirm';
-      puzzle: DailyPuzzle;
+      puzzle: ScriptedPuzzle;
+      date: string;
       runtime: Runtime;
     }
   | {
       kind: 'caps-reveal';
-      puzzle: DailyPuzzle;
+      puzzle: ScriptedPuzzle;
+      date: string;
       runtime: Runtime;
       verdict: CapsVerdictKind;
       witnessLine: CardId[] | null;
@@ -56,7 +51,8 @@ export type AppState =
     }
   | {
       kind: 'result';
-      puzzle: DailyPuzzle;
+      puzzle: ScriptedPuzzle;
+      date: string;
       verdict: CapsVerdictKind;
       callRound: number | null;
       obligatedAtRound: number | null;
@@ -66,11 +62,10 @@ export type AppState =
 
 interface Store {
   state: AppState;
-  setPuzzle: (puzzle: DailyPuzzle | null, date: string) => void;
+  setPuzzle: (puzzle: ScriptedPuzzle | null, date: string) => void;
   startGame: () => void;
-  legalPlaysForSouth: () => CardId[];
-  playCard: (card: CardId) => void;
-  advanceBots: () => void;
+  scriptedCardForSouth: () => CardId | null;
+  playScripted: () => void;        // advance one scripted play
   resolveCurrentRound: () => CompletedRound | null;
   openCapsConfirm: () => void;
   cancelCapsConfirm: () => void;
@@ -80,6 +75,17 @@ interface Store {
   replayHand: () => void;
 }
 
+const buildRuntimeFromPuzzle = (p: ScriptedPuzzle): Runtime =>
+  newRuntime({
+    hands: p.hands,
+    trumpSuit: p.trump.suit,
+    trumpCard: p.trump.card,
+    trumperSeat: p.trump.trumper,
+    priority: p.priority,
+    script: p.script,
+    mode: p.trump.mode,
+  });
+
 export const useStore = create<Store>((set, get) => ({
   state: { kind: 'loading' },
 
@@ -88,58 +94,28 @@ export const useStore = create<Store>((set, get) => ({
       set({ state: { kind: 'no-puzzle', date, reason: 'No puzzle for today' } });
       return;
     }
-    set({ state: { kind: 'intro', puzzle } });
+    set({ state: { kind: 'intro', puzzle, date } });
   },
 
   startGame: () => {
     const s = get().state;
     if (s.kind !== 'intro') return;
-    const runtime = newRuntime({
-      hands: s.puzzle.hands,
-      trumpSuit: s.puzzle.trump.suit,
-      trumpCard: s.puzzle.trump.card,
-      botSeed: s.puzzle.botSeed,
-    });
-    set({ state: { kind: 'playing', puzzle: s.puzzle, runtime } });
+    const runtime = buildRuntimeFromPuzzle(s.puzzle);
+    set({ state: { kind: 'playing', puzzle: s.puzzle, date: s.date, runtime } });
   },
 
-  legalPlaysForSouth: () => {
+  scriptedCardForSouth: () => {
     const s = get().state;
-    if (s.kind !== 'playing') return [];
-    const { runtime } = s;
-    const t = whoseTurn(runtime);
-    if (t !== 'south') return [];
-    const handsMap = new Map<Seat, ReadonlyArray<CardId>>();
-    handsMap.set('north', runtime.hands.north);
-    handsMap.set('west', runtime.hands.west);
-    handsMap.set('south', runtime.hands.south);
-    handsMap.set('east', runtime.hands.east);
-    const trumpHolders = seatsHoldingTrump(handsMap, runtime.trumpSuit);
-    return legalPlays({
-      hand: runtime.hands.south,
-      ledSuit: runtimeLedSuit(runtime),
-      trumpSuit: runtime.trumpSuit,
-      isLead: runtime.currentRound.length === 0,
-      seatsWithTrumps: trumpHolders,
-      seat: 'south',
-    });
+    if (s.kind !== 'playing') return null;
+    if (whoseTurn(s.runtime) !== 'south') return null;
+    return scriptedCardForCurrentTurn(s.runtime);
   },
 
-  playCard: (card) => {
+  playScripted: () => {
     const s = get().state;
     if (s.kind !== 'playing') return;
-    if (whoseTurn(s.runtime) !== 'south') return;
-    if (!get().legalPlaysForSouth().includes(card)) return;
-    applyPlay(s.runtime, 'south', card);
-    set({ state: { ...s } });
-  },
-
-  advanceBots: () => {
-    const s = get().state;
-    if (s.kind !== 'playing') return;
-    const turn = whoseTurn(s.runtime);
-    if (turn === null || turn === 'south') return;
-    playBotTurn(s.runtime, turn);
+    if (s.runtime.cursor >= s.runtime.script.length) return;
+    applyScriptedPlay(s.runtime);
     set({ state: { ...s } });
   },
 
@@ -159,6 +135,7 @@ export const useStore = create<Store>((set, get) => ({
       state: {
         kind: 'caps-confirm',
         puzzle: s.puzzle,
+        date: s.date,
         runtime: s.runtime,
       },
     });
@@ -167,7 +144,14 @@ export const useStore = create<Store>((set, get) => ({
   cancelCapsConfirm: () => {
     const s = get().state;
     if (s.kind !== 'caps-confirm') return;
-    set({ state: { kind: 'playing', puzzle: s.puzzle, runtime: s.runtime } });
+    set({
+      state: {
+        kind: 'playing',
+        puzzle: s.puzzle,
+        date: s.date,
+        runtime: s.runtime,
+      },
+    });
   },
 
   submitCaps: () => {
@@ -199,6 +183,7 @@ export const useStore = create<Store>((set, get) => ({
       state: {
         kind: 'caps-reveal',
         puzzle: s.puzzle,
+        date: s.date,
         runtime: s.runtime,
         verdict,
         witnessLine,
@@ -216,6 +201,7 @@ export const useStore = create<Store>((set, get) => ({
       state: {
         kind: 'result',
         puzzle: s.puzzle,
+        date: s.date,
         verdict: s.verdict,
         callRound: s.runtime.roundNumber,
         obligatedAtRound: s.obligatedAtRound,
@@ -228,17 +214,24 @@ export const useStore = create<Store>((set, get) => ({
   replayHand: () => {
     const s = get().state;
     const puzzle =
-      s.kind === 'result' || s.kind === 'caps-reveal' || s.kind === 'caps-confirm' || s.kind === 'playing' || s.kind === 'intro'
+      s.kind === 'result' ||
+      s.kind === 'caps-reveal' ||
+      s.kind === 'caps-confirm' ||
+      s.kind === 'playing' ||
+      s.kind === 'intro'
         ? s.puzzle
         : null;
+    const date =
+      s.kind === 'result' ||
+      s.kind === 'caps-reveal' ||
+      s.kind === 'caps-confirm' ||
+      s.kind === 'playing' ||
+      s.kind === 'intro'
+        ? s.date
+        : '';
     if (puzzle === null) return;
-    const runtime = newRuntime({
-      hands: puzzle.hands,
-      trumpSuit: puzzle.trump.suit,
-      trumpCard: puzzle.trump.card,
-      botSeed: puzzle.botSeed,
-    });
-    set({ state: { kind: 'playing', puzzle, runtime } });
+    const runtime = buildRuntimeFromPuzzle(puzzle);
+    set({ state: { kind: 'playing', puzzle, date, runtime } });
   },
 
   skipCapsToResult: () => {
@@ -250,6 +243,7 @@ export const useStore = create<Store>((set, get) => ({
       state: {
         kind: 'result',
         puzzle: s.puzzle,
+        date: s.date,
         verdict: 'missed',
         callRound: null,
         obligatedAtRound: stamp?.obligatedAtRound ?? null,
@@ -258,4 +252,5 @@ export const useStore = create<Store>((set, get) => ({
       },
     });
   },
+
 }));
