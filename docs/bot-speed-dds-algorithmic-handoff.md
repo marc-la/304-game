@@ -1,12 +1,12 @@
 ---
-title: 304 — DDS algorithmic speed-ups (P2 / P3 / P4 / P6)
-status: handoff, 2026-05-26
-purpose: Pick up the algorithmic optimisations carved out of the original Tier 3 plan. Read [bot-speed-tier3-changes.md](bot-speed-tier3-changes.md) first for the current baseline (P1 shipped). [bot-speed-handoff.md](bot-speed-handoff.md) has the original problem statement.
+title: 304 — DDS algorithmic speed-ups (P2 + P4 shipped, P3 rejected, P6 deferred)
+status: P2 + P4 shipped 2026-05-26 — see [bot-speed-tier3-p2-p4-changes.md](bot-speed-tier3-p2-p4-changes.md) for the post-ship doc. Kept here as the historical plan + record of what was tried.
+purpose: Pick up the algorithmic optimisations carved out of the original Tier 3 plan. Read [bot-speed-tier3-changes.md](bot-speed-tier3-changes.md) first for the P1 baseline. [bot-speed-handoff.md](bot-speed-handoff.md) has the original problem statement.
 ---
 
-# State of play
+# State of play (at the time this handoff was written)
 
-After Tier 3 P1 (Map → Array refactor), the bench is:
+After Tier 3 P1 (Map → Array refactor), the bench was:
 
 | Bot | R1/move | Mean/move | p95/move |
 |---|---|---|---|
@@ -14,9 +14,22 @@ After Tier 3 P1 (Map → Array refactor), the bench is:
 | B7 (bridge-derived) | **683 ms** | 159 ms | 1.04 s |
 | B6 (dds-mc) | **1.95 s** | 409 ms | 2.83 s |
 
-Target: beat B5 in ELO AND ≤ 500 ms median per move. B6 at R1 is over by ~4×, B7 by ~1.4×. R5+ is already < 3 ms — every speed-up here is really a speed-up at R1/R2.
+Target: beat B5 in ELO AND ≤ 500 ms median per move. B6 at R1 was over by ~4×, B7 by ~1.4×. R5+ was already < 3 ms — every speed-up here was really a speed-up at R1/R2.
 
-The 200 k node-budget cap is binding at R1 — every eval saturates it. That means each cheaper visit is reinvested into deeper search, not into faster wall-clock; the wall-clock win is whatever fraction of the budget we save outright.
+The 200 k node-budget cap was binding at R1 — every eval saturated it. That meant each cheaper visit was reinvested into deeper search, not into faster wall-clock; the wall-clock win was whatever fraction of the budget we saved outright.
+
+# State of play (after P2 + P4)
+
+P2 and P4 landed in the same session. The post-ship bench, 5 seeds:
+
+| Bot | R1/move | Mean/move | p95/move |
+|---|---|---|---|
+| B7 (bridge-derived) | **270 ms** (2.5×) | 52 ms (3.0×) | 287 ms (3.6×) |
+| B6 (dds-mc) | **484 ms** (4.0×) | 90 ms (4.6×) | 407 ms (6.9×) |
+
+The 500 ms median target is comfortably hit; B6 R1 is at the round-1 target. Full numbers and what specifically changed are in [bot-speed-tier3-p2-p4-changes.md](bot-speed-tier3-p2-p4-changes.md).
+
+P3 was implemented, measured, rejected — see "What was tried and rejected" in the post-ship doc. P6 is deferred (not needed at current speeds).
 
 # Why this is a separate handoff from the hybrid
 
@@ -24,7 +37,7 @@ The hybrid bot (B6o/B7o, see [bot-hybrid-handoff.md](bot-hybrid-handoff.md)) sid
 
 # Follow-ups, ordered by expected payoff
 
-## P2 — Principal Variation Search (PVS)
+## P2 — Principal Variation Search (PVS) — **SHIPPED 2026-05-26**
 
 **Why**: After move ordering, the first child at most nodes IS the best. PVS searches the first child with the full window, then the rest with a null window `(α, α+1)`. If a null-window search fails high, re-search with full window. Cuts node count further by ~1.5–2× on top of plain alpha-beta.
 
@@ -40,9 +53,11 @@ The hybrid bot (B6o/B7o, see [bot-hybrid-handoff.md](bot-hybrid-handoff.md)) sid
 **Expected payoff**: 1.5–2× wall-clock at R1.
 **Estimated effort**: 2–3 h. Subtle bugs are likely; validate hard.
 
-## P3 — History heuristic
+## P3 — History heuristic — **TRIED, REJECTED 2026-05-26**
 
-**Why**: Generalises killer. Every time a move causes a cutoff, bump a per-card score. Sort moves by score (highest first). Catches recurring strong moves that aren't the most recent killer for this depth.
+Implemented per the sketch below, measured at −19% to −39% B6 R1 wall-clock (i.e. slower). Reverted. The strong default order ("high-power-first within suit") plus killer already captures the available signal in 304's shallow tree, and the reorder pass cost more than the node-count reduction was worth. See the "What was tried and rejected" section of [bot-speed-tier3-p2-p4-changes.md](bot-speed-tier3-p2-p4-changes.md) for the diagnosis and the bar a future P3 attempt would need to clear.
+
+**Why** (original rationale): Generalises killer. Every time a move causes a cutoff, bump a per-card score. Sort moves by score (highest first). Catches recurring strong moves that aren't the most recent killer for this depth.
 
 **Where**: `engine/bots/dds-core.ts`. Add a `Uint32Array(32)` for per-card history; increment on cutoff in the main loop; in `legalMoves` sort by `history[card]` descending after the killer pre-pend.
 
@@ -51,7 +66,7 @@ The hybrid bot (B6o/B7o, see [bot-hybrid-handoff.md](bot-hybrid-handoff.md)) sid
 **Expected payoff**: 1.2–1.5× on top of killer alone.
 **Estimated effort**: 1–2 h.
 
-## P4 — Suit-equivalence collapsing
+## P4 — Suit-equivalence collapsing — **SHIPPED 2026-05-26**
 
 **Why**: The big bridge-DDS win. Within a suit, cards held by one player with no enemy holding between them are interchangeable for trick-taking. If I hold K-Q-8 of clubs and opp holds only 7♣, K and Q both beat 7♣ and are equivalent — DDS only needs to consider one. Collapses the branching factor dramatically on suit-rich positions.
 

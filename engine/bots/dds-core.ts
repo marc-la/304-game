@@ -203,10 +203,20 @@ const trickWinner = (s: DDSState, trumpSuit: number): number => {
 };
 
 // Fill `out` with legal card indices for `seat`, high-power-first within
-// each suit. Implements the engine's legal-play contract:
+// each suit, with suit-equivalence collapsing. Implements the engine's
+// legal-play contract:
 //   - Following a lead: must follow led suit if able; else any card.
 //   - Leading: if this seat is the only seat holding any trump and
 //     holds at least one, must lead trump.
+//
+// Suit-equivalence (the bridge-DDS branching-factor win): two cards of
+// the same suit held by `seat` are interchangeable if every card of
+// that suit with power strictly between them is also held by `seat`
+// (i.e. no opponent holds a card that could split them in trick value).
+// We emit one representative per class — the strongest, so move
+// ordering stays high-power-first within suit. Per-class collapse is
+// computed against `allMask` (all unplayed cards) and so changes node
+// to node; the TT keys include hand bitmasks, so caches remain correct.
 const legalMoves = (
   s: DDSState,
   seat: number,
@@ -215,11 +225,11 @@ const legalMoves = (
 ): void => {
   out.length = 0;
   const hand = s.hands[seat];
+  const allMask = (s.hands[0] | s.hands[1] | s.hands[2] | s.hands[3]) >>> 0;
   let movesMask: number;
   if (s.ledSuit < 0) {
     const trumpByte = (0xff << (trumpSuit << 3)) >>> 0;
-    const allTrumps =
-      ((s.hands[0] | s.hands[1] | s.hands[2] | s.hands[3]) & trumpByte) >>> 0;
+    const allTrumps = (allMask & trumpByte) >>> 0;
     const myTrumps = (hand & trumpByte) >>> 0;
     if (myTrumps !== 0 && allTrumps === myTrumps) {
       movesMask = myTrumps;
@@ -231,16 +241,37 @@ const legalMoves = (
     const suited = (hand & suitByte) >>> 0;
     movesMask = suited !== 0 ? suited : hand;
   }
-  // High-power-first within suit = low-bit-first within suit byte
-  // (because card index encodes power in the low 3 bits of each byte,
-  // and power 0 = strongest).
+  // Scan powers low-to-high (strongest first) per suit. Within a suit:
+  //   - On an opponent's card, close the current equivalence group.
+  //   - On a MY card, open a new group if none is open (and emit it).
+  //     Otherwise skip — this card is equivalent to the open group's
+  //     representative.
+  // The opponent-mask is computed from suitByte against `allMask` so
+  // that cards of mine that are NOT legal-to-play (e.g. when forced to
+  // follow a different suit) still count as group-internal for the
+  // collapsed suit — but since `movesMask` zeros out other suits, the
+  // scan only emits within the legal suit anyway.
   for (let suit = 0; suit < 4; suit++) {
-    let sm = (movesMask & (0xff << (suit << 3))) >>> 0;
-    while (sm !== 0) {
-      const lsb = sm & -sm;
-      const idx = 31 - Math.clz32(lsb);
-      out.push(idx);
-      sm ^= lsb;
+    const shift = suit << 3;
+    const suitByte = (0xff << shift) >>> 0;
+    const myInSuit = (movesMask & suitByte) >>> 0;
+    if (myInSuit === 0) continue;
+    const allInSuit = (allMask & suitByte) >>> 0;
+    // "Other" = unplayed cards of this suit held by anyone else. Use
+    // `hand` (not `movesMask`) so the must-lead-trump restriction
+    // collapses correctly: my trumps are all-equivalent iff no other
+    // seat holds any trump, which is precisely the lone-holder case.
+    const otherInSuit = (allInSuit & ~(hand & suitByte)) >>> 0;
+    let inGroup = false;
+    for (let p = 0; p < 8; p++) {
+      const bit = (1 << (shift + p)) >>> 0;
+      if (otherInSuit & bit) inGroup = false;
+      if (myInSuit & bit) {
+        if (!inGroup) {
+          out.push(shift + p);
+          inGroup = true;
+        }
+      }
     }
   }
 };
@@ -319,6 +350,15 @@ const dds = (
     s.trickLen++;
     if (wasLed < 0) s.ledSuit = CARD_SUIT[card];
 
+    // Principal Variation Search: after move ordering, the first child
+    // is almost always the best. Search it with the full (alpha, beta)
+    // window, then probe each subsequent child with a null window. The
+    // null-window probe answers "does this beat alpha?" (max) or "does
+    // this beat beta?" (min) ~2× cheaper than a full search. If the
+    // probe says yes, re-search with the full window to extract the
+    // true value. The bound-typed TT stores sound bounds regardless of
+    // window width, so deeper entries written during the null probe
+    // remain valid for the re-search.
     let value: number;
     if (s.trickLen === 4) {
       const winner = trickWinner(s, w.trumpSuit);
@@ -328,13 +368,40 @@ const dds = (
       s.leader = winner;
       s.trickLen = 0;
       s.ledSuit = -1;
-      const future = dds(s, alpha - won, beta - won, depth + 1, w);
+      const innerA = alpha - won;
+      const innerB = beta - won;
+      let future: number;
+      if (mi === 0) {
+        future = dds(s, innerA, innerB, depth + 1, w);
+      } else if (playForMe) {
+        future = dds(s, innerA, innerA + 1, depth + 1, w);
+        if (future > innerA && future < innerB) {
+          future = dds(s, innerA, innerB, depth + 1, w);
+        }
+      } else {
+        future = dds(s, innerB - 1, innerB, depth + 1, w);
+        if (future < innerB && future > innerA) {
+          future = dds(s, innerA, innerB, depth + 1, w);
+        }
+      }
       s.leader = prevLeader;
       s.trickLen = 4;
       s.ledSuit = prevLed;
       value = won + future;
     } else {
-      value = dds(s, alpha, beta, depth + 1, w);
+      if (mi === 0) {
+        value = dds(s, alpha, beta, depth + 1, w);
+      } else if (playForMe) {
+        value = dds(s, alpha, alpha + 1, depth + 1, w);
+        if (value > alpha && value < beta) {
+          value = dds(s, alpha, beta, depth + 1, w);
+        }
+      } else {
+        value = dds(s, beta - 1, beta, depth + 1, w);
+        if (value < beta && value > alpha) {
+          value = dds(s, alpha, beta, depth + 1, w);
+        }
+      }
     }
 
     // Undo
