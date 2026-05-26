@@ -129,6 +129,14 @@ export const chooseClosedTrumpPlay = (
   const isLead = cur.length === 0;
   const { ledSuit } = inProgressBest(state, trump);
 
+  // §T-2: at R8 (or any moment when the trumper's hand is empty and
+  // only the folded trump remains), the trumper plays the folded
+  // trump card as their last card — face-up. Covers both leading
+  // and following.
+  if (isTrumper && hand.length === 0 && foldedCard !== null) {
+    return { card: foldedCard, faceDown: false };
+  }
+
   // Leading: face-up only. Defer to existing heuristic style — lead
   // longest non-trump suit lowest non-J card; all-trump → lowest trump.
   if (isLead) {

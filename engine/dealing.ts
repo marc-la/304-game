@@ -46,9 +46,11 @@ export interface DealResult {
   botSeed: number;
 }
 
-// Generate a deal where South is always the trumper. Trump card =
-// South's highest-power card in their longest suit (deterministic).
-// Open trump (no closed-trump fold).
+// Deterministic synthetic deal: south always trumper, longest-suit /
+// highest-power trump pick. Used by the tournament harness and tests
+// where a "give me a random deal" primitive is needed. The scripted
+// puzzle pipeline does NOT use this — see tools/puzzles/match-collector
+// (slap-shuffled, all-bots-self-play) for that.
 export const dealForSeed = (seed: number): DealResult => {
   const rng = makeRng(seed);
   const shuffled = fisherYates(PACK, rng);
