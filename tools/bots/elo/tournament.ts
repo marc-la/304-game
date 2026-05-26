@@ -30,6 +30,11 @@ export interface PairingResult {
   mean_home_points_diff: number;
   // For analysis: how many of the games had home as the trumper.
   home_as_trumper_games: number;
+  // Wall-clock duration of this pairing in milliseconds. Lets the
+  // operator spot which bot combos dominate the run time (B6/B7 R1
+  // moves can dwarf the cheap bots — a single B6 pairing is ~50× a
+  // B0–B5 pairing).
+  duration_ms: number;
 }
 
 export interface TournamentOptions {
@@ -42,6 +47,28 @@ export interface TournamentOptions {
 
 const mixSeed = (s: number, salt: number): number =>
   (Math.imul(s ^ salt, 0x9e3779b1) ^ (s >>> 16)) >>> 0;
+
+// Compact, human-friendly duration. ≥1h → "1h23m"; ≥1min → "12m34s";
+// otherwise "5.4s" or "542ms".
+const formatDuration = (ms: number): string => {
+  if (ms >= 3_600_000) {
+    const h = Math.floor(ms / 3_600_000);
+    const m = Math.floor((ms % 3_600_000) / 60_000);
+    return `${h}h${m.toString().padStart(2, '0')}m`;
+  }
+  if (ms >= 60_000) {
+    const m = Math.floor(ms / 60_000);
+    const s = Math.floor((ms % 60_000) / 1000);
+    return `${m}m${s.toString().padStart(2, '0')}s`;
+  }
+  if (ms >= 1000) return `${(ms / 1000).toFixed(1)}s`;
+  return `${Math.round(ms)}ms`;
+};
+
+const formatPerGame = (ms: number, games: number): string => {
+  if (games === 0) return '—';
+  return formatDuration(ms / games);
+};
 
 const ROT: Seat[] = ['south', 'east', 'north', 'west'];
 
@@ -82,8 +109,10 @@ export const runTournament = (opts: TournamentOptions): TournamentResult => {
         away_wins: 0,
         mean_home_points_diff: 0,
         home_as_trumper_games: 0,
+        duration_ms: 0,
       };
       let cumulativeDiff = 0;
+      const pairingStart = Date.now();
 
       for (let g = 0; g < opts.gamesPerPairing; g++) {
         const seed = mixSeed(masterSeed, hi * 10_000 + aj * 100 + g);
@@ -128,6 +157,7 @@ export const runTournament = (opts: TournamentOptions): TournamentResult => {
         }
       }
       pr.mean_home_points_diff = cumulativeDiff / pr.games;
+      pr.duration_ms = Date.now() - pairingStart;
 
       pairings.push(pr);
 
@@ -145,11 +175,13 @@ export const runTournament = (opts: TournamentOptions): TournamentResult => {
       }
 
       // home-trumper is exactly 50% of games by construction (rotation
-// guarantees it); we no longer surface it per pairing.
+      // guarantees it); we no longer surface it per pairing.
       opts.progress?.(
         `   ${padName(home)}  vs  ${padName(away)}   ` +
         `${padInt(pr.home_wins, 3)}W / ${padInt(pr.away_wins, 3)}L   ` +
-        `diff: ${padDiff(pr.mean_home_points_diff)}`,
+        `diff: ${padDiff(pr.mean_home_points_diff)}   ` +
+        `time: ${formatDuration(pr.duration_ms).padStart(8)} ` +
+        `(${formatPerGame(pr.duration_ms, pr.games)}/game)`,
       );
     }
   }

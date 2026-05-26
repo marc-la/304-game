@@ -6,7 +6,10 @@ purpose: Record what changed in the Tier 3 P1 session. Pair-doc to the earlier [
 
 # What this session shipped
 
-**P1 from the Tier 3 plan**: the slim engine view's per-seat hands moved from `Map<Seat, …>` to a flat 4-slot array indexed by seat-number (`SEAT_INDEX`: N=0, W=1, S=2, E=3). This benefits everything that reads `state.hands` or `world.hands` — most notably B6/B7's per-world allocation in `enumerateWorlds.materialise()`, which was on the R1 hot path.
+Two things, neither algorithmic:
+
+1. **P1 from the Tier 3 plan**: the slim engine view's per-seat hands moved from `Map<Seat, …>` to a flat 4-slot array indexed by seat-number (`SEAT_INDEX`: N=0, W=1, S=2, E=3). This benefits everything that reads `state.hands` or `world.hands` — most notably B6/B7's per-world allocation in `enumerateWorlds.materialise()`, which was on the R1 hot path.
+2. **Tournament per-pairing timing**: every pairing now prints a wall-clock duration alongside its W/L line, and the `PairingResult` record carries `duration_ms` for downstream tooling. The original Tier 3 ask was "make slow B6 pairings visible as they happen" — this delivers it.
 
 Everything still passes: 170 vitest tests green, B6/B7 determinism replays clean on 3 seeds, no behavioural change.
 
@@ -50,9 +53,15 @@ A full 8-bot round-robin at `--games 50 --periods 3` still runs B6 for about **9
 - `engine/dd.ts`'s internal `simHands` stays as `Map<Seat, CardId[]>` because `solveCaps` mutates it through `handRemove`. A `worldHandsToMap` / `mapToHandsArr` helper bridges in and out of the array boundary at the entry points.
 - The full `GameState.hands: Record<Seat, CardId[]>` (the orchestrator-side schema) — separate concern. Only the slim engine view changed.
 
-# Loose end: tournament observability
+# Tournament timing format
 
-The original ask in this session also included "add a timing element to the tournament so I can see which pairings are slow." A first cut was prototyped (per-pairing wall-clock printed alongside W/L, `duration_ms` on `PairingResult`) but reverted. If the next session wants to ship this it's a ~30-line change in `tools/bots/elo/tournament.ts` — add `Date.now()` brackets around the inner `g`-loop and extend the progress callback. Keep the column-aligned look of the current line.
+Per-pairing line now looks like:
+
+```
+   b0-random          vs  b6-dds-mc          36W /  64L   diff:   -46.3   time:   10m12s (12.2s/game)
+```
+
+`formatDuration` collapses to `1h23m` / `12m34s` / `5.4s` / `542ms` based on magnitude. `duration_ms` is on the `PairingResult` record so a script can sort `tools/bots/elo/results.json` by `duration_ms` to surface the slowest pairings without re-parsing the log.
 
 # What's next — pick your handoff
 
