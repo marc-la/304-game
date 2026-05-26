@@ -68,11 +68,13 @@ interface LeaderboardFile {
   }>;
 }
 
-// B6 (DDS Monte Carlo) and B7 (bridge-derived) are deliberately
-// excluded from the default tournament — their per-move cost at the
-// opening makes a 50-game tournament take many hours. Include them
-// explicitly with `--bots b0-random,...,b6-dds-mc`. See
-// docs/bot-speed-handoff.md for the plan to make them tractable.
+// B6 (DDS Monte Carlo) and B7 (bridge-derived) are now included by
+// default following the tier-2 optimizations in dds-core.ts
+// (alpha-beta, bitmask hands, killer + bound TT, move ordering) that
+// make them tractable for tournament-scale runs. Exclude them
+// explicitly with `--bots b0-random,b1-high-low,...` if you need a
+// fast iteration loop. See docs/bot-speed-handoff.md +
+// docs/bot-speed-tier2-changes.md for context.
 const DEFAULT_TOURNAMENT_BOTS = [
   'b0-random',
   'b1-high-low',
@@ -80,6 +82,8 @@ const DEFAULT_TOURNAMENT_BOTS = [
   'b3-heuristic',
   'b4-infoset-1ply',
   'b5-csp-search',
+  'b6-dds-mc',
+  'b7-bridge-derived',
 ];
 
 const main = () => {
@@ -97,11 +101,41 @@ const main = () => {
     console.log(`Seeded from ${args.inFile}`);
   }
 
+  // --- Startup banner (printed once) ---------------------------------------
+  const RULE = '═'.repeat(70);
+  const SUB  = '─'.repeat(70);
+  const totalPerPairing = args.games * 2;
+  const totalPairings = botIds.length * (botIds.length - 1);
+  const totalGames = totalPairings * totalPerPairing * args.periods;
+  console.log(RULE);
+  console.log(' 304 Bot Tournament');
+  console.log(RULE);
+  console.log(' Bid             : 160 (trumping team wins iff points ≥ 160; opp ≥ 145)');
+  console.log(' Trumper         : rotates {south, east, north, west} per game');
+  console.log('                   each team trumps exactly 50% of games per pairing');
+  console.log(' Priority        : rotates independently of trumper (offset by 1)');
+  console.log(' Duplicate       : same seed + same trumper/priority, swap home/away seats');
+  console.log(' Draws           : impossible (304 total ⇒ thresholds are mutually exclusive)');
+  console.log(' Open trump only : closed-trump bots are exiled to the curator pipeline');
+  console.log(SUB);
+  console.log(` Bots (${botIds.length})        : ${botIds.join(', ')}`);
+  console.log(` Games / pairing : ${args.games} × 2 duplicate = ${totalPerPairing}`);
+  console.log(` Pairings        : ${totalPairings}`);
+  console.log(` Periods         : ${args.periods}`);
+  console.log(` Total games     : ${totalGames.toLocaleString()}`);
+  console.log(` Master seed     : ${args.masterSeed}`);
+  if (args.inFile !== null) {
+    console.log(` Seeded from     : ${args.inFile}`);
+  }
+  console.log(RULE);
+  console.log('');
+
   let lastPairings: ReturnType<typeof runTournament>['pairings'] = [];
   let ratings = new Map<string, Rating>();
 
   for (let p = 0; p < args.periods; p++) {
-    console.log(`Period ${p + 1}/${args.periods}…`);
+    console.log(`Period ${p + 1}/${args.periods}`);
+    console.log(SUB);
     const tStart = Date.now();
     const res = runTournament({
       bots: botIds,
@@ -113,7 +147,9 @@ const main = () => {
     for (const [b, r] of res.ratings) ratings.set(b, r);
     lastPairings = res.pairings;
     const dt = ((Date.now() - tStart) / 1000).toFixed(1);
-    console.log(`  ...period ${p + 1} done in ${dt}s`);
+    console.log(SUB);
+    console.log(` period ${p + 1} done in ${dt}s`);
+    console.log('');
   }
 
   if (ratings.size === 0) {
@@ -150,11 +186,22 @@ const main = () => {
 
   mkdirSync(dirname(args.out), { recursive: true });
   writeFileSync(args.out, JSON.stringify(file, null, 2));
-  console.log(`\nWrote ${args.out}`);
-  console.log('\nLeaderboard:');
-  for (const e of entries) {
-    console.log(`  ${e.rating.toString().padStart(5)} ± ${e.rd.toString().padStart(3)}   ${e.name}`);
-  }
+
+  const RULE2 = '═'.repeat(70);
+  const nameW = Math.max(...entries.map(e => e.name.length));
+  console.log(RULE2);
+  console.log(' Final Leaderboard');
+  console.log(RULE2);
+  entries.forEach((e, i) => {
+    const rank = String(i + 1).padStart(2);
+    const rating = String(e.rating).padStart(5);
+    const rd = String(e.rd).padStart(3);
+    console.log(
+      `  ${rank}.  ${rating} ± ${rd}   ${e.name.padEnd(nameW)}   (${e.bot})`,
+    );
+  });
+  console.log(RULE2);
+  console.log(` Wrote ${args.out}`);
 };
 
 main();

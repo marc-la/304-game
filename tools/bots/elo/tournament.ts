@@ -57,6 +57,15 @@ export const runTournament = (opts: TournamentOptions): TournamentResult => {
   const ratings = new Map<string, Rating>();
   for (const b of bots) ratings.set(b, newRating());
 
+  // Pad bot ids to the longest name for column-aligned output.
+  const nameWidth = bots.reduce((w, b) => Math.max(w, b.length), 0);
+  const padName = (s: string): string => s.padEnd(nameWidth);
+  const padInt = (n: number, w: number): string => String(n).padStart(w);
+  const padDiff = (d: number): string => {
+    const s = d >= 0 ? `+${d.toFixed(1)}` : d.toFixed(1);
+    return s.padStart(7);
+  };
+
   const pairings: PairingResult[] = [];
   const outcomesByBot = new Map<string, MatchOutcome[]>();
   for (const b of bots) outcomesByBot.set(b, []);
@@ -135,10 +144,12 @@ export const runTournament = (opts: TournamentOptions): TournamentResult => {
         awayOutcomes.push({ opponent: homeRating, score: 1 });
       }
 
+      // home-trumper is exactly 50% of games by construction (rotation
+// guarantees it); we no longer surface it per pairing.
       opts.progress?.(
-        `  ${home} vs ${away}: ${pr.home_wins}W / ${pr.away_wins}L  ` +
-        `(home-trumper ${pr.home_as_trumper_games}/${pr.games}, ` +
-        `pts diff ${pr.mean_home_points_diff.toFixed(1)})`,
+        `   ${padName(home)}  vs  ${padName(away)}   ` +
+        `${padInt(pr.home_wins, 3)}W / ${padInt(pr.away_wins, 3)}L   ` +
+        `diff: ${padDiff(pr.mean_home_points_diff)}`,
       );
     }
   }
