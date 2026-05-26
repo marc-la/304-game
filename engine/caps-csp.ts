@@ -35,8 +35,16 @@ import type { EngineGameState, RoundEntry } from './state';
 import { buildInfoSet } from './info';
 
 interface OppConstraint {
+  // Total cards in this opp's hand. Equals `forced.size` plus the
+  // number of unknown slots drawn from the shared `pool`.
   size: number;
   exhausted: Set<Suit>;
+  // Publicly-known cards in this opp's hand (per caps_formalism.md §3
+  // clause 4 / §4 W6). Today the only source is the §T9-lifted folded
+  // trump card in the trumper's hand. Forced cards are NOT in `pool`
+  // — tracked separately so the universal opp quantifier can branch
+  // on them and so suit-following knows the opp definitely holds them.
+  forced: Set<CardId>;
 }
 
 interface CSPCtx {
@@ -64,48 +72,52 @@ const initCtx = (state: EngineGameState, callerSeat: Seat): CSPCtx | null => {
 
   const known = new Set<CardId>([...callerHand, ...info.knownPlayed]);
   if (info.knownFoldedTrumpCard !== null) known.add(info.knownFoldedTrumpCard);
-  // Note: info.knownInHand (publicly-known cards in specific seats,
-  // see caps_formalism.md §4 W6) is intentionally NOT subtracted here.
-  // The CSP models opp hands as a fungible pool keyed by hand-size and
-  // suit-exhaustion; per-seat forced-card constraints would require
-  // tracking forced cards separately and merging them into
-  // computeOppCandidates. Without that integration the CSP remains
-  // sound (it over-considers worlds where a non-trumper holds the
-  // lifted folded card), but it under-recognises obligations that
-  // depend on knowing the trumper specifically holds that card.
-  // Affects external-caps reasoning only; for caller-as-trumper the
-  // lifted card is already in callerHand. See the v1 info-set audit
-  // (commit adbb02a) and docs/handoffs/info-set-completeness-v2-handoff.md.
+  // §4 W6: publicly-known cards in non-caller hands are also fully
+  // known (their identity AND their seat). They occupy hand slots in
+  // their seat's OppConstraint.forced, and they are excluded from the
+  // shared unknown pool so the universal opp quantifier cannot place
+  // them in any other seat. See caps_formalism.md §3 clause 4 / §4 W6
+  // and docs/info-set-completeness-v2-handoff.md.
+  for (const [, cards] of info.knownInHand) {
+    for (const c of cards) known.add(c);
+  }
 
   const pool = new Set<CardId>();
   for (const c of PACK) if (!known.has(c)) pool.add(c);
 
   const opps = new Map<Seat, OppConstraint>();
   let oppTotal = 0;
+  let forcedTotal = 0;
   for (const seat of ANTICLOCKWISE) {
     if (seat === callerSeat) continue;
     if (state.pccPartnerOut === seat) continue;
     const size = info.handSizes.get(seat) ?? 0;
+    const forced = new Set<CardId>(info.knownInHand.get(seat) ?? []);
     opps.set(seat, {
       size,
       exhausted: new Set(info.exhaustedSuits.get(seat) ?? []),
+      forced,
     });
     oppTotal += size;
+    forcedTotal += forced.size;
   }
 
   // Hidden slots (unrevealed face-down opp minuses in completed and
   // in-progress rounds) and the folded trump card (when face-down on
   // the table and unknown to the viewer) are NOT in any current opp
-  // hand but ARE in the pool from the viewer's perspective. Account
-  // for them so the consistency check passes:
-  //   pool.size === oppTotal + hiddenSlotCount + foldedUnknownCount
-  // The CSP search treats these "phantom" pool cards as if any opp
-  // could play them, which is a sound over-approximation (more
-  // adversarial opp options → conservative obligation answer).
+  // hand but ARE in the pool from the viewer's perspective. Forced
+  // cards (from §4 W6 knownInHand) DO occupy opp hand slots but are
+  // not in the pool — subtract them from the opp-slot side of the
+  // equation. Consistency check:
+  //   pool.size === (oppTotal - forcedTotal) + hiddenSlotCount
+  //                                          + foldedUnknownCount
+  // The CSP search treats phantom pool cards as if any opp could play
+  // them, which is a sound over-approximation (more adversarial opp
+  // options → conservative obligation answer).
   const hiddenSlotCount = info.hiddenSlots.length;
   const foldedUnknownCount =
     info.foldedTrumpOnTable && info.knownFoldedTrumpCard === null ? 1 : 0;
-  if (pool.size !== oppTotal + hiddenSlotCount + foldedUnknownCount) {
+  if (pool.size !== oppTotal - forcedTotal + hiddenSlotCount + foldedUnknownCount) {
     return null;
   }
 
@@ -244,7 +256,7 @@ const collectWitness = (ctx: CSPCtx, line: CardId[]): boolean => {
   const candidates = computeOppCandidates(ctx, seat, ledSuit, isLead);
   if (candidates.length === 0) return true;
   const [first] = candidates;
-  const next = applyOppPlay(ctx, seat, first.card, first.exhaustNewSuit);
+  const next = applyOppPlay(ctx, seat, first.card, first.exhaustNewSuit, first.fromForced);
   return collectWitness(next, line);
 };
 
@@ -291,6 +303,10 @@ const adaptiveSweep = (ctx: CSPCtx): boolean => {
 interface OppCandidate {
   card: CardId;
   exhaustNewSuit: Suit | null; // mark this suit exhausted on opp after the play
+  // True iff `card` came from this opp's `forced` set (rather than the
+  // shared pool). Determines which collection applyOppPlay subtracts
+  // from. Pool cards have fromForced=false.
+  fromForced: boolean;
 }
 
 const universalOppMove = (
@@ -306,7 +322,7 @@ const universalOppMove = (
   if (candidates.length === 0) return true; // infeasible branch
 
   for (const cand of candidates) {
-    const next = applyOppPlay(ctx, seat, cand.card, cand.exhaustNewSuit);
+    const next = applyOppPlay(ctx, seat, cand.card, cand.exhaustNewSuit, cand.fromForced);
     if (!adaptiveSweep(next)) return false;
   }
   return true;
@@ -320,33 +336,53 @@ const computeOppCandidates = (
 ): OppCandidate[] => {
   const opp = ctx.opps.get(seat);
   if (!opp) return [];
-  const oppCards = [...ctx.pool].filter(c => !opp.exhausted.has(suitOf(c)));
-  if (oppCards.length === 0) return [];
+  const poolCards = [...ctx.pool].filter(c => !opp.exhausted.has(suitOf(c)));
+  // Forced cards: defensively filter by exhaustion (a well-formed state
+  // never has a forced card in an exhausted suit, but a malformed input
+  // shouldn't crash the search).
+  const forcedCards = [...opp.forced].filter(c => !opp.exhausted.has(suitOf(c)));
+  if (poolCards.length === 0 && forcedCards.length === 0) return [];
 
   if (ledSuit === null) {
-    // Opp leads. Apply must-lead-trump rule if opp is the
-    // unique potential trump holder.
-    let pool = oppCards;
+    // Opp leads. Apply must-lead-trump rule if opp is the unique
+    // potential trump holder. Forced trump counts as trump-holding.
+    let poolUse = poolCards;
+    let forcedUse = forcedCards;
     if (isLead && oppIsSoleTrumpHolder(ctx, seat)) {
-      pool = pool.filter(c => suitOf(c) === ctx.trumpSuit);
-      if (pool.length === 0) pool = oppCards; // fallback (shouldn't happen)
+      const poolTrump = poolUse.filter(c => suitOf(c) === ctx.trumpSuit);
+      const forcedTrump = forcedUse.filter(c => suitOf(c) === ctx.trumpSuit);
+      if (poolTrump.length + forcedTrump.length > 0) {
+        poolUse = poolTrump;
+        forcedUse = forcedTrump;
+      }
     }
-    return pool.map(card => ({ card, exhaustNewSuit: null }));
+    const out: OppCandidate[] = [];
+    for (const c of poolUse) out.push({ card: c, exhaustNewSuit: null, fromForced: false });
+    for (const c of forcedUse) out.push({ card: c, exhaustNewSuit: null, fromForced: true });
+    return out;
   }
 
-  const inSuit = oppCards.filter(c => suitOf(c) === ledSuit);
-  const offSuit = oppCards.filter(c => suitOf(c) !== ledSuit);
+  const poolInSuit = poolCards.filter(c => suitOf(c) === ledSuit);
+  const poolOffSuit = poolCards.filter(c => suitOf(c) !== ledSuit);
+  const forcedInSuit = forcedCards.filter(c => suitOf(c) === ledSuit);
+  const forcedOffSuit = forcedCards.filter(c => suitOf(c) !== ledSuit);
 
   const out: OppCandidate[] = [];
-  // Case A: opp follows. Possible iff led-suit cards exist and opp
-  // not exhausted in led-suit.
-  if (inSuit.length > 0 && !opp.exhausted.has(ledSuit)) {
-    for (const c of inSuit) out.push({ card: c, exhaustNewSuit: null });
+  // Case A: opp follows led suit. Possible iff led-suit cards exist
+  // (in pool or forced) and opp not exhausted in led-suit.
+  const hasInSuit = poolInSuit.length > 0 || forcedInSuit.length > 0;
+  if (hasInSuit && !opp.exhausted.has(ledSuit)) {
+    for (const c of poolInSuit) out.push({ card: c, exhaustNewSuit: null, fromForced: false });
+    for (const c of forcedInSuit) out.push({ card: c, exhaustNewSuit: null, fromForced: true });
   }
-  // Case B: opp claims void on led-suit. Possible iff other opps
-  // can absorb every led-suit card in the pool.
-  if (canBeVoidIn(ctx, seat, ledSuit, inSuit.length)) {
-    for (const c of offSuit) out.push({ card: c, exhaustNewSuit: ledSuit });
+  // Case B: opp claims void on led-suit. Impossible if opp has any
+  // forced led-suit card (that's a definite hold, no void claim). Also
+  // requires other opps' unknown slots can absorb the pool's led-suit
+  // count — forced cards in other opps don't help, they're already
+  // placed.
+  if (forcedInSuit.length === 0 && canBeVoidIn(ctx, seat, ledSuit, poolInSuit.length)) {
+    for (const c of poolOffSuit) out.push({ card: c, exhaustNewSuit: ledSuit, fromForced: false });
+    for (const c of forcedOffSuit) out.push({ card: c, exhaustNewSuit: ledSuit, fromForced: true });
   }
   return out;
 };
@@ -362,7 +398,9 @@ const canBeVoidIn = (
   for (const [s, o] of ctx.opps) {
     if (s === seat) continue;
     if (o.exhausted.has(suit)) continue;
-    otherCapacity += o.size;
+    // Only unknown slots can absorb pool cards. Forced cards already
+    // occupy slots and cannot be reassigned.
+    otherCapacity += o.size - o.forced.size;
   }
   return otherCapacity >= suitInPoolCount;
 };
@@ -382,6 +420,13 @@ const trumpDominanceShortCircuit = (ctx: CSPCtx): boolean => {
   if (ctx.callerHand.length === 0) return false;
   for (const c of ctx.pool) {
     if (suitOf(c) === ctx.trumpSuit) return false;
+  }
+  // Forced trump in any opp's hand also defeats dominance — that opp
+  // holds trump for sure.
+  for (const o of ctx.opps.values()) {
+    for (const c of o.forced) {
+      if (suitOf(c) === ctx.trumpSuit) return false;
+    }
   }
   // Caller still needs at least one card per remaining round
   // (caller plays once per round). If hand is too short, can't sweep.
@@ -407,20 +452,40 @@ const isFeasible = (ctx: CSPCtx): boolean => {
     if (counts[suit] === 0) continue;
     let cap = 0;
     for (const o of ctx.opps.values()) {
-      if (!o.exhausted.has(suit)) cap += o.size;
+      if (!o.exhausted.has(suit)) cap += o.size - o.forced.size;
     }
     if (cap < counts[suit]) return false;
   }
   return true;
 };
 
+const oppHasForcedTrump = (o: OppConstraint, trumpSuit: Suit): boolean => {
+  for (const c of o.forced) if (suitOf(c) === trumpSuit) return true;
+  return false;
+};
+
+const oppCouldHavePoolTrump = (
+  o: OppConstraint,
+  trumpInPool: boolean,
+  trumpSuit: Suit,
+): boolean => {
+  if (!trumpInPool) return false;
+  if (o.exhausted.has(trumpSuit)) return false;
+  return o.size - o.forced.size > 0;
+};
+
 const oppIsSoleTrumpHolder = (ctx: CSPCtx, seat: Seat): boolean => {
   if (ctx.callerHand.some(c => suitOf(c) === ctx.trumpSuit)) return false;
+  const target = ctx.opps.get(seat);
+  if (!target) return false;
   const trumpInPool = [...ctx.pool].some(c => suitOf(c) === ctx.trumpSuit);
-  if (!trumpInPool) return false;
+  const targetForced = oppHasForcedTrump(target, ctx.trumpSuit);
+  const targetPool = oppCouldHavePoolTrump(target, trumpInPool, ctx.trumpSuit);
+  if (!targetForced && !targetPool) return false;
   for (const [s, o] of ctx.opps) {
     if (s === seat) continue;
-    if (o.size > 0 && !o.exhausted.has(ctx.trumpSuit)) return false;
+    if (oppHasForcedTrump(o, ctx.trumpSuit)) return false;
+    if (oppCouldHavePoolTrump(o, trumpInPool, ctx.trumpSuit)) return false;
   }
   return true;
 };
@@ -431,10 +496,12 @@ const computeTrumpHolders = (ctx: CSPCtx): Set<Seat> => {
     out.add(ctx.callerSeat);
   }
   const trumpInPool = [...ctx.pool].some(c => suitOf(c) === ctx.trumpSuit);
-  if (trumpInPool) {
-    for (const [s, o] of ctx.opps) {
-      if (o.size > 0 && !o.exhausted.has(ctx.trumpSuit)) out.add(s);
+  for (const [s, o] of ctx.opps) {
+    if (oppHasForcedTrump(o, ctx.trumpSuit)) {
+      out.add(s);
+      continue;
     }
+    if (oppCouldHavePoolTrump(o, trumpInPool, ctx.trumpSuit)) out.add(s);
   }
   return out;
 };
@@ -450,15 +517,18 @@ const applyOppPlay = (
   seat: Seat,
   c: CardId,
   exhaustNewSuit: Suit | null,
+  fromForced: boolean,
 ): CSPCtx => {
   const newPool = new Set(ctx.pool);
-  newPool.delete(c);
+  if (!fromForced) newPool.delete(c);
   const newOpps = new Map<Seat, OppConstraint>();
   for (const [s, o] of ctx.opps) {
     if (s === seat) {
       const newExhausted = new Set(o.exhausted);
       if (exhaustNewSuit !== null) newExhausted.add(exhaustNewSuit);
-      newOpps.set(s, { size: o.size - 1, exhausted: newExhausted });
+      const newForced = new Set(o.forced);
+      if (fromForced) newForced.delete(c);
+      newOpps.set(s, { size: o.size - 1, exhausted: newExhausted, forced: newForced });
     } else {
       newOpps.set(s, o);
     }

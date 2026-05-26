@@ -182,25 +182,99 @@ F4-b fix collapsed W4-c, W4-d, W4-e into a single over-relaxed case.
 
 ---
 
-# 3. CSP path doesn't consume W6 (B1 — v2 carry-forward)
-
-## What it is
-
-Already documented in v2 handoff §1. The CSP at
-[engine/caps-csp.ts:67-78](../../engine/caps-csp.ts#L67-L78)
-explicitly skips `info.knownInHand` from the unknown-pool / opp
-constraint model. This causes false-negative obligations for
-external-caps callers when the §T9-lifted folded card is dispositive.
+# 3. CSP path doesn't consume W6 (B1 — v2 carry-forward) — **SHIPPED**
 
 ## Status
 
-Check v2's worktree: if §1 of v2 landed, this is shipped. Otherwise,
-land it per v2's Option A.
+Landed via v2 Option A in a parallel session on 2026-05-26. The CSP
+now consumes `info.knownInHand` end-to-end. Implementation lives in
+[engine/caps-csp.ts](../../engine/caps-csp.ts); tests in
+[engine/__tests__/caps.test.ts](../../engine/__tests__/caps.test.ts)
+under "§T9 lift / W6 — CSP consumes knownInHand".
 
-## Why repeated here
+## What changed
 
-For one-stop reading. If v2 is done, mark this item complete and
-move on.
+- `OppConstraint` gained `forced: Set<CardId>`. `initCtx` populates
+  it from `info.knownInHand` for each non-caller seat, subtracts
+  forced cards from the shared `pool`, and adjusts the consistency
+  invariant to `pool.size === (oppTotal − forcedTotal) + hiddenSlots
+  + foldedUnknown`.
+- `OppCandidate` gained `fromForced: boolean`. `computeOppCandidates`
+  yields candidates from both pool and forced; the void-claim branch
+  (Case B) is rejected when the opp holds any forced led-suit card
+  (you can't claim void in a suit you definitely hold).
+- `applyOppPlay` branches on `fromForced`: forced plays remove from
+  `opp.forced` and leave the pool alone; pool plays remove from
+  `pool`. Hand size decrements either way.
+- `isFeasible` and `canBeVoidIn` use `size − forced.size` (only
+  unknown slots can absorb pool cards).
+- `oppIsSoleTrumpHolder`, `computeTrumpHolders`, and
+  `trumpDominanceShortCircuit` now treat forced trump cards as
+  definitely held — so an opp with a forced trump never gets
+  misclassified as trumpless.
+
+## What was deferred (caveats & follow-ups)
+
+1. **No strict obligation-discriminator test.** The handoff
+   suggested a test where v2 returns `true` while pre-v2 returned
+   `false`. I attempted several constructions but couldn't pin down
+   a self-consistent scenario where the W6 fix *alone* flips the
+   obligation answer — every candidate either swept in both worlds
+   (because south's hand was too dominant) or broke in both worlds
+   (because some other universal opp had a beater that didn't
+   depend on the lifted card's location). The four shipped tests
+   verify the **integration path** (knownInHand built correctly,
+   enumerateWorlds always places the lifted card with the trumper,
+   CSP runs cleanly, `foldedCardLifted` toggle toggles the forced
+   set) but do not encode an obligation flip. If a future session
+   wants the strict discriminator, two ideas worth trying that I
+   ran out of time on:
+   - Build a 3-rounds-remaining state and let the discrimination
+     ride on §T-8 (sole-trump-must-lead-trump) — knowing which seat
+     holds the lifted card changes which seat is the sole trump
+     holder for some intermediate round.
+   - Construct a 2-round state where the universal opp's
+     adversarial heart play in R8 depends on which seat the
+     enumerator places the lifted (trump) card in R7 — i.e., the
+     lifted card's *seat* commits a slot that otherwise would
+     have held a R8-relevant heart-beater.
+
+2. **`worldIsConsistent` vs `enumerateWorlds` divergence (latent,
+   pre-existing).** While writing tests I hit a case where
+   `enumerateWorlds` correctly materialises forced cards in the
+   trumper's hand (via `info.knownInHand`) but `worldIsConsistent`
+   rejects those worlds when the trumper has been deduced exhausted
+   in the lifted card's suit. The exhaustion comes from
+   `absorbExhaustion` having seen the trumper pitch on a led-of-that-suit
+   round *before* §T9 fired — which was a legitimate pitch at the time
+   (trumper truly had no card of that suit then) but is stale after
+   the lift adds one. This is **outside v2/B1 scope** (it's a
+   `buildInfoSet` / spec-interpretation gap, not a CSP gap) but
+   worth flagging:
+   - Spec view: clause 5 exhaustion is computed from observed plays
+     and never retracted, even when a §T9 lift demonstrably adds a
+     card of an exhausted suit.
+   - Fix options:
+     (a) Retract `exhaustedSuits[trumperSeat]` for the lifted card's
+         suit when `foldedCardLifted === true`. Simple, surgical.
+     (b) Track exhaustion with timestamps (round indices) and have
+         `worldIsConsistent` honour only exhaustions that predate
+         the §T9 reveal — over-engineered for the current need.
+     (c) Have `worldIsConsistent` treat forced cards as exempt from
+         exhaustion checks (consistent with the lift being a
+         publicly-observed new addition to the hand). Cleanest;
+         mirrors what `enumerateForTrump` already does on the write
+         side.
+   - This affects test fixtures that combine §T9 lift with prior
+     trumper pitches on the lifted suit. I worked around it in the
+     v2 fixture by constructing rounds where the trumper followed
+     every suit (no pitches → no spurious exhaustion). Worth adding
+     as a new item — call it B9 — in a future revision of this
+     handoff.
+
+3. **`play-engine.ts` §T9 plumbing (B3 / v2 §2) was *not* shipped
+   with B1.** Out of scope for the focused v2-A session; still open
+   per §6 below.
 
 ---
 
@@ -404,7 +478,7 @@ These tests double as regression nets for any future change to
 
 | Item | Estimated effort | Notes |
 |------|------------------|-------|
-| 3 (B1, W6/CSP) | half day | Carry-forward from v2; may already be done. |
+| 3 (B1, W6/CSP) | — | **Shipped** 2026-05-26 (v2-A). See §3 for caveats. |
 | 6 (B3, play-engine plumbing) | quarter day | Carry-forward; one-line + verify. |
 | 7 (A5, PCC guard) | quarter day | Trivial, high clarity benefit. |
 | 1 (A1, open-trump reveal) | half day | New field + curator wiring. Doesn't affect 304dle today. |
@@ -412,9 +486,10 @@ These tests double as regression nets for any future change to
 | 5 (B5/B6, tri-valued) | half day | Mostly diagnostic but unblocks further investigation. |
 | 4 (B2, pigeonhole pre-pass) | 1-2 days | The only item that needs real care. |
 | 8 (A8, closure tests) | half day | Tests only; net new safety. |
+| 9 (exh-stale-after-§T9) | quarter day | New, surfaced by v2-A. See §3 caveat 2 for options. |
 
-Total: 4–5 days of focused work to bring engine fully in line with
-the post-2026-05-26 spec.
+Total remaining: 3.75–4.75 days of focused work to bring engine fully
+in line with the post-2026-05-26 spec.
 
 # Out of scope
 
@@ -434,8 +509,15 @@ the post-2026-05-26 spec.
 - Run `cd frontend && npx vitest run` from the repo root (after
   `export PATH=/home/marc/.nvm/versions/node/v22.16.0/bin:$PATH`).
   Baseline at the time of this handoff: 170 passed + 1 skipped.
+  After v2-A (B1) shipped: **174 passed + 1 skipped** (4 new tests
+  under "§T9 lift / W6 — CSP consumes knownInHand"). Typecheck
+  clean.
 - The user has parallel WIP in `engine/__tests__/caps.test.ts`,
   `engine/bots/b6-dds-mc.ts`, `engine/bots/b7-bridge-derived.ts`,
   `engine/bots/dds-core.ts`, `engine/caps-csp.ts`, and
   `tools/bots/elo/results.json`. None of it interacts with the
   items above (it's bot-tournament work). Don't touch.
+- B9 (exh-stale-after-§T9, new in this revision) is the smallest
+  next bite if you want to clear out the residual from v2-A before
+  moving onto the larger A1/A2 work. Option (c) in §3 caveat 2 is
+  the recommended fix shape.
