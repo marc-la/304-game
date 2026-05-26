@@ -20,7 +20,9 @@ The brief for "what to pick up in a future session". When the work lands, the ha
 
 - [handoffs/bot-hybrid-handoff.md](handoffs/bot-hybrid-handoff.md) — B6o/B7o hybrid bots, gated on a B6/B7 objective refactor (tricks → points).
 - [handoffs/info-set-completeness-v2-handoff.md](handoffs/info-set-completeness-v2-handoff.md) — `knownInHand` doesn't propagate through the CSP path (W6). Carry-forward from the 2026-05-26 v1 audit.
-- [handoffs/deductions-audit.md](handoffs/deductions-audit.md) — non-bug deduction gaps deferred from the v1 audit.
+- [handoffs/info-set-completeness-v3-handoff.md](handoffs/info-set-completeness-v3-handoff.md) — engine work to bring the implementation up to the 2026-05-26 spec audit (A-class spec landed; B-class engine queued).
+- [handoffs/info-set-followup-investigations.md](handoffs/info-set-followup-investigations.md) — deeper-investigation tasks queued from the 2026-05-26 spec audit (budget benchmark, Long-2011 mapping, §T-8, Claim Balance, Absolute Hand).
+- [handoffs/deductions-audit.md](handoffs/deductions-audit.md) — non-bug deduction gaps deferred from the v1 audit; refreshed 2026-05-26 with Class-C deferrals.
 
 ## Explainers (curated)
 

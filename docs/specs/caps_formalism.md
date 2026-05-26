@@ -50,18 +50,32 @@ union of:
    plays. `V` always knows what they themselves played.
 3. **Public face-up history.** Every face-up card played by anyone in
    any completed round and the in-progress round.
-4. **Public face-down revelations.** Face-down trump cards that were
-   flipped during round resolution (per [play_invariants.md](play_invariants.md) §T9).
-   These become public at the moment of reveal. **In addition: when
-   §T9 fires in closed trump and the folded trump card is still on
-   the table, the folded card is "shown to all players, then picked
-   up and added to the Trumper's hand" (rules.md). Its identity
-   becomes public from that moment onward — for *every* viewer —
-   even though the card subsequently lives inside the trumper's
-   hand.** Open-trump-from-start does *not* trigger this clause: the
-   trumper reveals "any card of the Trump suit (not necessarily the
-   originally folded one)" per rules.md, so only the trump *suit*
-   becomes public, not the folded card's identity.
+4. **Public revelations during play.** Three distinct events publish a
+   card's identity to every viewer:
+   - **(a) §T9 trump reveal.** Face-down trump cards flipped during
+     round resolution (per [play_invariants.md](play_invariants.md) §T9). Become public at
+     round-resolution time — specifically, at the moment the viewer
+     observes the §T9 event in their event log (see §3.5 I-C2).
+   - **(b) §T9 folded-card lift.** When §T9 fires in closed trump and
+     the folded trump card is still on the table, the folded card is
+     "shown to all players, then picked up and added to the Trumper's
+     hand" (rules.md "Resolving Folded Cards"). Its identity is in
+     `I_V` for every viewer from the moment of lift, even though the
+     card subsequently lives inside the trumper's hand.
+   - **(c) Open-trump pre-play reveal.** In open-trump games where the
+     trumper does **not** have R1 priority, the trumper reveals one
+     trump-suit card to all players before R1 begins (rules.md "Open
+     Trump Games"). The revealed card may or may not be the
+     originally-folded card — the trumper chooses which trump-suit
+     card to show. Its identity is in `I_V` for every viewer from the
+     moment of reveal, and persists as a clause-4 fact until the card
+     is played.
+
+   Open-trump-from-start with **trumper-R1-priority** triggers neither
+   (b) nor (c): the trumper leads with a trump-suit card on R1 as a
+   normal face-up play (clause 3). The trump *suit* is established by
+   these mechanics; specific card identities only become public via
+   (a), (b), (c), or face-up play (clause 3).
 5. **Public suit-exhaustion.** For every completed round whose led
    suit was `s`, every seat `Q` whose play to that round was off-suit
    (face-up non-`s` card, or any face-down card) is publicly known to
@@ -88,14 +102,41 @@ excludes clause 6. The same predicate evaluated against this smaller
 information set produces the rules' "more lenient" external-caps
 standard automatically — no special-casing.
 
+## 3.5 Information closure
+
+These properties characterise how `I_V` evolves over play. They are
+the information-set analogue of the engine state invariants in
+[play_invariants.md](play_invariants.md) §C1/C2: they specify the contract
+`buildInfoSet` must satisfy across state transitions.
+
+| Property | Statement |
+|----------|-----------|
+| **I-C1 — Persistence** | For every state transition `S → S'` along the actual event sequence, every fact in `I_V(S)` either remains in `I_V(S')` or is replaced by a refinement induced by an observation event. Information once added is never silently removed. |
+| **I-C2 — Observation discipline** | Every difference between `I_V(S)` and `I_V(S')` is justified by exactly one observation event in §8.1. No information enters or leaves `I_V` without an observation event. The viewer's event log — not the underlying engine state — determines what is currently in `I_V`. |
+| **I-C3 — Monotone components** | `knownPlayed`, `exhaustedSuits[Q]` for every `Q`, and the *set of hidden slots* are all monotone non-decreasing under transitions: a hidden slot once created remains in `I_V` until its identity is publicly revealed (clause 4) or forced by W1 conservation. |
+| **I-C4 — knownInHand evolution** | `knownInHand[Q]` grows on clause-4-firing events (§T9 lift, open-trump pre-play reveal) and shrinks only when a card it contains is played. It is *not* globally monotone, but it is monotone-modulo-played-cards. |
+| **I-C5 — World-set monotonicity** | Modulo card-played transitions, observation events can only narrow `Worlds(I_V, S)`: if event `e` adds information to `I_V`, then `Worlds(I_V, S') ⊆ Worlds(I_V, S)` after factoring out the freshly-played card. Observation events never expand the world set. |
+
+These properties enable structural tests: a harness can verify that
+the engine's incremental `applyPlay` produces info-sets consistent
+with re-deriving `buildInfoSet` from scratch on the post-play state,
+that hidden-slot count only grows on face-down plays and shrinks only
+on §T9 reveals, and that `Worlds(I_V, S)` cardinality is monotone
+non-increasing along the actual event sequence.
+
 ## 4. Worlds
 
 A **world** `W` is a hypothesis about every card location currently
 hidden from `V`. A consistent world `W ∈ Worlds(I_V, S)` assigns:
 
-- An identity to every card in every other seat's hand,
-- An identity to every face-down completed-round entry whose value
-  `V` does not directly know (clauses 4 and 6 in §3 fix the rest).
+- An identity to every card in every other (non-PCC-out) seat's
+  hand,
+- An identity to every face-down round entry — completed or
+  in-progress — whose value `V` does not directly know (clauses 4
+  and 6 in §3 fix the rest),
+- An identity to the folded trump card when one is still on the
+  table and `V` does not know it (i.e., `V` is a non-trumper in
+  closed-trump pre-§T9).
 
 `W` is consistent with `I_V(S)` iff:
 
@@ -104,12 +145,50 @@ hidden from `V`. A consistent world `W ∈ Worlds(I_V, S)` assigns:
 | W1 | Card conservation. The multiset of all cards across all locations in `W` equals `pack`. No card appears in two places. |
 | W2 | Hand sizes. For every seat `Q ≠ V`, `len(W.hand[Q])` equals the actual hand size implied by `S` (rounds played, played-this-round flag). |
 | W3 | Suit-exhaustion. For every `(Q, s)` with `Q` publicly known to be out of `s` (clause 5), no card of suit `s` appears in `W.hand[Q]`. |
-| W4 | Hidden minus suit. For every face-down **completed-round** entry whose identity is hidden from `V`, the assigned card's suit is neither the led suit of that round nor the trump suit (the player couldn't follow, and a trump fold would have been revealed at round end — see [play_invariants.md](play_invariants.md) §S7). **For face-down entries in the *in-progress* round, the §T9 reveal has not yet fired; the slot's only constraint is `forbiddenSuits = {ledSuit}` — a trump cut is still possible.** |
+| W4 | Hidden face-down suit constraints. See the case table immediately below. The slot's `forbiddenSuits` depends on the slot's seat, the viewer's observation of round resolution, and the folded trump card's status at the time of play. |
 | W5 | Identity agreement. Cards `V` already knows the identity of (own hand, own plays, public face-ups, public reveals, trumper observations) appear in `W` exactly where `V` knows them to be. |
-| W6 | Publicly-known hand membership. Cards whose identity was publicly revealed and now live in seat `Q`'s hand (today the only source is the §T9 lift, per clause 4) appear in `W.hand[Q]` exactly. |
+| W6 | Publicly-known hand membership. For each seat `Q`, every card in `knownInHand[Q]` appears in `W.hand[Q]` exactly. `knownInHand[Q]` is populated from clause 4(b) §T9-lift cards in the trumper's hand and clause 4(c) open-trump pre-play revealed cards in the trumper's hand (until played). Future revelation channels feed the same field through the same interface. |
 
-`Worlds(I_V, S)` is the set of all `W` satisfying W1–W5. It is finite
-and, in practice, small once mid-game suit-exhaustion has accumulated.
+**W4 case table.** For every face-down round entry whose identity is
+hidden from `V`, the assigned card's suit obeys one of the following
+constraint sets — selected by the slot's seat, whether `V` has
+observed round resolution for that round, and the folded trump
+card's status at the time of the face-down play:
+
+| # | Slot seat | `V` observed round resolution? | Folded trump at play time | Allowed suits |
+|---|-----------|-------------------------------|---------------------------|---------------|
+| W4-a | Non-trumper | Yes (completed round) | n/a | Neither led-suit (§T-3 forced face-down on non-follow) nor trump-suit (any face-down trump would have been §T9-revealed at round resolution). |
+| W4-b | Non-trumper | No (in-progress round) | n/a | Not led-suit. Trump-suit allowed — a face-down cut is still possible until §T9 fires. |
+| W4-c | Trumper | Yes (completed round) | n/a | Neither led-suit nor trump-suit. |
+| W4-d | Trumper | No (in-progress) | Folded card still on the table at the time of the trumper's face-down play | Neither led-suit (§T-3) nor trump-suit (§T-4: the trumper cannot fold an in-hand trump card; the folded trump card is on the table — not in hand — and cannot itself be the face-down card in this subcase since it is still on the table). The face-down is a non-trump-non-led minus from the trumper's hand. |
+| W4-e | Trumper | No (in-progress) | Folded card off the table (the face-down play *is* the folded trump card itself) | Not led-suit. Trump-suit allowed — and forced to the folded trump card's identity by W1 conservation (it is the only unaccounted-for trump-suit card whose location is the in-progress slot). |
+
+**On viewer-observation discipline.** "Has `V` observed round
+resolution" is a property of `V`'s event log (§3.5 I-C2), not of
+the underlying engine state. A face-down round entry remains an
+in-progress hidden slot for any viewer who has not yet observed the
+§T9 event for that round, even if the engine has internally
+advanced. This matters whenever a UI or runtime layer introduces an
+asynchronous delay between the round filling and the round
+resolving — within that window, the viewer's `I_V` must still
+reflect the pre-§T9 constraints. Caps obligation against an
+in-progress info-set is therefore strictly weaker than caps
+obligation against the corresponding post-resolve info-set: the
+trumper "waiting on a face-down to confirm caps" technically has
+not yet observed the information that would obligate them.
+
+**On hidden-slot persistence.** Once created, a hidden slot remains
+in `I_V` for every subsequent state along the actual event sequence
+(§3.5 I-C3). The slot is removed only when (i) the corresponding
+card is publicly revealed (clause 4), or (ii) the card identity is
+forced by W1 conservation (all other unknown identities have been
+accounted for elsewhere). Hidden-slot count grows on face-down
+plays and shrinks on §T9 reveals; the *constraint* on the slot
+narrows as adjacent identities are pinned down.
+
+`Worlds(I_V, S)` is the set of all `W` satisfying W1–W6 (with W4
+applied per the case table above). It is finite and, in practice,
+small once mid-game suit-exhaustion has accumulated.
 
 The **actual world** is always a member of `Worlds(I_V, S)`. It is one
 world among many.
@@ -194,9 +273,11 @@ mechanic:
 | **External Caps** | `V ∉ Team(Trumper)`; `I_V` excludes clause 6 (no folded-card observations). |
 | **Absolute Hand** | Caps obligation evaluated at `S` = the state immediately after trump selection, before round 1 leads. The caller's information is restricted to their hand and the public bidding history (no play history yet). |
 | **Claim Balance** | Replace the goal "Team(V) wins every remaining round" with "Team(V)'s final point total ≥ threshold" where threshold is the bid (for trumping team) or `304 − bid + 1` (for external). World enumeration is identical. |
+| **PCC** | *Not applicable.* PCC's stake is determined purely by whether the trumper wins all 8 rounds — Caps, External Caps, and Claim Balance mechanics do not apply (rules.md §C-10). The formalism does not define `I_V(S)`, `Worlds(I_V, S)`, or the obligation predicate for PCC games. Engine callers must guard against invoking caps mechanics in PCC states. The partner-out seat's frozen 8-card hand is private to that seat and outside the scope of this document. |
 
 Absolute Hand is therefore the round-1 case of caps; Claim Balance is
 caps with a different terminal predicate. One engine, four mechanics.
+PCC is the carve-out.
 
 ## 7. The caps call
 
@@ -254,6 +335,18 @@ the policy. Three policies are supported:
 Lenient is the default for the rules engine. Strict is available for
 analytical modes. Unified-time is for live UI where the hard constraint
 is human reaction time.
+
+**On the strictness of the obligation predicate.** The obligation
+predicate (§5) is computed at the *strict first-opportunity*
+granularity per the information sets defined in §3 — including
+mid-round states where some information events have fired but
+others have not. Any slack — UI grace periods, mid-round call
+windows, human-table tolerance for "I haven't moved my card yet" —
+is implemented at the timing-policy layer (this section) or
+higher. The predicate is invariant under such layering: an
+implementation that conflates predicate-level strictness with
+policy-level slack will under-recognise obligations in the cases
+described in W4-d / W4-e and §3 clause 4.
 
 ### 8.4 Outcome mapping
 
@@ -355,3 +448,54 @@ the two and applies policy.
 - Caching strategies beyond the §9 sketch.
 - Heuristics for suggesting caps to a human player. The predicate is
   the source of truth; UX hints are downstream.
+- **PCC games.** Caps and External Caps do not apply to PCC
+  (rules.md §C-10). See §6 specialisations table.
+- **Bidding-phase signals.** No bidding-phase observation provides
+  a certainty-grade constraint on opponent hand contents at
+  play-phase states. The deterministic facts established during
+  bidding (bid values, bidder identities, trump suit, trumper seat,
+  folded trump card location) are either already in the play-phase
+  state (`trump_suit`, `trumper_seat`, `folded_trump_card`) or
+  carry no per-card implication. The low-points safeguards —
+  redeal-eligibility (<15 points on 4 cards) and 8-card pass-on
+  (<25 points on 8 cards) — are *optional* invocations: a player
+  below the threshold may legitimately choose to continue playing.
+  Observing that a safeguard was not invoked therefore does not
+  constrain the would-be invoker's hand contents in every
+  consistent world. Probabilistic signals (bid level → hand
+  strength, partnering → distributed strength, trump-suit choice →
+  the trumper's 4-card concentration) are excluded from `I_V(S)`
+  by §5's adversarial-opponent discipline: `τ` ranges over every
+  legal continuation, not over continuations consistent with prior
+  bidding behaviour.
+- **Forced-play retroactive deductions.** Inferences of the form
+  "seat `X` did not lead suit `s` despite priority and a rule that
+  would have forced it" (notably §T-8 Exhausted Trumps) are not
+  captured by `Worlds(I_V, S)` as defined. The world enumerator
+  constrains hand contents from observed face-up plays,
+  suit-exhaustion events, and §T9 reveals — not from the absence
+  of plays the rules would have forced. Adding this would require
+  modelling the legal-plays predicate as a per-world consistency
+  constraint. See [handoffs/deductions-audit.md](../handoffs/deductions-audit.md) and the
+  followup-investigations handoff.
+- **Higher-order epistemic reasoning.** "V learns about W's
+  beliefs from W's non-call / false-call" is out of scope. Caps
+  requires certainty deductions about hidden state, not
+  inferences about other players' mental models. Specifically: a
+  false Spoilt Trumps call by W and the non-occurrence of a caps
+  call by V are not modelled.
+- **Memory limits.** The formalism assumes perfect recall of every
+  observation event in `V`'s log. Real players forget. rules.md
+  endorses this idealisation ("players who fail to remember have
+  only themselves to blame"). Engine analysis credits the
+  predicate; human play is bounded by memory and is the player's
+  own responsibility.
+- **Cross-game shuffle correlations.** rules.md "Dealing" notes
+  minimal shuffling between games to preserve some prior-deal
+  order. Inter-game correlations are probabilistic and outside
+  the single-game obligation predicate.
+- **Deliberate-throw concealment** (rules.md §C-7). The check is a
+  retrospective forensic predicate at scrutiny, not a play-time
+  deduction. The §5 adversarial quantifier already covers the
+  certainty side; the throw-detection side is a separate
+  predicate.

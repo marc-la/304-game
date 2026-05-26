@@ -1,8 +1,12 @@
 ---
 title: 304 — Deductions Audit
-status: OPEN, deferred from the 2026-05-26 info-set investigation
+status: OPEN; refreshed 2026-05-26 to add §5 (Class-C deferrals from the spec audit)
 audience: future Claude session, or a returning human reader
-sibling docs: ../specs/caps_formalism.md (the spec); v1 audit lives in git log only (commit adbb02a)
+sibling docs:
+  - ../specs/caps_formalism.md (the spec — updated 2026-05-26 with A-class refinements)
+  - info-set-completeness-v3-handoff.md (B-class engine work that came out of the 2026-05-26 spec audit)
+  - info-set-followup-investigations.md (deep-dive investigations queued post-2026-05-26)
+  - v1 audit (commit adbb02a) lives in git log only
 ---
 
 # Why this file exists
@@ -194,7 +198,7 @@ If a future session escalates this audit:
 # 4. Out of scope for the 2026-05-26 bug-fix session
 
 This file documents observations. It does not propose code changes.
-The 2026-05-26 session's deliverables were:
+The 2026-05-26 v1 session's deliverables were:
 
 - F1 — UI linger / engine divergence fixed.
 - F2 — Folded-card §T9 lift identity (W6) propagated to non-trumper
@@ -204,6 +208,74 @@ The 2026-05-26 session's deliverables were:
   pre-lift knowledge.
 - This deductions audit (F5) — the parts that aren't bugs.
 
-A separate session is welcome to take this file as input and produce
-a follow-up implementation plan. Tag it as `info-set-completeness-v2`
-or similar so it's clearly downstream of the v1 work.
+# 5. Class-C deferrals carried forward from the 2026-05-26 spec audit
+
+The 2026-05-26 spec audit (separate from this file's v1 deferral)
+turned up several additional out-of-scope items beyond §T-8. They
+are kept here so the deferred-deductions thread stays unified.
+
+Each item is documented as "deferred under the formalism's certainty
+discipline." None is a bug. Each could be picked up if/when the
+table's discipline shifts.
+
+## 5.1 §T-8 retroactive deduction (the original)
+
+Documented in §2.1 above. **Status unchanged: deferred.** This is the
+priority item if/when a session escalates: it is the only forced-play
+absence with deductive content beyond W3.
+
+## 5.2 Spoilt Trumps false-call as evidence
+
+A false Spoilt Trumps call by `W` reveals that `W` believed the
+opposition held zero trump from the deal. Other players gain a
+higher-order epistemic fact: `W`'s tracking model. Not a
+certainty-grade constraint on hidden state. **Deferred** under §5's
+adversarial-`τ` discipline.
+
+## 5.3 Caps-call non-occurrence as evidence
+
+If `V` (trumper) has not called caps by round R, opp observers can
+infer "V doesn't yet believe V is caps-obligated from V's info-set."
+Probabilistic; depends on assumptions about V's competence and
+intent. Not certainty-grade. **Deferred.**
+
+## 5.4 Deliberate-throw concealment
+
+rules.md §C-7 punishes deliberately throwing a round to conceal
+caps. This is a scrutiny-time forensic predicate ("did V have a
+winning move at state S?"), not a play-time deduction. The §5
+adversarial-`τ` quantifier already covers the certainty side. The
+throw-detection predicate is a separate scrutiny check; **out of
+scope** for `I_V`.
+
+## 5.5 Memory limits
+
+The formalism assumes perfect recall. Real players forget.
+rules.md endorses this idealisation. **Out of scope** — the
+predicate is the source of truth; human memory is the player's
+responsibility.
+
+## 5.6 Cross-game shuffle correlations
+
+Minimal shuffling between games preserves some prior-deal order.
+Inter-game correlations are probabilistic and dependent on
+shuffling discipline. **Out of scope** for the single-game
+obligation predicate.
+
+These deferrals are now mirrored in [../specs/caps_formalism.md](../specs/caps_formalism.md) §12
+as explicit non-goals, so the spec itself is the source of truth
+for "what we deliberately don't model." This file remains the
+working notebook for if/when any of them gets unblocked.
+
+# 6. If you escalate
+
+A future session that picks up this file should:
+
+- For §T-8 specifically: take [info-set-followup-investigations.md](info-set-followup-investigations.md)
+  as input (it has the Long-2011 mapping, the worked-puzzle
+  benchmark, and the broader literature search queued up).
+- For 5.2–5.6: each one needs its own framing decision before any
+  implementation work. Treat them as design discussions, not
+  bug-fixes.
+- Tag any new handoff as `info-set-completeness-vN` so it threads
+  cleanly with the v1/v2/v3 history.
