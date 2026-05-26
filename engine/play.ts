@@ -4,7 +4,7 @@
 import type { CardId, Suit } from './card';
 import { powerOf, suitOf } from './card';
 import type { Seat } from './seating';
-import { nextSeat } from './seating';
+import { nextSeat, SEATS_BY_INDEX } from './seating';
 
 export interface LegalPlaysArgs {
   hand: ReadonlyArray<CardId>;
@@ -13,20 +13,34 @@ export interface LegalPlaysArgs {
   isLead: boolean;
   seatsWithTrumps: ReadonlySet<Seat>;
   seat: Seat;
+  // Optional R1-trumper-lead context. When all four are supplied the
+  // function enforces §T-6 (closed R1: trumper with priority cannot
+  // lead trump) and §T-7 (open R1: trumper with priority must lead
+  // trump if they hold any, non-PCC). Older callers that omit them
+  // get the previous follow-suit + exhausted-trumps behaviour only.
+  roundNumber?: number;
+  trumperSeat?: Seat | null;
+  isOpen?: boolean;
+  isPcc?: boolean;
 }
 
 // Cards `seat` can legally play given the current round state.
-// Enforces follow-suit and the exhausted-trumps lead rule.
-// Closed-trump face-down semantics are intentionally not modelled here:
-// caps cards play face-up, and 304dle v1 uses Open Trump throughout.
+// Enforces follow-suit, exhausted-trumps lead, and (when the optional
+// context fields are supplied) the round-1 trumper lead constraints
+// §T-1 / §T-6 (closed) and §T-7 (open).
+// Face-down vs face-up choice is decided at the runtime layer
+// (apps/304dle/runtime.ts) and validated against §S7 there.
 export const legalPlays = (args: LegalPlaysArgs): CardId[] => {
-  const { hand, ledSuit, trumpSuit, isLead, seatsWithTrumps, seat } = args;
+  const {
+    hand, ledSuit, trumpSuit, isLead, seatsWithTrumps, seat,
+    roundNumber, trumperSeat, isOpen, isPcc,
+  } = args;
   if (!isLead) {
     const suited = hand.filter(c => suitOf(c) === ledSuit);
     return suited.length > 0 ? suited : [...hand];
   }
   // Leading: if this seat is the only seat with any remaining trump
-  // and they hold any, they must lead trump.
+  // and they hold any, they must lead trump (§T-8).
   if (
     trumpSuit !== null &&
     seatsWithTrumps.size === 1 &&
@@ -34,6 +48,30 @@ export const legalPlays = (args: LegalPlaysArgs): CardId[] => {
     hand.some(c => suitOf(c) === trumpSuit)
   ) {
     return hand.filter(c => suitOf(c) === trumpSuit);
+  }
+  // R1 trumper-with-priority lead constraints, if context supplied:
+  //   §T-6 closed: cannot lead trump.
+  //   §T-7 open non-PCC: must lead trump if any held.
+  const isTrumperOnR1Lead =
+    roundNumber === 1 &&
+    trumperSeat !== undefined && trumperSeat !== null &&
+    seat === trumperSeat &&
+    trumpSuit !== null;
+  if (isTrumperOnR1Lead) {
+    if (isOpen === false) {
+      const nonTrump = hand.filter(c => suitOf(c) !== trumpSuit);
+      // If the trumper has only trumps, no legal closed R1 lead exists.
+      // Returning an empty set surfaces the contradiction to callers
+      // (it's the same condition that triggers ClosedTrumpDealError in
+      // the closed-trump bot).
+      if (nonTrump.length > 0) return nonTrump;
+      return [];
+    }
+    if (isOpen === true && isPcc !== true) {
+      const inTrump = hand.filter(c => suitOf(c) === trumpSuit);
+      if (inTrump.length > 0) return inTrump;
+      // No trumps held — open trumper may lead any card.
+    }
   }
   return [...hand];
 };
@@ -88,13 +126,15 @@ export const roundPoints = (
 ): number => plays.reduce((sum, [, c]) => sum + pointsOf(c), 0);
 
 export const seatsHoldingTrump = (
-  hands: ReadonlyMap<Seat, ReadonlyArray<CardId>>,
+  hands: ReadonlyArray<ReadonlyArray<CardId>>,
   trumpSuit: Suit | null,
 ): Set<Seat> => {
   const out = new Set<Seat>();
   if (trumpSuit === null) return out;
-  for (const [seat, hand] of hands.entries()) {
-    if (hand.some(c => suitOf(c) === trumpSuit)) out.add(seat);
+  for (let i = 0; i < 4; i++) {
+    const hand = hands[i];
+    if (hand === undefined) continue;
+    if (hand.some(c => suitOf(c) === trumpSuit)) out.add(SEATS_BY_INDEX[i]);
   }
   return out;
 };

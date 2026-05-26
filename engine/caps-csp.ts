@@ -31,7 +31,7 @@ import { suitOf, PACK } from './card';
 import type { Seat } from './seating';
 import { teamOf, ANTICLOCKWISE } from './seating';
 import { roundTurnOrder, roundWinner, legalPlays } from './play';
-import type { EngineGameState } from './state';
+import type { EngineGameState, RoundEntry } from './state';
 import { buildInfoSet } from './info';
 
 interface OppConstraint {
@@ -64,9 +64,6 @@ const initCtx = (state: EngineGameState, callerSeat: Seat): CSPCtx | null => {
 
   const known = new Set<CardId>([...callerHand, ...info.knownPlayed]);
   if (info.knownFoldedTrumpCard !== null) known.add(info.knownFoldedTrumpCard);
-  // The folded trump card, if face-down on the table and unknown to
-  // the viewer, is part of the pool — but for Open Trump it's
-  // either revealed or in the trumper's hand.
 
   const pool = new Set<CardId>();
   for (const c of PACK) if (!known.has(c)) pool.add(c);
@@ -83,11 +80,40 @@ const initCtx = (state: EngineGameState, callerSeat: Seat): CSPCtx | null => {
     });
     oppTotal += size;
   }
-  if (oppTotal !== pool.size) return null;
 
+  // Hidden slots (unrevealed face-down opp minuses in completed and
+  // in-progress rounds) and the folded trump card (when face-down on
+  // the table and unknown to the viewer) are NOT in any current opp
+  // hand but ARE in the pool from the viewer's perspective. Account
+  // for them so the consistency check passes:
+  //   pool.size === oppTotal + hiddenSlotCount + foldedUnknownCount
+  // The CSP search treats these "phantom" pool cards as if any opp
+  // could play them, which is a sound over-approximation (more
+  // adversarial opp options → conservative obligation answer).
+  const hiddenSlotCount = info.hiddenSlots.length;
+  const foldedUnknownCount =
+    info.foldedTrumpOnTable && info.knownFoldedTrumpCard === null ? 1 : 0;
+  if (pool.size !== oppTotal + hiddenSlotCount + foldedUnknownCount) {
+    return null;
+  }
+
+  // In-progress entries: every entry must be present (turn-order in
+  // the search depends on inProgress.length). If any in-progress entry
+  // is face-down and not knowable by the caller, abandon — the CSP
+  // would otherwise have to use the ground-truth identity (leaking
+  // information that doesn't belong in the caller's info-set, possibly
+  // producing false-positive obligations). The runtime's trackCaps
+  // hook will retry at end-of-round when the round is empty and any
+  // §T9 reveals have been applied; the cached stamp covers any earlier
+  // moment via the lenient timing policy.
   const inProgress: Array<[Seat, CardId]> = [];
   for (const e of state.play.currentRound) {
-    if (e.card !== null) inProgress.push([e.seat, e.card]);
+    if (e.card === null) continue;
+    if (entryKnowableToCaller(e, callerSeat, info.isViewerTrumper)) {
+      inProgress.push([e.seat, e.card]);
+    } else {
+      return null;
+    }
   }
 
   return {
@@ -102,6 +128,20 @@ const initCtx = (state: EngineGameState, callerSeat: Seat): CSPCtx | null => {
     pccPartnerOut: state.pccPartnerOut,
     budget: { remaining: DEFAULT_NODE_BUDGET, exhausted: false },
   };
+};
+
+const entryKnowableToCaller = (
+  e: RoundEntry,
+  viewer: Seat,
+  viewerIsTrumper: boolean,
+): boolean => {
+  if (!e.faceDown) return e.card !== null;
+  if (e.revealed) return e.card !== null;
+  if (e.seat === viewer) return e.card !== null;
+  // Mid-round, even the trumper has not yet observed face-downs
+  // (clause 6 fires at round resolution). Suppress.
+  void viewerIsTrumper;
+  return false;
 };
 
 // Public entry point — does south's team have an adaptive winning

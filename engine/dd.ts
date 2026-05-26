@@ -12,7 +12,7 @@ import type { CardId, Suit } from './card';
 import { suitOf } from './card';
 import { legalPlays, roundPoints, roundTurnOrder, roundWinner, seatsHoldingTrump } from './play';
 import type { Seat, Team } from './seating';
-import { teamOf } from './seating';
+import { SEAT_INDEX, SEATS_BY_INDEX, teamOf } from './seating';
 import type { World } from './info';
 
 export interface InProgressEntry {
@@ -34,9 +34,26 @@ export interface OrderSweepsArgs {
   roundsRemaining: number;
 }
 
+const worldHandsToMap = (
+  hands: ReadonlyArray<ReadonlyArray<CardId>>,
+): Map<Seat, CardId[]> => {
+  const m = new Map<Seat, CardId[]>();
+  for (let i = 0; i < 4; i++) {
+    m.set(SEATS_BY_INDEX[i], [...(hands[i] ?? [])]);
+  }
+  return m;
+};
+
+const mapToHandsArr = (
+  hands: ReadonlyMap<Seat, ReadonlyArray<CardId>>,
+): ReadonlyArray<ReadonlyArray<CardId>> => {
+  const arr: ReadonlyArray<CardId>[] = [[], [], [], []];
+  for (const [s, cs] of hands) arr[SEAT_INDEX[s]] = cs;
+  return arr;
+};
+
 export const orderSweepsWorld = (args: OrderSweepsArgs): boolean => {
-  const simHands = new Map<Seat, CardId[]>();
-  for (const [seat, cards] of args.world.hands) simHands.set(seat, [...cards]);
+  const simHands = worldHandsToMap(args.world.hands);
   const inProgress: Array<[Seat, CardId]> =
     args.snapshot.entries.map(e => [e.seat, e.card]);
   return solveCaps({
@@ -54,8 +71,7 @@ export const orderSweepsWorld = (args: OrderSweepsArgs): boolean => {
 };
 
 export const orderMinPointsInWorld = (args: OrderSweepsArgs): number => {
-  const simHands = new Map<Seat, CardId[]>();
-  for (const [seat, cards] of args.world.hands) simHands.set(seat, [...cards]);
+  const simHands = worldHandsToMap(args.world.hands);
   const inProgress: Array<[Seat, CardId]> =
     args.snapshot.entries.map(e => [e.seat, e.card]);
   return solveMinPoints({
@@ -130,7 +146,7 @@ const solveCaps = (ctx: SolveCtx): boolean => {
   const ledSuit: Suit | null =
     ctx.inProgress.length > 0 ? suitOf(ctx.inProgress[0][1]) : null;
   const isLead = ctx.inProgress.length === 0;
-  const trumpHolders = seatsHoldingTrump(ctx.simHands, ctx.trumpSuit);
+  const trumpHolders = seatsHoldingTrump(mapToHandsArr(ctx.simHands), ctx.trumpSuit);
 
   if (nextSeatToPlay === ctx.callerSeat) {
     if (ctx.callerIndex >= ctx.callerOrder.length) return false;
@@ -200,7 +216,7 @@ const solveMinPoints = (ctx: SolveCtx): number => {
   const ledSuit: Suit | null =
     ctx.inProgress.length > 0 ? suitOf(ctx.inProgress[0][1]) : null;
   const isLead = ctx.inProgress.length === 0;
-  const trumpHolders = seatsHoldingTrump(ctx.simHands, ctx.trumpSuit);
+  const trumpHolders = seatsHoldingTrump(mapToHandsArr(ctx.simHands), ctx.trumpSuit);
 
   if (nextSeatToPlay === ctx.callerSeat) {
     if (ctx.callerIndex >= ctx.callerOrder.length) return 0;

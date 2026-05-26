@@ -20,18 +20,19 @@ import type { CardId, Suit } from '@engine/card';
 import { orderSweepsWorld } from '@engine/dd';
 import type { World } from '@engine/info';
 import type { Seat } from '@engine/seating';
+import { SEAT_INDEX } from '@engine/seating';
 import type { Layer2Result } from '../types';
 
 const dealToWorld = (
   hands: Record<Seat, CardId[]>,
   trumpSuit: Suit,
 ): World => {
-  const handsMap = new Map<Seat, ReadonlyArray<CardId>>();
+  const handsArr: ReadonlyArray<CardId>[] = [[], [], [], []];
   for (const seat of ['north', 'west', 'south', 'east'] as Seat[]) {
-    handsMap.set(seat, [...hands[seat]].sort());
+    handsArr[SEAT_INDEX[seat]] = [...hands[seat]].sort();
   }
   return {
-    hands: handsMap,
+    hands: handsArr,
     trumpSuit,
     foldedTrumpCard: null,
     hiddenSlotAssignments: new Map(),

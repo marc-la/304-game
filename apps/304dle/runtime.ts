@@ -14,9 +14,15 @@
 
 import type { CardId, Suit } from '@engine/card';
 import { suitOf } from '@engine/card';
-import { roundTurnOrder, roundWinner, roundPoints } from '@engine/play';
+import {
+  legalPlays,
+  roundTurnOrder,
+  roundWinner,
+  roundPoints,
+  seatsHoldingTrump,
+} from '@engine/play';
 import type { Seat, Team } from '@engine/seating';
-import { teamOf } from '@engine/seating';
+import { SEAT_INDEX, teamOf } from '@engine/seating';
 import type {
   CapsObligation,
   CompletedRound,
@@ -100,10 +106,10 @@ export const newRuntime = (opts: RuntimeOptions): Runtime => {
 };
 
 export const toEngineState = (rt: Runtime): EngineGameState => {
-  const handsMap = new Map<Seat, ReadonlyArray<CardId>>();
-  for (const seat of SEATS_ALL) handsMap.set(seat, rt.hands[seat]);
+  const handsArr: ReadonlyArray<CardId>[] = [[], [], [], []];
+  for (const seat of SEATS_ALL) handsArr[SEAT_INDEX[seat]] = rt.hands[seat];
   return {
-    hands: handsMap,
+    hands: handsArr,
     trump: {
       trumperSeat: rt.trump.trumperSeat,
       trumpSuit: rt.trump.trumpSuit,
@@ -164,6 +170,18 @@ export const applyPlay = (
       throw new Error(`Card ${card} not in ${seat}'s hand`);
     }
     hand.splice(idx, 1);
+    // §S6/§S10: once the trumper plays the (formerly folded) trump
+    // card from hand, the trump-card slot is no longer "in hand". Clear
+    // it so the state remains a faithful descriptor of where the card
+    // lives.
+    if (
+      seat === rt.trump.trumperSeat &&
+      rt.trump.trumpCardInHand &&
+      rt.trump.trumpCard === card
+    ) {
+      rt.trump.trumpCard = null;
+      rt.trump.trumpCardInHand = false;
+    }
   }
   rt.currentRound.push({
     seat,
@@ -179,8 +197,122 @@ export const applyScriptedPlay = (rt: Runtime): void => {
     throw new Error('Script exhausted');
   }
   const entry = rt.script[rt.cursor];
+  validatePlayLegality(rt, entry.seat, entry.card, entry.faceDown);
   applyPlay(rt, entry.seat, entry.card, entry.faceDown);
   rt.cursor++;
+};
+
+// Gatekeeper for scripted plays. Throws if `card`+`faceDown` would
+// violate any of §S7, §T-2, §T-3, §T-4, §T-5, §T-6, §T-7, §T-8, or
+// the basic follow-suit rule. Called from applyScriptedPlay so the
+// 304dle runtime never silently replays an illegal puzzle script.
+//
+// applyPlay itself remains a low-level primitive (used by tests for
+// arbitrary plays); this function is the contract for production
+// scripted plays.
+const validatePlayLegality = (
+  rt: Runtime,
+  seat: Seat,
+  card: CardId,
+  faceDown: boolean,
+): void => {
+  const trump = rt.trump;
+  const isTrumper = seat === trump.trumperSeat;
+  const isLead = rt.currentRound.length === 0;
+  const led = ledSuit(rt);
+  const hand = rt.hands[seat];
+
+  // Trumper plays the folded trump card from the table?
+  const isPlayingFoldedTrump =
+    isTrumper && !trump.trumpCardInHand && trump.trumpCard === card;
+
+  if (isPlayingFoldedTrump) {
+    // §T-2: folded trump is playable face-down as a cut (not leading,
+    // can't follow led suit, led suit ≠ trump) OR face-up only as the
+    // trumper's R8 last card.
+    if (faceDown) {
+      if (isLead) {
+        throw new Error('§T-3: trumper cannot lead with face-down play');
+      }
+      if (led !== null && hand.some(c => suitOf(c) === led)) {
+        throw new Error(
+          `§T-2: trumper cannot cut while able to follow led suit ${led}`,
+        );
+      }
+      if (led === trump.trumpSuit) {
+        throw new Error('§T-2: folded trump cannot cut a trump-led round');
+      }
+      if (trump.isOpen || trump.isRevealed) {
+        throw new Error('§S7: cannot play face-down after trump reveal');
+      }
+      return;
+    }
+    if (rt.roundNumber !== 8 || hand.length !== 0) {
+      throw new Error(
+        `§T-2: folded trump card face-up only on R8 as trumper's last card ` +
+        `(round=${rt.roundNumber}, hand size=${hand.length})`,
+      );
+    }
+    return;
+  }
+
+  // From here, the play is sourced from `hand`.
+  if (!hand.includes(card)) {
+    throw new Error(`Card ${card} not in ${seat}'s hand`);
+  }
+
+  // Compute the engine's view of legal face-up plays.
+  const seatsHands: ReadonlyArray<CardId>[] = [[], [], [], []];
+  for (const s of SEATS_ALL) seatsHands[SEAT_INDEX[s]] = rt.hands[s];
+  const seatsWithTrumps = seatsHoldingTrump(seatsHands, trump.trumpSuit);
+  const legal = legalPlays({
+    hand,
+    ledSuit: led,
+    trumpSuit: trump.trumpSuit,
+    isLead,
+    seatsWithTrumps,
+    seat,
+    roundNumber: rt.roundNumber,
+    trumperSeat: trump.trumperSeat,
+    isOpen: trump.isOpen,
+    isPcc: false,
+  });
+
+  if (faceDown) {
+    // §S7: face-down only pre-reveal.
+    if (trump.isOpen || trump.isRevealed) {
+      throw new Error('§S7: cannot play face-down after trump reveal');
+    }
+    // §T-3: face-down requires not-leading and unable to follow led suit.
+    if (isLead) {
+      throw new Error('§T-3: cannot lead face-down');
+    }
+    if (led !== null && hand.some(c => suitOf(c) === led)) {
+      throw new Error(
+        `§T-3: cannot play face-down while able to follow ${led}`,
+      );
+    }
+    // §T-4: trumper cannot fold an in-hand trump card.
+    if (isTrumper && suitOf(card) === trump.trumpSuit) {
+      throw new Error('§T-4: trumper cannot fold an in-hand trump card');
+    }
+    return;
+  }
+
+  // Face-up. Must be in the engine's legal-plays set. Empty `legal`
+  // means no face-up play is legal (e.g. §T-1 with only-trumps); the
+  // caller should never have produced a face-up play in this state.
+  if (legal.length === 0) {
+    throw new Error(
+      `No legal face-up play exists for ${seat} (e.g. §T-1 closed-trump ` +
+      `R1 trumper with only trumps); puzzle deal is irrecoverable`,
+    );
+  }
+  if (!legal.includes(card)) {
+    throw new Error(
+      `Illegal play ${card} by ${seat}: not in legal set [${legal.join(',')}]`,
+    );
+  }
 };
 
 // §T9 round resolution. Determines winner, sums points, advances

@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { dealForSeed, makeRng, seedFromDate } from '../dealing';
 import { chooseBotPlay } from '../bot';
 import { roundTurnOrder, roundWinner, roundPoints } from '../play';
-import { teamOf } from '../seating';
+import { SEAT_INDEX, teamOf } from '../seating';
 import type { Seat, Team } from '../seating';
 import type { CompletedRound, EngineGameState } from '../state';
 import type { CardId } from '../card';
@@ -19,10 +19,10 @@ const buildState = (
   completed: CompletedRound[],
   pointsWon: Record<Team, number>,
 ): EngineGameState => {
-  const hMap = new Map<Seat, CardId[]>();
-  for (const s of ['north', 'west', 'south', 'east'] as Seat[]) hMap.set(s, hands[s]);
+  const hArr: CardId[][] = [[], [], [], []];
+  for (const s of ['north', 'west', 'south', 'east'] as Seat[]) hArr[SEAT_INDEX[s]] = hands[s];
   return {
-    hands: hMap,
+    hands: hArr,
     trump: {
       trumperSeat: 'south', trumpSuit, trumpCard,
       trumpCardInHand: true, isRevealed: true, isOpen: true,

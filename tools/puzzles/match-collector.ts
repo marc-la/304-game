@@ -19,14 +19,17 @@ import { PACK } from '../../engine/card';
 import { makeRng } from '../../engine/dealing';
 import { roundTurnOrder, roundWinner, roundPoints } from '../../engine/play';
 import type { Seat, Team } from '../../engine/seating';
-import { teamOf, ANTICLOCKWISE } from '../../engine/seating';
+import { SEAT_INDEX, teamOf, ANTICLOCKWISE } from '../../engine/seating';
 import type {
   CompletedRound,
   EngineGameState,
   RoundEntry,
 } from '../../engine/state';
 import { botById } from '../../engine/bots';
-import { chooseClosedTrumpPlay } from '../curator/closed-trump-bot';
+import {
+  ClosedTrumpDealError,
+  chooseClosedTrumpPlay,
+} from '../curator/closed-trump-bot';
 import { slapShuffleAndCut } from './slap-shuffle';
 
 const SEATS: Seat[] = ['north', 'west', 'south', 'east'];
@@ -112,10 +115,10 @@ const buildState = (
   completed: CompletedRound[],
   pts: Record<Team, number>,
 ): EngineGameState => {
-  const handsMap = new Map<Seat, CardId[]>();
-  for (const s of SEATS) handsMap.set(s, hands[s]);
+  const handsArr: CardId[][] = [[], [], [], []];
+  for (const s of SEATS) handsArr[SEAT_INDEX[s]] = hands[s];
   return {
-    hands: handsMap,
+    hands: handsArr,
     trump: {
       trumperSeat: trump.trumperSeat,
       trumpSuit: trump.trumpSuit,
@@ -332,13 +335,25 @@ export function* runMatch(opts: MatchCollectorOptions): Generator<GameRecord> {
 
   for (let g = 0; g < opts.gamesPerMatch; g++) {
     const prioritySeat: Seat = opts.prioritySeat ?? PRIORITY_CYCLE[g % 4];
-    const { game, newDeck } = playOneGame(
-      deck, opts.bots, trumperSeat, prioritySeat, g,
-      shuffleSeedFor(g, opts.initialDeckSeed),
-      mode,
-    );
-    yield game;
-    deck = slapShuffleAndCut(newDeck, shuffleSeedFor(g + 1, opts.initialDeckSeed));
+    let result: { game: GameRecord; newDeck: CardId[] };
+    try {
+      result = playOneGame(
+        deck, opts.bots, trumperSeat, prioritySeat, g,
+        shuffleSeedFor(g, opts.initialDeckSeed),
+        mode,
+      );
+    } catch (e) {
+      if (e instanceof ClosedTrumpDealError) {
+        // §T-1 unrecoverable deal — trumper R1 priority with only
+        // trumps. Skip this game; reshuffle and continue. The skip is
+        // expected to be exceedingly rare.
+        deck = slapShuffleAndCut(deck, shuffleSeedFor(g + 1, opts.initialDeckSeed));
+        continue;
+      }
+      throw e;
+    }
+    yield result.game;
+    deck = slapShuffleAndCut(result.newDeck, shuffleSeedFor(g + 1, opts.initialDeckSeed));
   }
 }
 

@@ -15,7 +15,7 @@ import { findWitnessLine } from '../caps-csp';
 import { buildInfoSet, enumerateWorlds } from '../info';
 import { roundTurnOrder, roundWinner } from '../play';
 import type { Seat } from '../seating';
-import { teamOf } from '../seating';
+import { SEATS_BY_INDEX, teamOf } from '../seating';
 import {
   inProgressTuples,
   legalPlaysFor,
@@ -33,8 +33,13 @@ const sampleWorlds = (ctx: BotContext, cap: number): Sample[] => {
   const info = buildInfoSet(ctx.state, ctx.seat);
   const out: Sample[] = [];
   for (const w of enumerateWorlds(info, { maxWorlds: cap })) {
+    // B5 mutates per-seat hands during the 2-ply projection, so we
+    // copy into a Map<Seat, CardId[]> keyed by seat (matches projectTrick).
     const hands = new Map<Seat, CardId[]>();
-    for (const [s, cs] of w.hands) hands.set(s, [...cs]);
+    for (let i = 0; i < 4; i++) {
+      const cs = w.hands[i];
+      if (cs !== undefined) hands.set(SEATS_BY_INDEX[i], [...cs]);
+    }
     out.push({ hands });
     if (out.length >= cap) break;
   }

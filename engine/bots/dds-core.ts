@@ -71,13 +71,15 @@ export const handMaskFrom = (cards: ReadonlyArray<CardId>): number => {
 };
 
 // Build the 4-element hand bitmask array from a world's per-seat hands.
-// Note: 304 has 4 seats (no PCC-out in the open-trump tournament path).
+// `hands` is indexed by SEAT_INDEX (same as EngineGameState.hands and
+// World.hands). 304 has 4 seats (no PCC-out in the open-trump path).
 export const worldHandsToMasks = (
-  hands: ReadonlyMap<Seat, ReadonlyArray<CardId>>,
+  hands: ReadonlyArray<ReadonlyArray<CardId>>,
 ): Uint32Array => {
   const out = new Uint32Array(4);
-  for (const [seat, cards] of hands) {
-    out[SEAT_TO_IDX[seat]] = handMaskFrom(cards);
+  for (let i = 0; i < 4; i++) {
+    const cards = hands[i];
+    if (cards !== undefined) out[i] = handMaskFrom(cards);
   }
   return out;
 };

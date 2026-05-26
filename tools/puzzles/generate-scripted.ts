@@ -21,7 +21,7 @@ import type { CardId, Suit } from '../../engine/card';
 import { suitOf } from '../../engine/card';
 import { checkCapsObligation } from '../../engine/caps';
 import type { Seat, Team } from '../../engine/seating';
-import { teamOf } from '../../engine/seating';
+import { SEAT_INDEX, teamOf } from '../../engine/seating';
 import type {
   CompletedRound,
   EngineGameState,
@@ -101,10 +101,10 @@ const buildEngineState = (
   completed: CompletedRound[],
   pts: Record<Team, number>,
 ): EngineGameState => {
-  const handsMap = new Map<Seat, CardId[]>();
-  for (const s of SEATS) handsMap.set(s, hands[s]);
+  const handsArr: CardId[][] = [[], [], [], []];
+  for (const s of SEATS) handsArr[SEAT_INDEX[s]] = hands[s];
   return {
-    hands: handsMap,
+    hands: handsArr,
     trump: {
       trumperSeat: trump.trumperSeat,
       trumpSuit: trump.trumpSuit,

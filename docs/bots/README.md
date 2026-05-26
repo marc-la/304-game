@@ -2,7 +2,16 @@
 
 Deterministic play-only bots used to generate 304dle puzzles and to benchmark each other via a round-robin Glicko-2 tournament.
 
-_Run `npm run bots:tournament` then `npm run bots:docs` to populate._
+## Leaderboard (2026-05-26T05:09:03.112Z)
+
+| # | Bot | Rating | RD |
+|---|---|---|---|
+| 1 | [b5-csp-search](b5-csp-search.md) | 1572 | ± 37 |
+| 2 | [b4-infoset-1ply](b4-infoset-1ply.md) | 1567 | ± 37 |
+| 3 | [b1-high-low](b1-high-low.md) | 1515 | ± 37 |
+| 4 | [b3-heuristic](b3-heuristic.md) | 1510 | ± 37 |
+| 5 | [b2-memo-high-low](b2-memo-high-low.md) | 1500 | ± 37 |
+| 6 | [b0-random](b0-random.md) | 1336 | ± 37 |
 
 ## Bots
 

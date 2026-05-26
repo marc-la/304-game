@@ -19,6 +19,7 @@ import { suitOf } from '@engine/card';
 import type { CardId, Suit } from '@engine/card';
 import { checkCapsObligation } from '@engine/caps';
 import type { Seat } from '@engine/seating';
+import { SEAT_INDEX } from '@engine/seating';
 import type {
   CompletedRound,
   EngineGameState,
@@ -186,7 +187,7 @@ export const computeDeductionLabour = (
   // own remaining hand at S* (which is what the caller will play
   // out). Adaptive caps doesn't have a single witness, so we use
   // the breadth of south's hand as a proxy.
-  const ownHand = args.state.hands.get('south') ?? [];
+  const ownHand = args.state.hands[SEAT_INDEX.south] ?? [];
   const witnessSuitSpan = new Set(ownHand.map(c => suitOf(c))).size;
 
   if (labour < args.thresholds.minLabour) {

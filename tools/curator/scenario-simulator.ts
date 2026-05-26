@@ -20,14 +20,17 @@ import {
   roundWinner,
 } from '@engine/play';
 import type { Seat, Team } from '@engine/seating';
-import { teamOf } from '@engine/seating';
+import { SEAT_INDEX, SEATS_BY_INDEX, teamOf } from '@engine/seating';
 import type {
   CompletedRound,
   EngineGameState,
   EngineTrumpState,
   RoundEntry,
 } from '@engine/state';
-import { chooseClosedTrumpPlay } from './closed-trump-bot';
+import {
+  ClosedTrumpDealError,
+  chooseClosedTrumpPlay,
+} from './closed-trump-bot';
 import type { Scenario } from './scenario-dealing';
 
 const SEATS_ALL: Seat[] = ['north', 'west', 'south', 'east'];
@@ -52,8 +55,8 @@ const buildEngineState = (
   s: ScenarioSimState,
   currentRound: ReadonlyArray<RoundEntry>,
 ): EngineGameState => {
-  const handsMap = new Map<Seat, CardId[]>();
-  for (const seat of SEATS_ALL) handsMap.set(seat, s.hands[seat]);
+  const handsArr: ReadonlyArray<CardId>[] = [[], [], [], []];
+  for (const seat of SEATS_ALL) handsArr[SEAT_INDEX[seat]] = s.hands[seat];
   const trump: EngineTrumpState = {
     trumperSeat: s.trump.trumperSeat,
     trumpSuit: s.trump.trumpSuit,
@@ -63,7 +66,7 @@ const buildEngineState = (
     isOpen: s.trump.isOpen,
   };
   return {
-    hands: handsMap,
+    hands: handsArr,
     trump,
     play: {
       roundNumber: s.completed.length + 1,
@@ -80,11 +83,12 @@ const buildEngineState = (
 // Deep snapshot — defensive copy so subsequent mutations don't drift
 // the captured S* state.
 const snapshotState = (state: EngineGameState): EngineGameState => {
-  const handsMap = new Map<Seat, ReadonlyArray<CardId>>();
-  for (const [seat, cards] of state.hands) handsMap.set(seat, [...cards]);
+  const handsArr: ReadonlyArray<CardId>[] = [[], [], [], []];
+  for (let i = 0; i < 4; i++) handsArr[i] = [...(state.hands[i] ?? [])];
+  void SEATS_BY_INDEX;
   return {
     ...state,
-    hands: handsMap,
+    hands: handsArr,
     trump: { ...state.trump },
     play: {
       ...state.play,
@@ -260,18 +264,42 @@ export const simulateScenarioOnce = (
   let obligationState: EngineGameState | null = null;
   let obligationWitness: CardId[] | null = null;
 
-  for (let round = 1; round <= 8; round++) {
-    const order = roundTurnOrder(s.priority, null);
-    const currentRound: RoundEntry[] = [];
-    for (const seat of order) {
-      const { card, faceDown } = choosePlay(s, seat, currentRound);
-      applyPlay(s, seat, card, faceDown, currentRound);
-    }
-    resolveRound(s, currentRound, round);
+  try {
+    for (let round = 1; round <= 8; round++) {
+      const order = roundTurnOrder(s.priority, null);
+      const currentRound: RoundEntry[] = [];
+      for (const seat of order) {
+        const { card, faceDown } = choosePlay(s, seat, currentRound);
+        applyPlay(s, seat, card, faceDown, currentRound);
+      }
+      resolveRound(s, currentRound, round);
 
-    // Did south's team lose this round? Caps is forever broken.
-    const winner = s.completed[s.completed.length - 1].winner;
-    if (teamOf(winner) !== teamOf('south')) {
+      // Did south's team lose this round? Caps is forever broken.
+      const winner = s.completed[s.completed.length - 1].winner;
+      if (teamOf(winner) !== teamOf('south')) {
+        return {
+          optimalCallRound: null,
+          obligationState: null,
+          obligationWitness: null,
+          southLostARound: true,
+          southPoints: s.pointsWon[teamOf('south')],
+          southPositionR1,
+        };
+      }
+
+      // Check obligation after this round's resolution. Stamp first time.
+      if (optimalCallRound === null) {
+        const post = buildEngineState(s, []);
+        if (checkCapsObligation(post, 'south')) {
+          optimalCallRound = round;
+          obligationState = snapshotState(post);
+          obligationWitness = findWitnessLine(post, 'south') ?? [];
+        }
+      }
+    }
+  } catch (e) {
+    if (e instanceof ClosedTrumpDealError) {
+      // §T-1 unrecoverable deal — caller skips via southLostARound.
       return {
         optimalCallRound: null,
         obligationState: null,
@@ -281,16 +309,7 @@ export const simulateScenarioOnce = (
         southPositionR1,
       };
     }
-
-    // Check obligation after this round's resolution. Stamp first time.
-    if (optimalCallRound === null) {
-      const post = buildEngineState(s, []);
-      if (checkCapsObligation(post, 'south')) {
-        optimalCallRound = round;
-        obligationState = snapshotState(post);
-        obligationWitness = findWitnessLine(post, 'south') ?? [];
-      }
-    }
+    throw e;
   }
 
   return {

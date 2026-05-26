@@ -9,9 +9,16 @@ export const ANTICLOCKWISE: readonly Seat[] = [
 ];
 export const SEATS = ANTICLOCKWISE;
 
-const SEAT_INDEX: Record<Seat, number> = {
+// SEAT_INDEX is the canonical seat→array-index map. Exported so any
+// module that stores per-seat data in a flat Array (e.g. the slim
+// EngineGameState.hands, dds-core's hand bitmasks, info.ts World.hands)
+// can convert between Seat and 0..3 without re-deriving the order.
+// SEATS_BY_INDEX is the inverse — for `for (let i = 0; i < 4; i++)`
+// loops that need to round-trip back to a Seat (alias of ANTICLOCKWISE).
+export const SEAT_INDEX: Record<Seat, number> = {
   north: 0, west: 1, south: 2, east: 3,
 };
+export const SEATS_BY_INDEX: readonly Seat[] = ANTICLOCKWISE;
 
 export const nextSeat = (seat: Seat): Seat =>
   ANTICLOCKWISE[(SEAT_INDEX[seat] + 1) % 4];

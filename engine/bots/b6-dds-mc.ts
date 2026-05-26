@@ -14,8 +14,7 @@
 import { suitOf } from '../card';
 import type { CardId, Suit } from '../card';
 import { buildInfoSet, enumerateWorlds } from '../info';
-import type { Seat } from '../seating';
-import { teamOf } from '../seating';
+import { SEAT_INDEX, teamOf } from '../seating';
 import {
   inProgressTuples,
   legalPlaysFor,
@@ -36,7 +35,9 @@ const SUIT_TO_IDX: Record<Suit, number> = { c: 0, d: 1, h: 2, s: 3 };
 const NEXT_SEAT_IDX = [1, 2, 3, 0]; // anticlockwise N→W→S→E→N
 
 interface Sample {
-  hands: ReadonlyMap<Seat, ReadonlyArray<CardId>>;
+  // Indexed by SEAT_INDEX; matches World.hands shape directly so the
+  // sampler can hand it through without copying.
+  hands: ReadonlyArray<ReadonlyArray<CardId>>;
 }
 
 const sampleWorlds = (ctx: BotContext, cap: number): Sample[] => {
@@ -112,10 +113,15 @@ export const chooseDDSMC = (ctx: BotContext): BotChoice => {
     handsMask: Uint32Array;
     cache: Map<string, number>;
   }> = samples.map(sample => {
-    const handsForWorld = new Map<Seat, ReadonlyArray<CardId>>();
-    for (const [s, cs] of sample.hands) {
-      handsForWorld.set(s, s === ctx.seat ? ctx.hand : cs);
-    }
+    // Pin our seat's hand to ctx.hand (overrides whatever the sampler
+    // assigned). Other seats stay as the world specifies.
+    const handsForWorld: ReadonlyArray<CardId>[] = [
+      sample.hands[0] ?? [],
+      sample.hands[1] ?? [],
+      sample.hands[2] ?? [],
+      sample.hands[3] ?? [],
+    ];
+    handsForWorld[SEAT_INDEX[ctx.seat]] = ctx.hand;
     return {
       handsMask: worldHandsToMasks(handsForWorld),
       cache: new Map<string, number>(),

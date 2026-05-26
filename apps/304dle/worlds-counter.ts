@@ -99,6 +99,29 @@ export const countWorlds = (
   }
   // Hidden folded trump card slot.
   if (info.foldedTrumpOnTable && info.knownFoldedTrumpCard === null) sizes.push(1);
+  // Hidden slots — unrevealed face-down opp minuses in completed (and
+  // in-progress) rounds. Each occupies one card from the pool with a
+  // forbidden-suit constraint (led suit, trump suit). Modelled as
+  // size-1 "pseudo-opps" so the multinomial denominator and the
+  // constraint factor both account for them.
+  for (const hs of info.hiddenSlots) {
+    sizes.push(1);
+    const forbidden = new Set<Suit>();
+    if (hs.knownSuit !== undefined) {
+      // The slot is locked to one suit — translate to "exhausted in
+      // every other suit" so the constraint factor weights it correctly.
+      for (const s of (['c', 'd', 'h', 's'] as Suit[])) {
+        if (s !== hs.knownSuit) forbidden.add(s);
+      }
+    } else {
+      forbidden.add(hs.ledSuit);
+      // Hidden minuses in completed rounds are also non-trump (any
+      // face-down trump would have been revealed at §T9). If
+      // info.trumpSuit is known, add it to the forbidden set.
+      if (info.trumpSuit !== null) forbidden.add(info.trumpSuit);
+    }
+    opps.push({ size: 1, exhausted: forbidden });
+  }
 
   // Build pool composition by suit. The "pool" is everything the
   // viewer doesn't see: full deck minus own hand minus knownPlayed

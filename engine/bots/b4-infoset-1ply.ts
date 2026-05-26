@@ -13,7 +13,7 @@ import type { CardId, Suit } from '../card';
 import { buildInfoSet, enumerateWorlds } from '../info';
 import { roundTurnOrder, roundWinner } from '../play';
 import type { Seat } from '../seating';
-import { teamOf } from '../seating';
+import { SEATS_BY_INDEX, teamOf } from '../seating';
 import {
   inProgressTuples,
   legalPlaysFor,
@@ -38,7 +38,10 @@ const sampleWorlds = (
   const out: Sample[] = [];
   for (const w of enumerateWorlds(info, { maxWorlds: cap })) {
     const hands = new Map<Seat, CardId[]>();
-    for (const [s, cs] of w.hands) hands.set(s, [...cs]);
+    for (let i = 0; i < 4; i++) {
+      const cs = w.hands[i];
+      if (cs !== undefined) hands.set(SEATS_BY_INDEX[i], [...cs]);
+    }
     out.push({ hands });
     if (out.length >= cap) break;
   }

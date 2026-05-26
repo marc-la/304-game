@@ -71,10 +71,13 @@ export interface EnginePlayState {
 }
 
 export interface EngineGameState {
-  // Hands stored per seat. The engine only ever reads the viewer's
-  // own hand (build_info_set never peeks at others); 304dle stores
-  // the full set so the bot can use its own seat's hand.
-  hands: ReadonlyMap<Seat, ReadonlyArray<CardId>>;
+  // Hands stored per seat, indexed by SEAT_INDEX (N=0, W=1, S=2, E=3).
+  // Array form (not Map) because the slim view is on the hot path for
+  // B6/B7 — every world sample reads four entries, and ~64 evals at
+  // R1 amplify any per-seat hash lookup. The PCC-out seat keeps an
+  // empty entry rather than being absent, so callers can index without
+  // a presence check.
+  hands: ReadonlyArray<ReadonlyArray<CardId>>;
   trump: EngineTrumpState;
   play: EnginePlayState;
   pccPartnerOut: Seat | null;

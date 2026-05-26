@@ -10,6 +10,7 @@ import type { CardId, Suit } from '../../card';
 import { dealForSeed, makeRng } from '../../dealing';
 import { legalPlays, seatsHoldingTrump } from '../../play';
 import type { Seat } from '../../seating';
+import { SEAT_INDEX } from '../../seating';
 import type { CompletedRound, EngineGameState, RoundEntry } from '../../state';
 import { BOTS } from '..';
 
@@ -26,10 +27,10 @@ const buildState = (args: {
   completed?: CompletedRound[];
   pointsWon?: { team_a: number; team_b: number };
 }): EngineGameState => {
-  const handsMap = new Map<Seat, CardId[]>();
-  for (const s of SEATS) handsMap.set(s, args.hands[s]);
+  const handsArr: CardId[][] = [[], [], [], []];
+  for (const s of SEATS) handsArr[SEAT_INDEX[s]] = args.hands[s];
   return {
-    hands: handsMap,
+    hands: handsArr,
     trump: {
       trumperSeat: 'south',
       trumpSuit: args.trump,
@@ -76,9 +77,9 @@ describe('bot zoo: invariants (all bots)', () => {
           state,
           rng,
         });
-        const handsMap = new Map<Seat, ReadonlyArray<CardId>>();
-        for (const s of SEATS) handsMap.set(s, deal.hands[s]);
-        const trumpHolders = seatsHoldingTrump(handsMap, deal.trumpSuit);
+        const handsArr: ReadonlyArray<CardId>[] = [[], [], [], []];
+        for (const s of SEATS) handsArr[SEAT_INDEX[s]] = deal.hands[s];
+        const trumpHolders = seatsHoldingTrump(handsArr, deal.trumpSuit);
         const legal = legalPlays({
           hand: deal.hands.south,
           ledSuit: null,

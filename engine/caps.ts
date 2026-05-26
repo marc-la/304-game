@@ -10,7 +10,7 @@ import { buildInfoSet, enumerateWorlds } from './info';
 import type { InProgressEntry, PlaySnapshot } from './dd';
 import { orderMinPointsInWorld, orderSweepsWorld } from './dd';
 import type { Seat } from './seating';
-import { teamOf } from './seating';
+import { SEATS_BY_INDEX, teamOf } from './seating';
 import type { CapsObligation, EngineGameState, EnginePlayState } from './state';
 import { checkCapsObligationCSP } from './caps-csp';
 
@@ -118,9 +118,11 @@ export const explainCapsFailure = (
 const anyWorld = (state: EngineGameState): World => {
   // Best-effort: build a dummy world out of the actual hands the
   // runtime is carrying. Used only for the explainer fallback.
-  const hands = new Map<Seat, ReadonlyArray<CardId>>();
-  for (const [s, cs] of state.hands) {
-    if (s !== state.pccPartnerOut) hands.set(s, [...cs]);
+  const hands: ReadonlyArray<CardId>[] = [[], [], [], []];
+  for (let i = 0; i < 4; i++) {
+    const seat = SEATS_BY_INDEX[i];
+    if (seat === state.pccPartnerOut) continue;
+    hands[i] = [...(state.hands[i] ?? [])];
   }
   return {
     hands,
@@ -204,36 +206,6 @@ export const isCapsLate = (
   const vPlaysNow =
     (play.roundNumber - 1) + (vPlayedInCurrent ? 1 : 0);
   return vPlaysNow > obligation.vPlaysAtObligation;
-};
-
-export const deduceExhaustedSuits = (
-  state: EngineGameState,
-): Map<Seat, Set<import('./card').Suit>> => {
-  const out = new Map<Seat, Set<import('./card').Suit>>();
-  for (const s of (['north', 'west', 'south', 'east'] as Seat[])) {
-    out.set(s, new Set());
-  }
-  for (const r of state.play.completedRounds) {
-    if (r.cards.length === 0) continue;
-    let ledSuit: import('./card').Suit | null = null;
-    for (const e of r.cards) {
-      if (!e.faceDown && e.card !== null) {
-        ledSuit = e.card[e.card.length - 1] as import('./card').Suit;
-        break;
-      }
-    }
-    if (ledSuit === null) continue;
-    for (const e of r.cards) {
-      if (e.faceDown) {
-        out.get(e.seat)!.add(ledSuit);
-        continue;
-      }
-      if (e.card === null) continue;
-      const su = e.card[e.card.length - 1] as import('./card').Suit;
-      if (su !== ledSuit) out.get(e.seat)!.add(ledSuit);
-    }
-  }
-  return out;
 };
 
 // Claim balance ----------------------------------------------------------

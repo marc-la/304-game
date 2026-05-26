@@ -1,49 +1,49 @@
 {
-  "generatedAt": "2026-05-26T05:09:03.112Z",
-  "games": 10,
-  "periods": 1,
+  "generatedAt": "2026-05-26T05:55:00.241Z",
+  "games": 50,
+  "periods": 3,
   "masterSeed": 1,
   "ratings": [
     {
-      "bot": "b5-csp-search",
-      "name": "CSP Search",
-      "rating": 1572,
-      "rd": 37,
-      "volatility": 0.06
-    },
-    {
       "bot": "b4-infoset-1ply",
       "name": "InfoSet 1-Ply",
-      "rating": 1567,
-      "rd": 37,
+      "rating": 1589,
+      "rd": 16,
       "volatility": 0.06
     },
     {
-      "bot": "b1-high-low",
-      "name": "High-Low",
-      "rating": 1515,
-      "rd": 37,
-      "volatility": 0.06
-    },
-    {
-      "bot": "b3-heuristic",
-      "name": "Heuristic",
-      "rating": 1510,
-      "rd": 37,
+      "bot": "b5-csp-search",
+      "name": "CSP Search",
+      "rating": 1583,
+      "rd": 16,
       "volatility": 0.06
     },
     {
       "bot": "b2-memo-high-low",
       "name": "Memo High-Low",
+      "rating": 1505,
+      "rd": 16,
+      "volatility": 0.06
+    },
+    {
+      "bot": "b3-heuristic",
+      "name": "Heuristic",
       "rating": 1500,
-      "rd": 37,
+      "rd": 16,
+      "volatility": 0.06
+    },
+    {
+      "bot": "b1-high-low",
+      "name": "High-Low",
+      "rating": 1496,
+      "rd": 16,
       "volatility": 0.06
     },
     {
       "bot": "b0-random",
       "name": "Random",
-      "rating": 1336,
-      "rd": 37,
+      "rating": 1327,
+      "rd": 16,
       "volatility": 0.06
     }
   ],
@@ -51,272 +51,272 @@
     {
       "home": "b0-random",
       "away": "b1-high-low",
-      "games": 20,
-      "home_wins": 8,
-      "away_wins": 12,
-      "mean_home_points_diff": -27.2,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 37,
+      "away_wins": 63,
+      "mean_home_points_diff": -46.64,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b0-random",
       "away": "b2-memo-high-low",
-      "games": 20,
-      "home_wins": 9,
-      "away_wins": 11,
-      "mean_home_points_diff": -32.9,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 39,
+      "away_wins": 61,
+      "mean_home_points_diff": -31.4,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b0-random",
       "away": "b3-heuristic",
-      "games": 20,
-      "home_wins": 9,
-      "away_wins": 11,
-      "mean_home_points_diff": -1.2,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 35,
+      "away_wins": 65,
+      "mean_home_points_diff": -33.56,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b0-random",
       "away": "b4-infoset-1ply",
-      "games": 20,
-      "home_wins": 5,
-      "away_wins": 15,
-      "mean_home_points_diff": -73.5,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 23,
+      "away_wins": 77,
+      "mean_home_points_diff": -76.3,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b0-random",
       "away": "b5-csp-search",
-      "games": 20,
-      "home_wins": 4,
-      "away_wins": 16,
-      "mean_home_points_diff": -64.9,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 22,
+      "away_wins": 78,
+      "mean_home_points_diff": -81.46,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b1-high-low",
       "away": "b0-random",
-      "games": 20,
-      "home_wins": 13,
-      "away_wins": 7,
-      "mean_home_points_diff": 27.4,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 56,
+      "away_wins": 44,
+      "mean_home_points_diff": 21.84,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b1-high-low",
       "away": "b2-memo-high-low",
-      "games": 20,
-      "home_wins": 10,
-      "away_wins": 10,
-      "mean_home_points_diff": 0,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 50,
+      "away_wins": 50,
+      "mean_home_points_diff": -0.34,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b1-high-low",
       "away": "b3-heuristic",
-      "games": 20,
-      "home_wins": 11,
-      "away_wins": 9,
-      "mean_home_points_diff": 7.6,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 49,
+      "away_wins": 51,
+      "mean_home_points_diff": 2.56,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b1-high-low",
       "away": "b4-infoset-1ply",
-      "games": 20,
-      "home_wins": 11,
-      "away_wins": 9,
-      "mean_home_points_diff": 13.6,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 43,
+      "away_wins": 57,
+      "mean_home_points_diff": -14.74,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b1-high-low",
       "away": "b5-csp-search",
-      "games": 20,
-      "home_wins": 9,
-      "away_wins": 11,
-      "mean_home_points_diff": -2,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 44,
+      "away_wins": 56,
+      "mean_home_points_diff": -8.84,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b2-memo-high-low",
       "away": "b0-random",
-      "games": 20,
-      "home_wins": 12,
-      "away_wins": 8,
-      "mean_home_points_diff": 22,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 60,
+      "away_wins": 40,
+      "mean_home_points_diff": 27.72,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b2-memo-high-low",
       "away": "b1-high-low",
-      "games": 20,
-      "home_wins": 10,
-      "away_wins": 10,
-      "mean_home_points_diff": 0,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 50,
+      "away_wins": 50,
+      "mean_home_points_diff": -0.26,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b2-memo-high-low",
       "away": "b3-heuristic",
-      "games": 20,
-      "home_wins": 8,
-      "away_wins": 12,
-      "mean_home_points_diff": -3.5,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 55,
+      "away_wins": 45,
+      "mean_home_points_diff": 13.78,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b2-memo-high-low",
       "away": "b4-infoset-1ply",
-      "games": 20,
-      "home_wins": 11,
-      "away_wins": 9,
-      "mean_home_points_diff": 15.3,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 45,
+      "away_wins": 55,
+      "mean_home_points_diff": -12.82,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b2-memo-high-low",
       "away": "b5-csp-search",
-      "games": 20,
-      "home_wins": 11,
-      "away_wins": 9,
-      "mean_home_points_diff": 3.8,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 48,
+      "away_wins": 52,
+      "mean_home_points_diff": -7.54,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b3-heuristic",
       "away": "b0-random",
-      "games": 20,
-      "home_wins": 12,
-      "away_wins": 8,
-      "mean_home_points_diff": 19.9,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 58,
+      "away_wins": 42,
+      "mean_home_points_diff": 25.72,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b3-heuristic",
       "away": "b1-high-low",
-      "games": 20,
-      "home_wins": 12,
-      "away_wins": 8,
-      "mean_home_points_diff": 21.6,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 49,
+      "away_wins": 51,
+      "mean_home_points_diff": -5.8,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b3-heuristic",
       "away": "b2-memo-high-low",
-      "games": 20,
-      "home_wins": 11,
-      "away_wins": 9,
-      "mean_home_points_diff": -9.6,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 50,
+      "away_wins": 50,
+      "mean_home_points_diff": 3.16,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b3-heuristic",
       "away": "b4-infoset-1ply",
-      "games": 20,
-      "home_wins": 9,
-      "away_wins": 11,
-      "mean_home_points_diff": -6.8,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 47,
+      "away_wins": 53,
+      "mean_home_points_diff": -15.42,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b3-heuristic",
       "away": "b5-csp-search",
-      "games": 20,
-      "home_wins": 10,
-      "away_wins": 10,
-      "mean_home_points_diff": 6.8,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 48,
+      "away_wins": 52,
+      "mean_home_points_diff": -13,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b4-infoset-1ply",
       "away": "b0-random",
-      "games": 20,
-      "home_wins": 15,
-      "away_wins": 5,
-      "mean_home_points_diff": 34.3,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 75,
+      "away_wins": 25,
+      "mean_home_points_diff": 65.98,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b4-infoset-1ply",
       "away": "b1-high-low",
-      "games": 20,
-      "home_wins": 10,
-      "away_wins": 10,
-      "mean_home_points_diff": 4.9,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 56,
+      "away_wins": 44,
+      "mean_home_points_diff": 4.92,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b4-infoset-1ply",
       "away": "b2-memo-high-low",
-      "games": 20,
-      "home_wins": 11,
-      "away_wins": 9,
-      "mean_home_points_diff": -1.9,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 59,
+      "away_wins": 41,
+      "mean_home_points_diff": 10.4,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b4-infoset-1ply",
       "away": "b3-heuristic",
-      "games": 20,
-      "home_wins": 12,
-      "away_wins": 8,
-      "mean_home_points_diff": 24.7,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 58,
+      "away_wins": 42,
+      "mean_home_points_diff": 25.88,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b4-infoset-1ply",
       "away": "b5-csp-search",
-      "games": 20,
-      "home_wins": 9,
-      "away_wins": 11,
-      "mean_home_points_diff": 3.3,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 47,
+      "away_wins": 53,
+      "mean_home_points_diff": -4.92,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b5-csp-search",
       "away": "b0-random",
-      "games": 20,
-      "home_wins": 15,
-      "away_wins": 5,
-      "mean_home_points_diff": 89.1,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 74,
+      "away_wins": 26,
+      "mean_home_points_diff": 81.94,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b5-csp-search",
       "away": "b1-high-low",
-      "games": 20,
-      "home_wins": 11,
-      "away_wins": 9,
-      "mean_home_points_diff": 7.6,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 54,
+      "away_wins": 46,
+      "mean_home_points_diff": 11.08,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b5-csp-search",
       "away": "b2-memo-high-low",
-      "games": 20,
-      "home_wins": 11,
-      "away_wins": 9,
-      "mean_home_points_diff": 23.7,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 55,
+      "away_wins": 45,
+      "mean_home_points_diff": 10.96,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b5-csp-search",
       "away": "b3-heuristic",
-      "games": 20,
-      "home_wins": 12,
-      "away_wins": 8,
-      "mean_home_points_diff": 31.7,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 55,
+      "away_wins": 45,
+      "mean_home_points_diff": 18.04,
+      "home_as_trumper_games": 50
     },
     {
       "home": "b5-csp-search",
       "away": "b4-infoset-1ply",
-      "games": 20,
-      "home_wins": 8,
-      "away_wins": 12,
-      "mean_home_points_diff": 1.5,
-      "home_as_trumper_games": 10
+      "games": 100,
+      "home_wins": 51,
+      "away_wins": 49,
+      "mean_home_points_diff": -1.96,
+      "home_as_trumper_games": 50
     }
   ]
 }

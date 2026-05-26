@@ -22,11 +22,7 @@ export const legalPlaysFor = (
   hand: ReadonlyArray<CardId>,
 ): CardId[] => {
   const trump = state.trump.trumpSuit;
-  const handsMap = new Map<Seat, ReadonlyArray<CardId>>();
-  for (const s of ['north', 'west', 'south', 'east'] as Seat[]) {
-    handsMap.set(s, state.hands.get(s) ?? []);
-  }
-  const trumpHolders = seatsHoldingTrump(handsMap, trump);
+  const trumpHolders = seatsHoldingTrump(state.hands, trump);
   return legalPlays({
     hand,
     ledSuit: ledSuitOf(state),
@@ -34,6 +30,10 @@ export const legalPlaysFor = (
     isLead: isLeadNow(state),
     seatsWithTrumps: trumpHolders,
     seat,
+    roundNumber: state.play.roundNumber,
+    trumperSeat: state.trump.trumperSeat,
+    isOpen: state.trump.isOpen,
+    isPcc: state.pccPartnerOut !== null,
   });
 };
 

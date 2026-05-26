@@ -140,12 +140,11 @@ export const chooseClosedTrumpPlay = (
   // Leading: face-up only. Defer to existing heuristic style — lead
   // longest non-trump suit lowest non-J card; all-trump → lowest trump.
   if (isLead) {
-    const handsLen = state.hands.get(seat)?.length ?? hand.length;
-    void handsLen;
     // §T-1: closed-trump trumper cannot lead trump on round 1 from
     // priority. We check completedRounds.length === 0 to detect R1.
     const isR1 = state.play.completedRounds.length === 0;
-    const restrictTrumpLead = isR1 && isTrumper && state.play.priority === seat;
+    const restrictTrumpLead =
+      isR1 && isTrumper && state.play.priority === seat && !state.trump.isOpen;
 
     const nonTrumps = hand.filter(c => suitOf(c) !== trump);
     if (nonTrumps.length > 0) {
@@ -157,10 +156,14 @@ export const chooseClosedTrumpPlay = (
       return { card: nonJ ?? sorted[0], faceDown: false };
     }
     if (restrictTrumpLead) {
-      // Edge: trumper has only trump but can't lead trump on R1. The
-      // rules require Open Trump declaration for this; but in our
-      // simulator we accept it as a degenerate trumper-leads-trump
-      // play (rare; the bot should not generate this state often).
+      // Edge: trumper has only trump but can't lead trump on R1 in
+      // closed mode. The deal is irrecoverable in closed (the trumper
+      // should have declared Open Trump pre-play). Caller should
+      // discard this game and re-deal.
+      throw new ClosedTrumpDealError(
+        '§T-1: closed-trump trumper has R1 priority with only trumps; ' +
+        'open trump declaration was required pre-play',
+      );
     }
     return { card: lowestByPoints(hand), faceDown: false };
   }
@@ -188,16 +191,27 @@ export const chooseClosedTrumpPlay = (
     return { card: lowestByPoints(ledMatches), faceDown: false };
   }
 
-  // Cannot follow. Must play face-down (closed trump).
-  // Decide between cut and minus.
+  // Cannot follow. Face-down logic applies ONLY pre-reveal (§S7); after
+  // §T9 has flipped isOpen=true, all subsequent plays must be face-up.
+  const isOpenNow = state.trump.isOpen;
   const points = cur.reduce((s, e) =>
     s + (!e.faceDown && e.card !== null ? pointsOf(e.card) : 0), 0);
   const partnerWinning = partnerWinningHeuristic(state, seat, trump);
 
   if (isTrumper) {
-    // §T-3, §T-4: trumper can cut with folded card OR minus with
-    // non-trump in-hand card. Cannot fold in-hand trumps.
+    // §T-3, §T-4: trumper can cut (folded card pre-reveal, any trump
+    // post-reveal) OR minus a non-trump in-hand card. Cannot fold
+    // in-hand trumps.
     const inHandNonTrump = hand.filter(c => suitOf(c) !== trump);
+    if (isOpenNow) {
+      // Post-reveal: face-up. Just discard the lowest non-trump if
+      // available, else cut with the lowest in-hand trump.
+      if (inHandNonTrump.length > 0) {
+        return { card: lowestByPoints(inHandNonTrump), faceDown: false };
+      }
+      return { card: lowestByPoints(hand), faceDown: false };
+    }
+    // Pre-reveal: face-down per §T-3.
     const canCut = foldedCard !== null && ledSuit !== trump;
     const wantsCut = !partnerWinning && points >= 5 && rng() < 0.5;
     if (canCut && (wantsCut || inHandNonTrump.length === 0)) {
@@ -211,10 +225,13 @@ export const chooseClosedTrumpPlay = (
     if (foldedCard !== null) {
       return { card: foldedCard, faceDown: true };
     }
-    // Pathological: no in-hand non-trumps and no folded card. Should
-    // not occur in valid scenarios. Play any in-hand card face-down
-    // as a fallback to keep the simulator advancing.
-    return { card: lowestByPoints(hand), faceDown: true };
+    // Pre-reveal with no folded card and only in-hand trumps is
+    // impossible in valid play: playing the folded card always triggers
+    // §T9 → isOpen=true (handled above). Reaching this branch means
+    // the surrounding state is corrupt.
+    throw new ClosedTrumpDealError(
+      'closed-trump-bot: pre-reveal trumper has only in-hand trumps and no folded card',
+    );
   }
 
   // Non-trumper: cut with any in-hand trump, or minus non-led non-trump.
@@ -225,6 +242,21 @@ export const chooseClosedTrumpPlay = (
   const canCut = inHandTrumps.length > 0;
   const wantsCut = !partnerWinning && points >= 10 && rng() < 0.5;
 
+  if (isOpenNow) {
+    // Post-reveal: face-up cut or face-up discard.
+    if (canCut && (wantsCut || inHandNonTrumpNonLed.length === 0)) {
+      return { card: lowestByPoints(inHandTrumps), faceDown: false };
+    }
+    if (inHandNonTrumpNonLed.length > 0) {
+      return { card: lowestByPoints(inHandNonTrumpNonLed), faceDown: false };
+    }
+    if (inHandTrumps.length > 0) {
+      return { card: lowestByPoints(inHandTrumps), faceDown: false };
+    }
+    return { card: lowestByPoints(hand), faceDown: false };
+  }
+
+  // Pre-reveal: face-down per §T-3.
   if (canCut && (wantsCut || inHandNonTrumpNonLed.length === 0)) {
     return { card: lowestByPoints(inHandTrumps), faceDown: true };
   }
@@ -235,6 +267,21 @@ export const chooseClosedTrumpPlay = (
   if (inHandTrumps.length > 0) {
     return { card: lowestByPoints(inHandTrumps), faceDown: true };
   }
-  // Fallback (shouldn't happen): play anything face-down.
-  return { card: lowestByPoints(hand), faceDown: true };
+  // Hand is non-empty (we entered the can't-follow branch) yet contains
+  // neither trumps nor non-led-suit cards. The only possibility is that
+  // every remaining card is the led suit — contradicting "can't follow".
+  // Reaching here means upstream state is corrupt.
+  throw new ClosedTrumpDealError(
+    'closed-trump-bot: non-trumper has no valid face-down candidate',
+  );
 };
+
+// Thrown when a closed-trump game enters a state that the rules
+// disallow (e.g. §T-1: trumper R1 priority with only trumps in hand).
+// Callers should catch this and discard the deal.
+export class ClosedTrumpDealError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ClosedTrumpDealError';
+  }
+}

@@ -6,7 +6,7 @@
 import type { CardId, Suit } from './card';
 import { PACK, SUITS, suitOf } from './card';
 import type { Seat } from './seating';
-import { SEATS, teamOf } from './seating';
+import { SEAT_INDEX, SEATS, SEATS_BY_INDEX, teamOf } from './seating';
 import type { EngineGameState, RoundEntry } from './state';
 
 export interface HiddenSlot {
@@ -44,7 +44,11 @@ const slotKey = (seat: Seat, roundNumber: number): string =>
   `${seat}:${roundNumber}`;
 
 export interface World {
-  hands: ReadonlyMap<Seat, ReadonlyArray<CardId>>;
+  // Indexed by SEAT_INDEX (N=0, W=1, S=2, E=3); PCC-out seat is `[]`.
+  // Array (not Map) because enumerateWorlds materialises one World per
+  // sample in the B6/B7 hot path — the per-world Map allocation was
+  // measurably visible at R1.
+  hands: ReadonlyArray<ReadonlyArray<CardId>>;
   trumpSuit: Suit;
   foldedTrumpCard: CardId | null;
   hiddenSlotAssignments: ReadonlyMap<string, CardId>;
@@ -93,12 +97,12 @@ export const buildInfoSet = (
   const knownFoldedCard: CardId | null =
     isViewerTrumper && foldedOnTable ? trump.trumpCard : null;
 
-  const ownHand: ReadonlyArray<CardId> = state.hands.get(viewer) ?? [];
+  const ownHand: ReadonlyArray<CardId> = state.hands[SEAT_INDEX[viewer]] ?? [];
 
   const handSizes = new Map<Seat, number>();
   for (const s of SEATS) {
     if (state.pccPartnerOut === s) continue;
-    handSizes.set(s, (state.hands.get(s) ?? []).length);
+    handSizes.set(s, (state.hands[SEAT_INDEX[s]] ?? []).length);
   }
 
   // Suit exhaustion (clause 5)
@@ -275,12 +279,12 @@ function* enumerateForTrump(
   const assignments = new Map<string, CardId[]>();
 
   const materialise = (): World => {
-    const hands = new Map<Seat, ReadonlyArray<CardId>>();
-    hands.set(info.viewer, [...info.ownHand].sort());
+    const hands: ReadonlyArray<CardId>[] = [[], [], [], []];
+    hands[SEAT_INDEX[info.viewer]] = [...info.ownHand].sort();
     for (const seat of info.handSizes.keys()) {
       if (seat === info.viewer) continue;
       const cards = assignments.get(`hand:${seat}`) ?? [];
-      hands.set(seat, [...cards].sort());
+      hands[SEAT_INDEX[seat]] = [...cards].sort();
     }
     let folded: CardId | null;
     if (info.foldedTrumpOnTable) {
@@ -371,12 +375,17 @@ export const worldIsConsistent = (
   for (const s of SEATS) {
     if (s !== info.pccPartnerOut) expectedSeats.add(s);
   }
-  const worldSeats = new Set(world.hands.keys());
-  if (worldSeats.size !== expectedSeats.size) return false;
-  for (const s of expectedSeats) if (!worldSeats.has(s)) return false;
+  for (let i = 0; i < 4; i++) {
+    const seat = SEATS_BY_INDEX[i];
+    const present = world.hands[i] !== undefined && world.hands[i].length > 0;
+    const expected = expectedSeats.has(seat);
+    // Allow either presence (cards remain) or empty arrays — PCC-out
+    // also lands here. We verify per-seat hand size below.
+    if (!expected && present) return false;
+  }
 
   for (const [seat, expected] of info.handSizes) {
-    if ((world.hands.get(seat) ?? []).length !== expected) return false;
+    if ((world.hands[SEAT_INDEX[seat]] ?? []).length !== expected) return false;
   }
 
   if (info.foldedTrumpOnTable) {
@@ -391,7 +400,7 @@ export const worldIsConsistent = (
   }
 
   for (const [seat, suits] of info.exhaustedSuits) {
-    const hand = world.hands.get(seat);
+    const hand = world.hands[SEAT_INDEX[seat]];
     if (!hand) continue;
     for (const c of hand) {
       if (suits.has(suitOf(c))) return false;
@@ -414,13 +423,16 @@ export const worldIsConsistent = (
   }
 
   // Viewer's own-hand identity (W5).
-  const viewerHand = new Set(world.hands.get(info.viewer) ?? []);
+  const viewerHand = new Set(world.hands[SEAT_INDEX[info.viewer]] ?? []);
   if (viewerHand.size !== info.ownHand.length) return false;
   for (const c of info.ownHand) if (!viewerHand.has(c)) return false;
 
   // Card conservation (W1).
   const seen: CardId[] = [];
-  for (const cards of world.hands.values()) seen.push(...cards);
+  for (let i = 0; i < 4; i++) {
+    const cards = world.hands[i];
+    if (cards !== undefined) seen.push(...cards);
+  }
   if (world.foldedTrumpCard !== null) seen.push(world.foldedTrumpCard);
   for (const c of world.hiddenSlotAssignments.values()) seen.push(c);
   for (const c of info.knownPlayed) seen.push(c);

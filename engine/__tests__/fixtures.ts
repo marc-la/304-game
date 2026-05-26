@@ -1,6 +1,7 @@
 // Hand-curated test fixtures for caps engine end-to-end tests.
 
 import type { CardId } from '../card';
+import { SEAT_INDEX } from '../seating';
 import type { EngineGameState } from '../state';
 
 const c = (s: string): CardId => s as CardId;
@@ -30,9 +31,9 @@ const buildState = (args: {
   priority: 'north' | 'west' | 'south' | 'east';
   pointsWon: { team_a: number; team_b: number };
 }): EngineGameState => {
-  const hands = new Map<'north' | 'west' | 'south' | 'east', CardId[]>();
+  const hands: CardId[][] = [[], [], [], []];
   for (const seat of ['north', 'west', 'south', 'east'] as const) {
-    hands.set(seat, args.hands[seat]);
+    hands[SEAT_INDEX[seat]] = args.hands[seat];
   }
   return {
     hands,
@@ -475,11 +476,13 @@ export const fixtureUserCSPRegression: Fixture = {
     'Trump = spades. Only outstanding spade is Qs. Caps obligated.',
   state: (() => {
     const c = (s: string): CardId => s as CardId;
-    const hands = new Map<'north' | 'west' | 'south' | 'east', CardId[]>();
-    hands.set('south', [c('As'), c('10s'), c('Ks'), c('8s'), c('7s')]);
-    hands.set('north', [c('Ah'), c('Kh'), c('9h'), c('10h'), c('Jd')]);
-    hands.set('east',  [c('Qs'), c('Qd'), c('Kd'), c('10d'), c('9d'), c('8d')]);
-    hands.set('west',  [c('Jc'), c('Qc'), c('Kc'), c('Ac'), c('Ad'), c('7d')]);
+    // EngineGameState.hands is now Array, indexed by SEAT_INDEX
+    // (N=0, W=1, S=2, E=3).
+    const hands: CardId[][] = [[], [], [], []];
+    hands[2] = [c('As'), c('10s'), c('Ks'), c('8s'), c('7s')];
+    hands[0] = [c('Ah'), c('Kh'), c('9h'), c('10h'), c('Jd')];
+    hands[3] = [c('Qs'), c('Qd'), c('Kd'), c('10d'), c('9d'), c('8d')];
+    hands[1] = [c('Jc'), c('Qc'), c('Kc'), c('Ac'), c('Ad'), c('7d')];
     return {
       hands,
       trump: {

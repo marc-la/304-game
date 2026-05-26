@@ -19,8 +19,7 @@
 import { suitOf } from '../card';
 import type { CardId, Suit } from '../card';
 import { buildInfoSet, enumerateWorlds } from '../info';
-import type { Seat } from '../seating';
-import { teamOf } from '../seating';
+import { SEAT_INDEX, teamOf } from '../seating';
 import {
   inProgressTuples,
   legalPlaysFor,
@@ -41,7 +40,9 @@ const SUIT_TO_IDX: Record<Suit, number> = { c: 0, d: 1, h: 2, s: 3 };
 const NEXT_SEAT_IDX = [1, 2, 3, 0];
 
 interface Sample {
-  hands: ReadonlyMap<Seat, ReadonlyArray<CardId>>;
+  // Indexed by SEAT_INDEX; matches World.hands shape so the sampler
+  // can hand it through without copying.
+  hands: ReadonlyArray<ReadonlyArray<CardId>>;
 }
 
 const sampleFresh = (
@@ -133,10 +134,13 @@ export const chooseBridgeDerived = (ctx: BotContext): BotChoice => {
 
     let total = 0;
     for (const sample of samples) {
-      const handsForWorld = new Map<Seat, ReadonlyArray<CardId>>();
-      for (const [s, cs] of sample.hands) {
-        handsForWorld.set(s, s === ctx.seat ? ctx.hand : cs);
-      }
+      const handsForWorld: ReadonlyArray<CardId>[] = [
+        sample.hands[0] ?? [],
+        sample.hands[1] ?? [],
+        sample.hands[2] ?? [],
+        sample.hands[3] ?? [],
+      ];
+      handsForWorld[SEAT_INDEX[ctx.seat]] = ctx.hand;
       const hands = worldHandsToMasks(handsForWorld);
       hands[mySeatIdx] = (hands[mySeatIdx] & ~(1 << candIdx)) >>> 0;
 

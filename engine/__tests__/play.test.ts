@@ -58,6 +58,85 @@ describe('legalPlays', () => {
     });
     expect(out).toEqual([c('Jh')]);
   });
+
+  // §T-1 / §T-6: closed-trump R1 trumper with priority cannot lead trump.
+  it('R1 closed-trump trumper-with-priority cannot lead a trump card', () => {
+    const out = legalPlays({
+      hand: [c('Jh'), c('9h'), c('Ac'), c('10d')],
+      ledSuit: null,
+      trumpSuit: 'h',
+      isLead: true,
+      seatsWithTrumps: new Set(['south', 'east']),
+      seat: 'south',
+      roundNumber: 1,
+      trumperSeat: 'south',
+      isOpen: false,
+    });
+    expect(out).toEqual([c('Ac'), c('10d')]);
+  });
+
+  it('R1 closed-trump trumper with only trumps yields no legal face-up lead', () => {
+    const out = legalPlays({
+      hand: [c('Jh'), c('9h'), c('Ah'), c('Kh')],
+      ledSuit: null,
+      trumpSuit: 'h',
+      isLead: true,
+      seatsWithTrumps: new Set(['south', 'east']),
+      seat: 'south',
+      roundNumber: 1,
+      trumperSeat: 'south',
+      isOpen: false,
+    });
+    expect(out).toEqual([]);
+  });
+
+  // §T-7: open-trump R1 trumper non-PCC must lead trump if any held.
+  it('R1 open-trump non-PCC trumper must lead trump when holding any', () => {
+    const out = legalPlays({
+      hand: [c('Jh'), c('9h'), c('Ac'), c('10d')],
+      ledSuit: null,
+      trumpSuit: 'h',
+      isLead: true,
+      seatsWithTrumps: new Set(['south', 'east']),
+      seat: 'south',
+      roundNumber: 1,
+      trumperSeat: 'south',
+      isOpen: true,
+      isPcc: false,
+    });
+    expect(out).toEqual([c('Jh'), c('9h')]);
+  });
+
+  it('R1 open-trump PCC trumper may lead any card', () => {
+    const out = legalPlays({
+      hand: [c('Jh'), c('9h'), c('Ac'), c('10d')],
+      ledSuit: null,
+      trumpSuit: 'h',
+      isLead: true,
+      seatsWithTrumps: new Set(['south', 'east']),
+      seat: 'south',
+      roundNumber: 1,
+      trumperSeat: 'south',
+      isOpen: true,
+      isPcc: true,
+    });
+    expect(out).toEqual([c('Jh'), c('9h'), c('Ac'), c('10d')]);
+  });
+
+  it('R2+ trumper: no R1 lead restriction applied', () => {
+    const out = legalPlays({
+      hand: [c('Jh'), c('Ac')],
+      ledSuit: null,
+      trumpSuit: 'h',
+      isLead: true,
+      seatsWithTrumps: new Set(['south', 'east']),
+      seat: 'south',
+      roundNumber: 3,
+      trumperSeat: 'south',
+      isOpen: false,
+    });
+    expect(out).toEqual([c('Jh'), c('Ac')]);
+  });
 });
 
 describe('roundWinner', () => {
@@ -123,18 +202,19 @@ describe('roundTurnOrder', () => {
 
 describe('seatsHoldingTrump', () => {
   it('detects trump holders', () => {
-    const hands = new Map([
-      ['north' as const, [c('Jh'), c('Ac')] as readonly CardId[]],
-      ['west' as const, [c('Qd'), c('Kc')] as readonly CardId[]],
-      ['south' as const, [c('9h')] as readonly CardId[]],
-      ['east' as const, [c('Ks')] as readonly CardId[]],
-    ]);
+    // Indexed N=0, W=1, S=2, E=3.
+    const hands: ReadonlyArray<readonly CardId[]> = [
+      [c('Jh'), c('Ac')],
+      [c('Qd'), c('Kc')],
+      [c('9h')],
+      [c('Ks')],
+    ];
     const out = seatsHoldingTrump(hands, 'h');
     expect(out).toEqual(new Set(['north', 'south']));
   });
 
   it('returns empty when no trump', () => {
-    const hands = new Map([['north' as const, [c('Jc')] as readonly CardId[]]]);
+    const hands: ReadonlyArray<readonly CardId[]> = [[c('Jc')], [], [], []];
     expect(seatsHoldingTrump(hands, null).size).toBe(0);
   });
 });

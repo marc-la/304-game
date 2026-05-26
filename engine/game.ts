@@ -45,6 +45,7 @@ import {
   teamOf,
 } from './seating';
 import type { Seat, Team } from './seating';
+import { SEAT_INDEX } from './seating';
 import type {
   CompletedRound,
   EngineGameState,
@@ -103,9 +104,9 @@ export const toEngineState = (state: GameState): EngineGameState => {
     capsObligations: play.capsObligations,
   };
 
-  const hands = new Map<Seat, ReadonlyArray<CardId>>();
+  const hands: ReadonlyArray<CardId>[] = [[], [], [], []];
   for (const seat of ALL_SEATS) {
-    hands.set(seat, state.hands[seat] ?? []);
+    hands[SEAT_INDEX[seat]] = state.hands[seat] ?? [];
   }
 
   return {

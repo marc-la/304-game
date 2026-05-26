@@ -10,7 +10,7 @@
 import type { CardId } from '@engine/card';
 import { suitOf } from '@engine/card';
 import { legalPlays, roundWinner, seatsHoldingTrump } from '@engine/play';
-import { partnerSeat, type Seat } from '@engine/seating';
+import { SEAT_INDEX, partnerSeat, type Seat } from '@engine/seating';
 import type { Runtime } from './runtime';
 import { ledSuit as runtimeLedSuit } from './runtime';
 
@@ -25,11 +25,11 @@ const jitter = (ms: number, frac = 0.15): number => {
 };
 
 export const tempoForBotPlay = (rt: Runtime, seat: Seat): BotTempo => {
-  const handsMap = new Map<Seat, ReadonlyArray<CardId>>();
+  const handsArr: ReadonlyArray<CardId>[] = [[], [], [], []];
   for (const s of ['north', 'west', 'south', 'east'] as Seat[]) {
-    handsMap.set(s, rt.hands[s]);
+    handsArr[SEAT_INDEX[s]] = rt.hands[s];
   }
-  const trumpHolders = seatsHoldingTrump(handsMap, rt.trump.trumpSuit);
+  const trumpHolders = seatsHoldingTrump(handsArr, rt.trump.trumpSuit);
   const ledSuitNow = runtimeLedSuit(rt);
   const isLead = rt.currentRound.length === 0;
 

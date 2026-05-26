@@ -158,7 +158,13 @@ export const useStore = create<Store>((set, get) => ({
     const s = get().state;
     if (s.kind !== 'caps-confirm' && s.kind !== 'playing') return;
     const engine = toEngineState(s.runtime);
-    const obligated = checkCapsObligation(engine, 'south');
+    // Authoritative source of "obligated": the cached stamp written by
+    // trackCapsObligation at the first event-state at which obligation
+    // held (see [docs/caps_formalism.md §8.2]). Falling back to a live
+    // CSP re-check covers obligations that the stamp may have missed
+    // (e.g. transient mid-round states where the CSP could not run).
+    const stamp = s.runtime.capsObligations.get('south');
+    const obligated = stamp !== undefined || checkCapsObligation(engine, 'south');
     const late = isCapsLate(engine, 'south');
 
     let verdict: CapsVerdictKind;
@@ -176,7 +182,6 @@ export const useStore = create<Store>((set, get) => ({
     const worldsCount = countWorlds(s.runtime, 'south');
     const worldsAtCall = measureForDifficulty(worldsCount);
     const difficulty = gradeDifficulty(worldsAtCall);
-    const stamp = s.runtime.capsObligations.get('south');
     const obligatedAtRound = stamp?.obligatedAtRound ?? null;
 
     set({

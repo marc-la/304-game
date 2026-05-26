@@ -146,6 +146,10 @@ export const chooseBotPlay = (ctx: BotContext): CardId => {
     isLead,
     seatsWithTrumps: trumpHolders,
     seat,
+    roundNumber: state.play.roundNumber,
+    trumperSeat: state.trump.trumperSeat,
+    isOpen: state.trump.isOpen,
+    isPcc: state.pccPartnerOut !== null,
   });
 
   if (legal.length === 1) return legal[0];

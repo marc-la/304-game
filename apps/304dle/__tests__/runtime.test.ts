@@ -12,7 +12,7 @@ import {
 import { buildVerdict } from '../scoring';
 import { buildShareGrid } from '../share';
 import { fixtureSimpleSweep } from '@engine/__tests__/fixtures';
-import type { Seat } from '@engine/seating';
+import { SEAT_INDEX, type Seat } from '@engine/seating';
 import type { CardId } from '@engine/card';
 import type { ScriptedPlay } from '../types';
 
@@ -53,14 +53,21 @@ describe('runtime', () => {
 
   it('applyScriptedPlay advances the cursor and applies in script order', () => {
     const deal = dealForSeed(seedFromDate('2026-05-01'));
-    // Build a script of one round using the hands' first cards.
-    // (We just need *some* legal turn order — south leads, then
-    // east, north, west.)
+    // Build a legal R1 script: south (trumper, priority, open) MUST
+    // lead trump per §T-7; others follow-suit if able.
+    const trumpSuit = deal.trumpSuit;
+    const southLead = deal.hands.south.find(c => c.endsWith(trumpSuit))
+      ?? deal.hands.south[0];
+    const followOrAny = (seat: Seat): CardId => {
+      const led = southLead.endsWith(trumpSuit) ? trumpSuit : southLead.slice(-1) as typeof trumpSuit;
+      const inSuit = deal.hands[seat].find(c => c.endsWith(led));
+      return (inSuit ?? deal.hands[seat][0]) as CardId;
+    };
     const seats: Seat[] = ['south', 'east', 'north', 'west'];
     const script: ScriptedPlay[] = seats.map(seat => ({
       round: 1,
       seat,
-      card: deal.hands[seat][0],
+      card: seat === 'south' ? southLead : followOrAny(seat),
       faceDown: false,
     }));
     const rt = newRuntimeFromDeal(deal, script);
@@ -97,10 +104,10 @@ describe('runtime caps obligation tracking', () => {
     const fx = fixtureSimpleSweep;
     const rt = newRuntime({
       hands: {
-        north: [...fx.state.hands.get('north')!],
-        west: [...fx.state.hands.get('west')!],
-        south: [...fx.state.hands.get('south')!],
-        east: [...fx.state.hands.get('east')!],
+        north: [...fx.state.hands[SEAT_INDEX.north]],
+        west: [...fx.state.hands[SEAT_INDEX.west]],
+        south: [...fx.state.hands[SEAT_INDEX.south]],
+        east: [...fx.state.hands[SEAT_INDEX.east]],
       },
       trumpSuit: fx.state.trump.trumpSuit,
       trumpCard: fx.state.trump.trumpCard!,

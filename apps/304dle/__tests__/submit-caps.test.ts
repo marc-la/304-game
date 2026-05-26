@@ -4,7 +4,7 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CardId } from '@engine/card';
-import type { Seat } from '@engine/seating';
+import { SEAT_INDEX, type Seat } from '@engine/seating';
 import {
   fixtureNotObligated,
   fixtureSimpleSweep,
@@ -17,10 +17,10 @@ import type { Fixture } from '@engine/__tests__/fixtures';
 const runtimeFromFixture = (fx: Fixture): Runtime => {
   const rt = newRuntime({
     hands: {
-      north: [...fx.state.hands.get('north')!],
-      west: [...fx.state.hands.get('west')!],
-      south: [...fx.state.hands.get('south')!],
-      east: [...fx.state.hands.get('east')!],
+      north: [...fx.state.hands[SEAT_INDEX.north]],
+      west: [...fx.state.hands[SEAT_INDEX.west]],
+      south: [...fx.state.hands[SEAT_INDEX.south]],
+      east: [...fx.state.hands[SEAT_INDEX.east]],
     },
     trumpSuit: fx.state.trump.trumpSuit,
     trumpCard: fx.state.trump.trumpCard!,
