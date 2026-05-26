@@ -1,11 +1,12 @@
 ---
 title: 304 — Deductions Audit
-status: OPEN; refreshed 2026-05-26 to add §5 (Class-C deferrals from the spec audit)
+status: OPEN; refreshed 2026-05-26 to add §5 (Class-C deferrals from the spec audit) and §2.1 forward pointer to the §T-8 design doc
 audience: future Claude session, or a returning human reader
 sibling docs:
   - ../specs/caps_formalism.md (the spec — updated 2026-05-26 with A-class refinements)
   - info-set-completeness-v3-handoff.md (B-class engine work that came out of the 2026-05-26 spec audit)
   - info-set-followup-investigations.md (deep-dive investigations queued post-2026-05-26)
+  - t8-retroactive-design.md (pre-implementation design doc for §2.1 / §5.1 §T-8 retroactive deduction — 2026-05-26)
   - v1 audit (commit adbb02a) lives in git log only
 ---
 
@@ -220,9 +221,14 @@ table's discipline shifts.
 
 ## 5.1 §T-8 retroactive deduction (the original)
 
-Documented in §2.1 above. **Status unchanged: deferred.** This is the
-priority item if/when a session escalates: it is the only forced-play
-absence with deductive content beyond W3.
+Documented in §2.1 above. **Status: pre-implementation design doc
+landed 2026-05-26 at [t8-retroactive-design.md](t8-retroactive-design.md).**
+The design recommends **defer for 304dle, implement when an
+engine-as-library use case materialises**, using an aggregate
+current-state CSP constraint (Option B in the design doc). Reach,
+encoding, performance, worked-example sketch, and CSP-integration
+sketch are all in that doc. A future implementation session should
+take it as input.
 
 ## 5.2 Spoilt Trumps false-call as evidence
 

@@ -289,6 +289,12 @@ Half day for the framing decision. Multi-day if implementation.
 
 # 6. The §T-8 forced-play retroactive deduction (carry-forward)
 
+> **Design doc landed 2026-05-26: [t8-retroactive-design.md](t8-retroactive-design.md).**
+> Recommendation: defer for 304dle, implement when an
+> engine-as-library use case materialises, using an aggregate
+> current-state CSP constraint (Option B). The brief below is kept
+> for context; the design doc supersedes its "Output" section.
+
 ## Question
 
 Documented in [deductions-audit.md §2.1 / §5.1](deductions-audit.md).
