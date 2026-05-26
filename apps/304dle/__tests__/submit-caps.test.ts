@@ -137,6 +137,28 @@ describe('submitCaps verdict tree (adaptive)', () => {
     expect(verdict()).toBe('late');
   });
 
+  it('pre-resolves a full in-progress round before evaluating (F1 grace-period fix)', () => {
+    // §2.3.2 regression: in the grace window after a round fills,
+    // `currentRound` holds 4 cards but `resolveRound` has not fired.
+    // The trumper's clause-6 visibility and §T9 reveals only take
+    // effect at resolve time, so the obligation predicate must see
+    // the post-resolve state. submitCaps pre-resolves to guarantee this.
+    const rt = runtimeFromFixture(fixtureSimpleSweep);
+    applyPlay(rt, 'north', 'Ah' as CardId);
+    applyPlay(rt, 'west',  'Kh' as CardId);
+    applyPlay(rt, 'south', 'Jh' as CardId);
+    applyPlay(rt, 'east',  '8h' as CardId);
+    expect(rt.currentRound.length).toBe(4);
+    expect(rt.completedRounds.length).toBe(6);
+
+    seedCapsConfirm(rt);
+    useStore.getState().submitCaps();
+
+    // The grace-window pre-resolve fired.
+    expect(rt.currentRound.length).toBe(0);
+    expect(rt.completedRounds.length).toBe(7);
+  });
+
   it('finishGame surfaces callRound and obligatedAtRound', () => {
     const rt = runtimeFromFixture(fixtureSimpleSweep);
     applyPlay(rt, 'north', 'Ah' as CardId);

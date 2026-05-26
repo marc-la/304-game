@@ -157,6 +157,16 @@ export const useStore = create<Store>((set, get) => ({
   submitCaps: () => {
     const s = get().state;
     if (s.kind !== 'caps-confirm' && s.kind !== 'playing') return;
+
+    // Grace-period model: if the round is full but not yet resolved
+    // (the player is reviewing the just-completed round), §T9 reveals
+    // and clause-6 trumper visibility have not yet fired in the engine.
+    // Resolve first so the obligation predicate sees the state the
+    // player is visually reasoning about.
+    if (s.runtime.currentRound.length === turnOrder(s.runtime).length) {
+      resolveRound(s.runtime);
+    }
+
     const engine = toEngineState(s.runtime);
     // Authoritative source of "obligated": the cached stamp written by
     // trackCapsObligation at the first event-state at which obligation

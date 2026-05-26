@@ -64,6 +64,18 @@ const initCtx = (state: EngineGameState, callerSeat: Seat): CSPCtx | null => {
 
   const known = new Set<CardId>([...callerHand, ...info.knownPlayed]);
   if (info.knownFoldedTrumpCard !== null) known.add(info.knownFoldedTrumpCard);
+  // Note: info.knownInHand (publicly-known cards in specific seats,
+  // see caps_formalism.md §4 W6) is intentionally NOT subtracted here.
+  // The CSP models opp hands as a fungible pool keyed by hand-size and
+  // suit-exhaustion; per-seat forced-card constraints would require
+  // tracking forced cards separately and merging them into
+  // computeOppCandidates. Without that integration the CSP remains
+  // sound (it over-considers worlds where a non-trumper holds the
+  // lifted folded card), but it under-recognises obligations that
+  // depend on knowing the trumper specifically holds that card.
+  // Affects external-caps reasoning only; for caller-as-trumper the
+  // lifted card is already in callerHand. See F2 in
+  // docs/info-set-investigation-report.md for the followup.
 
   const pool = new Set<CardId>();
   for (const c of PACK) if (!known.has(c)) pool.add(c);

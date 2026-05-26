@@ -13,6 +13,12 @@ export interface HiddenSlot {
   seat: Seat;
   roundNumber: number;
   ledSuit: Suit;
+  // True when the slot is from the in-progress round (§T9 has not
+  // yet fired). For completed rounds a face-down trump fold would
+  // have been revealed at round resolution; for in-progress rounds
+  // that reveal is still pending so the slot *can* be the trump
+  // suit. See caps_formalism.md §4 W4.
+  inProgress: boolean;
   // When set, the slot's card must be of this exact suit. Used by
   // tools that build relaxed information sets where the player saw
   // *which* suit was played but is being asked counterfactually to
@@ -32,6 +38,12 @@ export interface InformationSet {
   handSizes: ReadonlyMap<Seat, number>;
   exhaustedSuits: ReadonlyMap<Seat, ReadonlySet<Suit>>;
   knownPlayed: ReadonlySet<CardId>;
+  // Publicly-known cards currently in specific seats' hands. Today
+  // this only contains the §T9-lifted folded trump card (in the
+  // trumper's hand). See caps_formalism.md §3 clause 4 / §4 W6.
+  // The viewer's own-hand entries are NOT duplicated here — `ownHand`
+  // already covers those — though setting them would be harmless.
+  knownInHand: ReadonlyMap<Seat, ReadonlySet<CardId>>;
   hiddenSlots: ReadonlyArray<HiddenSlot>;
   pccPartnerOut: Seat | null;
   completedRoundWinners: ReadonlyArray<Seat>;
@@ -136,6 +148,7 @@ export const buildInfoSet = (
           seat: entry.seat,
           roundNumber,
           ledSuit: led,
+          inProgress: !inCompleted,
         });
       }
     }
@@ -147,6 +160,21 @@ export const buildInfoSet = (
     absorbRound(play.roundNumber, play.currentRound, false);
   }
 
+  // Publicly-known cards in specific hands. Currently the only source
+  // is the §T9-lifted folded trump card — public to all viewers from
+  // the moment of lift (rules.md "shown to all players, then picked
+  // up and added to the Trumper's hand").
+  const knownInHand = new Map<Seat, Set<CardId>>();
+  if (
+    trump.foldedCardLifted === true &&
+    trump.trumpCardInHand &&
+    trump.trumpCard !== null &&
+    trump.trumperSeat !== null
+  ) {
+    const set = new Set<CardId>([trump.trumpCard]);
+    knownInHand.set(trump.trumperSeat, set);
+  }
+
   const myTeam = teamOf(viewer);
   const teamWonAll = play.completedRounds.every(
     r => teamOf(r.winner) === myTeam,
@@ -154,6 +182,8 @@ export const buildInfoSet = (
 
   const exhaustedReadonly = new Map<Seat, ReadonlySet<Suit>>();
   for (const [s, set] of exhausted) exhaustedReadonly.set(s, set);
+  const knownInHandReadonly = new Map<Seat, ReadonlySet<CardId>>();
+  for (const [s, set] of knownInHand) knownInHandReadonly.set(s, set);
 
   return {
     viewer,
@@ -165,6 +195,7 @@ export const buildInfoSet = (
     handSizes,
     exhaustedSuits: exhaustedReadonly,
     knownPlayed,
+    knownInHand: knownInHandReadonly,
     hiddenSlots,
     pccPartnerOut: state.pccPartnerOut,
     completedRoundWinners: play.completedRounds.map(r => r.winner),
@@ -235,7 +266,13 @@ function* enumerateForTrump(
         allowedSuits: new Set([hs.knownSuit]),
       });
     } else {
-      const forbidden = new Set<Suit>([hs.ledSuit, trumpSuit]);
+      // §4 W4: trumpSuit is forbidden only for completed-round
+      // face-downs (a trump fold would have been revealed at §T9).
+      // For in-progress face-downs the §T9 reveal is still pending,
+      // so a trump cut is still possible. See caps_formalism.md §4.
+      const forbidden = hs.inProgress
+        ? new Set<Suit>([hs.ledSuit])
+        : new Set<Suit>([hs.ledSuit, trumpSuit]);
       slots.push({
         key: `hidden:${hs.seat}:${hs.roundNumber}`,
         size: 1,
@@ -259,9 +296,14 @@ function* enumerateForTrump(
   const handSlotsBySeat = new Map<Seat, Slot>();
   for (const [seat, size] of info.handSizes) {
     if (seat === info.viewer) continue;
+    // Publicly-known cards in this seat's hand (W6) are forced
+    // assignments — they're not enumerated, so we subtract them
+    // from the slot size and re-add them in `materialise`.
+    const forced = info.knownInHand.get(seat);
+    const forcedCount = forced?.size ?? 0;
     const slot: Slot = {
       key: `hand:${seat}`,
-      size,
+      size: size - forcedCount,
       forbiddenSuits: info.exhaustedSuits.get(seat) ?? new Set(),
       allowedSuits: null,
     };
@@ -284,7 +326,11 @@ function* enumerateForTrump(
     for (const seat of info.handSizes.keys()) {
       if (seat === info.viewer) continue;
       const cards = assignments.get(`hand:${seat}`) ?? [];
-      hands[SEAT_INDEX[seat]] = [...cards].sort();
+      const forced = info.knownInHand.get(seat);
+      const merged = forced
+        ? [...cards, ...forced]
+        : cards;
+      hands[SEAT_INDEX[seat]] = [...merged].sort();
     }
     let folded: CardId | null;
     if (info.foldedTrumpOnTable) {
@@ -345,6 +391,11 @@ export function* enumerateWorlds(
     ownKnown.add(info.knownFoldedTrumpCard);
   }
   for (const c of info.knownPlayed) ownKnown.add(c);
+  // §4 W6: publicly-known cards in non-viewer hands are forced
+  // assignments — exclude them from the unknown pool.
+  for (const [, cards] of info.knownInHand) {
+    for (const c of cards) ownKnown.add(c);
+  }
 
   const unknown = PACK.filter(c => !ownKnown.has(c)).sort();
 
@@ -417,8 +468,19 @@ export const worldIsConsistent = (
     if (!slot) return false;
     if (slot.knownSuit !== undefined) {
       if (suitOf(c) !== slot.knownSuit) return false;
-    } else if (suitOf(c) === slot.ledSuit || suitOf(c) === world.trumpSuit) {
-      return false;
+    } else {
+      if (suitOf(c) === slot.ledSuit) return false;
+      // §4 W4: trumpSuit forbidden only for completed-round slots.
+      if (!slot.inProgress && suitOf(c) === world.trumpSuit) return false;
+    }
+  }
+
+  // §4 W6: publicly-known cards must appear in their seat's hand.
+  for (const [seat, cards] of info.knownInHand) {
+    const hand = world.hands[SEAT_INDEX[seat]];
+    if (!hand) return false;
+    for (const c of cards) {
+      if (!hand.includes(c)) return false;
     }
   }
 

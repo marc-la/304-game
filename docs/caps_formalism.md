@@ -52,7 +52,16 @@ union of:
    any completed round and the in-progress round.
 4. **Public face-down revelations.** Face-down trump cards that were
    flipped during round resolution (per [play_invariants.md](play_invariants.md) §T9).
-   These become public at the moment of reveal.
+   These become public at the moment of reveal. **In addition: when
+   §T9 fires in closed trump and the folded trump card is still on
+   the table, the folded card is "shown to all players, then picked
+   up and added to the Trumper's hand" (rules.md). Its identity
+   becomes public from that moment onward — for *every* viewer —
+   even though the card subsequently lives inside the trumper's
+   hand.** Open-trump-from-start does *not* trigger this clause: the
+   trumper reveals "any card of the Trump suit (not necessarily the
+   originally folded one)" per rules.md, so only the trump *suit*
+   becomes public, not the folded card's identity.
 5. **Public suit-exhaustion.** For every completed round whose led
    suit was `s`, every seat `Q` whose play to that round was off-suit
    (face-up non-`s` card, or any face-down card) is publicly known to
@@ -62,7 +71,13 @@ union of:
 6. **Trumper's privileged observations** (only if `V` is the trumper):
    the identity of every face-down card `V` inspected at end-of-round
    resolution, regardless of whether it was revealed publicly. This
-   includes face-down minuses by opponents and partner.
+   includes face-down minuses by opponents and partner. **In
+   addition: while the folded trump card sits face-down on the table
+   (pre-§T9-reveal), the trumper knows its identity by virtue of
+   having placed it. After §T9 fires and the folded card is lifted
+   into the trumper's hand, the identity is also public to every
+   viewer (clause 4); the trumper's privileged-pre-lift knowledge is
+   the only reason this clause is needed.**
 
 `I_V(S)` does **not** include opponents' hands, opponents' face-down
 minuses (unless `V` is the trumper), or the folded trump card before
@@ -89,8 +104,9 @@ hidden from `V`. A consistent world `W ∈ Worlds(I_V, S)` assigns:
 | W1 | Card conservation. The multiset of all cards across all locations in `W` equals `pack`. No card appears in two places. |
 | W2 | Hand sizes. For every seat `Q ≠ V`, `len(W.hand[Q])` equals the actual hand size implied by `S` (rounds played, played-this-round flag). |
 | W3 | Suit-exhaustion. For every `(Q, s)` with `Q` publicly known to be out of `s` (clause 5), no card of suit `s` appears in `W.hand[Q]`. |
-| W4 | Hidden minus suit. For every face-down completed-round entry whose identity is hidden from `V`, the assigned card's suit is neither the led suit of that round nor the trump suit (the player couldn't follow, and a trump fold would have been revealed at round end — see [play_invariants.md](play_invariants.md) §S7). |
+| W4 | Hidden minus suit. For every face-down **completed-round** entry whose identity is hidden from `V`, the assigned card's suit is neither the led suit of that round nor the trump suit (the player couldn't follow, and a trump fold would have been revealed at round end — see [play_invariants.md](play_invariants.md) §S7). **For face-down entries in the *in-progress* round, the §T9 reveal has not yet fired; the slot's only constraint is `forbiddenSuits = {ledSuit}` — a trump cut is still possible.** |
 | W5 | Identity agreement. Cards `V` already knows the identity of (own hand, own plays, public face-ups, public reveals, trumper observations) appear in `W` exactly where `V` knows them to be. |
+| W6 | Publicly-known hand membership. Cards whose identity was publicly revealed and now live in seat `Q`'s hand (today the only source is the §T9 lift, per clause 4) appear in `W.hand[Q]` exactly. |
 
 `Worlds(I_V, S)` is the set of all `W` satisfying W1–W5. It is finite
 and, in practice, small once mid-game suit-exhaustion has accumulated.

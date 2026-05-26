@@ -13,7 +13,7 @@ import type { Runtime } from './runtime';
 import { selectPuzzleForDate } from './daily-selector';
 import { countWorlds } from './worlds-counter';
 import { buildVerdict } from './scoring';
-import { ROUND_LINGER_MS, tempoForBotPlay } from './tempo';
+import { tempoForBotPlay } from './tempo';
 import {
   isAlreadyPlayed,
   loadState,
@@ -196,10 +196,12 @@ const PlayingShell = ({ runtime, appState }: ShellProps) => {
   useEffect(() => {
     if (appState.kind !== 'playing') return;
     if (isGameOver(runtime)) return;
-    if (turn === null && roundComplete) {
-      const t = setTimeout(() => resolveCurrentRound(), ROUND_LINGER_MS);
-      return () => clearTimeout(t);
-    }
+    // Grace period: when the round fills, the engine does NOT
+    // auto-resolve. The just-completed round stays on the table until
+    // the player either calls caps or clicks Continue. This matches
+    // the table convention: a brief window to call caps on the
+    // closing card of a round before play moves on.
+    if (turn === null && roundComplete) return;
     if (turn !== null && turn !== 'south') {
       const { delayMs } = tempoForBotPlay(runtime, turn);
       const t = setTimeout(() => playScripted(), delayMs);
@@ -251,6 +253,15 @@ const PlayingShell = ({ runtime, appState }: ShellProps) => {
         >
           Call Caps
         </button>
+        {turn === null && roundComplete && !isGameOver(runtime) && (
+          <button
+            type="button"
+            className="dle-btn"
+            onClick={() => resolveCurrentRound()}
+          >
+            Continue
+          </button>
+        )}
       </div>
 
       {appState.kind === 'caps-confirm' && (

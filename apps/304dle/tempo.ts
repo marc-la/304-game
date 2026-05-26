@@ -81,8 +81,9 @@ export const tempoForBotPlay = (rt: Runtime, seat: Seat): BotTempo => {
   return { delayMs: jitter(base), reason: `width-${legals.length}` };
 };
 
-// Round-resolve beat — how long the trick stays in the centre
-// after the last card is played, before sweeping to the winner's
-// pile. Soul §VI.2: "previous trick remains visible long enough
-// to be re-read."
-export const ROUND_LINGER_MS = 1500;
+// Round-resolve is no longer time-gated: the just-completed round
+// stays on the table indefinitely until the player either calls
+// caps or clicks Continue (App.tsx). This matches the table's grace
+// window for calling caps on the closing card of a round before
+// play moves on. Soul §VI.2: "previous trick remains visible long
+// enough to be re-read."

@@ -47,6 +47,14 @@ export interface TrumpState {
   isRevealed: boolean;
   // true: open trump mode (all plays face-up from here on).
   isOpen: boolean;
+  // true iff §T9 fired in closed-trump mode and lifted the folded
+  // trump card publicly into the trumper's hand. The card identity
+  // is public knowledge from this moment on (rules.md: "shown to all
+  // players, then picked up and added to the Trumper's hand"). False
+  // for open-trump-from-start (the folded card's identity was never
+  // publicly shown — the trumper revealed a different trump-suit
+  // card per the open-trump reveal mechanic).
+  foldedCardLifted: boolean;
 }
 
 export interface RuntimeOptions {
@@ -93,6 +101,7 @@ export const newRuntime = (opts: RuntimeOptions): Runtime => {
       trumpCardInHand: isOpen,
       isRevealed: isOpen,
       isOpen,
+      foldedCardLifted: false,
     },
     roundNumber: 1,
     priority: opts.priority,
@@ -117,6 +126,7 @@ export const toEngineState = (rt: Runtime): EngineGameState => {
       trumpCardInHand: rt.trump.trumpCardInHand,
       isRevealed: rt.trump.isRevealed,
       isOpen: rt.trump.isOpen,
+      foldedCardLifted: rt.trump.foldedCardLifted,
     },
     play: {
       roundNumber: rt.roundNumber,
@@ -342,10 +352,15 @@ export const resolveRound = (rt: Runtime): CompletedRound => {
         }
       }
       // If the folded trump card was NOT played this round, it goes
-      // to the trumper's hand and trumpCardInHand becomes true.
+      // to the trumper's hand and trumpCardInHand becomes true. The
+      // card's identity is *publicly revealed* in the process (rules:
+      // "shown to all players, then picked up and added to the
+      // Trumper's hand") — mark `foldedCardLifted` so buildInfoSet
+      // can propagate the public knownInHand to non-trumpers.
       if (rt.trump.trumpCard !== null && !rt.trump.trumpCardInHand) {
         rt.hands[rt.trump.trumperSeat].push(rt.trump.trumpCard);
         rt.trump.trumpCardInHand = true;
+        rt.trump.foldedCardLifted = true;
       }
       rt.trump.isRevealed = true;
       rt.trump.isOpen = true;

@@ -59,6 +59,18 @@ export interface EngineTrumpState {
   trumpCardInHand: boolean;
   isRevealed: boolean;
   isOpen: boolean;
+  // True iff §T9 fired in closed-trump mode and lifted the
+  // (formerly folded) trump card publicly into the trumper's hand
+  // (the rules say the card "is shown to all players, then picked
+  // up and added to the Trumper's hand"). In this state the card
+  // identity is public knowledge even though the card now lives
+  // in a hand. False for open-trump-from-start (identity never
+  // publicly shown), false for closed-trump pre-§T9, and false
+  // when the trumper cut with the folded card itself (the card
+  // is in a completed round entry with revealed=true, not in any
+  // hand). Optional/defaulting-to-false so engine call sites that
+  // don't construct post-lift states need no change.
+  foldedCardLifted?: boolean;
 }
 
 export interface EnginePlayState {
