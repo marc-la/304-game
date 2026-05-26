@@ -73,8 +73,8 @@ interface LeaderboardFile {
 // (alpha-beta, bitmask hands, killer + bound TT, move ordering) that
 // make them tractable for tournament-scale runs. Exclude them
 // explicitly with `--bots b0-random,b1-high-low,...` if you need a
-// fast iteration loop. See docs/bot-speed-handoff.md +
-// docs/bot-speed-tier2-changes.md for context.
+// fast iteration loop. See git log around `dds-core.ts` (alpha-beta,
+// PVS, suit-equivalence) for the speed history.
 const DEFAULT_TOURNAMENT_BOTS = [
   'b0-random',
   'b1-high-low',

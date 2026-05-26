@@ -3,16 +3,16 @@ title: 304 — Info-Set Completeness v2 Handoff (carry-forward from 2026-05-26)
 status: open, ready for a fresh session
 audience: a fresh Claude session
 sibling docs:
-  - docs/info-set-investigation-report.md (the v1 audit)
-  - docs/caps_formalism.md (the spec the audit tested)
-  - docs/deductions-audit.md (separate, plain-English deferred-deductions thread)
+  - docs/specs/caps_formalism.md (the spec the audit tested)
+  - docs/handoffs/deductions-audit.md (separate, plain-English deferred-deductions thread)
+  - v1 audit lives in git log only (commit adbb02a — "Fix info-set audit findings F1–F4 and add v2 handoff"); referenced report doc was deleted in the 2026-05-26 docs reorg
 ---
 
 # Mission
 
 The 2026-05-26 session ("v1") audited the engine's information-set
 implementation against the formalism, fixed the bug-fixable findings
-(F1–F4), and deferred F5 to [docs/deductions-audit.md](deductions-audit.md).
+(F1–F4), and deferred F5 to [deductions-audit.md](deductions-audit.md).
 
 This handoff captures the **known limitations** that v1 left behind —
 each is sound (no false caps confirmations) but incomplete (under-
@@ -31,7 +31,7 @@ implementation session, not another audit.
 `engine/info.ts:InformationSet.knownInHand` was introduced in v1 to
 record cards whose identity is publicly known to be in a specific
 seat's hand. Today the only source is the §T9 lift of the folded
-trump card (per [caps_formalism.md](caps_formalism.md) §3 clause 4
+trump card (per [caps_formalism.md](../specs/caps_formalism.md) §3 clause 4
 and §4 W6). The **world-enumeration path** (`enumerateWorlds`,
 `worldIsConsistent`, `validateCapsCall`, `explainCapsFailure`,
 `checkClaimBalance`, `worlds-counter`) already consumes it correctly.
@@ -110,11 +110,10 @@ insufficient.
 
 - Existing 170 tests still pass.
 - New test (per Option A above) passes.
-- The benchmark from
-  [info-set-investigation-report.md](info-set-investigation-report.md)
-  F2's "test to add" — non-trumper viewer sees only worlds where the
-  trumper holds the lifted card — passes via both `enumerateWorlds`
-  (already passes) and `checkCapsObligationCSP` (new).
+- The F2 benchmark from the v1 audit (git log `adbb02a`) — non-trumper
+  viewer sees only worlds where the trumper holds the lifted card —
+  passes via both `enumerateWorlds` (already passes) and
+  `checkCapsObligationCSP` (new).
 
 ---
 
@@ -148,7 +147,7 @@ This is a low-priority follow-up. 304dle itself is unaffected.
 
 # 3. Carry-forward from the deductions audit
 
-[docs/deductions-audit.md](deductions-audit.md) catalogues the
+[deductions-audit.md](deductions-audit.md) catalogues the
 non-bug deduction gaps deferred from v1:
 
 - **§T-8 retroactive deduction** (the priority deduction-completeness

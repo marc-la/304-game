@@ -170,7 +170,7 @@ export const useStore = create<Store>((set, get) => ({
     const engine = toEngineState(s.runtime);
     // Authoritative source of "obligated": the cached stamp written by
     // trackCapsObligation at the first event-state at which obligation
-    // held (see [docs/caps_formalism.md §8.2]). Falling back to a live
+    // held (see [docs/specs/caps_formalism.md §8.2]). Falling back to a live
     // CSP re-check covers obligations that the stamp may have missed
     // (e.g. transient mid-round states where the CSP could not run).
     const stamp = s.runtime.capsObligations.get('south');

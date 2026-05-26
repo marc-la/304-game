@@ -7,7 +7,7 @@
 // to call caps.
 //
 // Closed-trump support: the runtime tracks live trump state per
-// [docs/play_invariants.md §S6]. Face-down plays are applied as-is.
+// [docs/specs/play_invariants.md §S6]. Face-down plays are applied as-is.
 // On round resolution, §T9 fires: if any face-down was trump, all
 // trumps in the round are revealed and (if the folded card is still
 // on the table) it moves to the trumper's hand.

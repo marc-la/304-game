@@ -1,5 +1,5 @@
 // Information set construction (§3) and world enumeration (§4) of
-// docs/caps_formalism.md. Caps is a property of what V knows, not of
+// docs/specs/caps_formalism.md. Caps is a property of what V knows, not of
 // the actual deal — this module bridges the authoritative state and
 // V's epistemic view. No game-tree search; pure finite-CSP solver.
 

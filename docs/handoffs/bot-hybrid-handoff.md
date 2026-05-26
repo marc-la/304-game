@@ -1,7 +1,7 @@
 ---
 title: 304 — B6o / B7o hybrid bots (R1+R2 cheap, R3+ DDS)
 status: handoff, updated 2026-05-26 (post P2+P4 ship and first tournament read)
-purpose: Build hybrid open-trump bots that side-step the R1/R2 cost of full DDS. Read [bot-speed-tier3-p2-p4-changes.md](bot-speed-tier3-p2-p4-changes.md) for the current bench.
+purpose: Build hybrid open-trump bots that side-step the R1/R2 cost of full DDS. PVS + suit-equivalence shipped 2026-05-26 (commit `0b302bd`); current bench lives in git log + the `dds-core.ts` header comment.
 ---
 
 # Why this exists
@@ -182,11 +182,10 @@ cd frontend && npx vitest run
 # Reading list
 
 1. This file.
-2. [bot-speed-tier3-p2-p4-changes.md](bot-speed-tier3-p2-p4-changes.md) — current bench (post-P2+P4).
-3. [bot-speed-dds-algorithmic-handoff.md](bot-speed-dds-algorithmic-handoff.md) — what shipped at the DDS layer.
-4. `engine/card.ts` — `POINTS` table for the refactor.
-5. `engine/bots/dds-core.ts` — where the objective change lives.
-6. `engine/bots/b5-csp-search.ts` — early-round delegate AND reference for caps-witness override.
-7. `engine/bots/b6-dds-mc.ts`, `b7-bridge-derived.ts` — late-round delegates and the wrapper pattern.
-8. `engine/caps-csp.ts` — `findWitnessLine` for the caps override.
-9. `engine/bots/index.ts` — bot registry.
+2. `git log -- engine/bots/dds-core.ts` — speed history (P1 Map→Array, Tier 2 alpha-beta + bitmasks, P2+P4 PVS + suit-equivalence).
+3. `engine/card.ts` — `POINTS` table for the refactor.
+4. `engine/bots/dds-core.ts` — where the objective change lives.
+5. `engine/bots/b5-csp-search.ts` — early-round delegate AND reference for caps-witness override.
+6. `engine/bots/b6-dds-mc.ts`, `b7-bridge-derived.ts` — late-round delegates and the wrapper pattern.
+7. `engine/caps-csp.ts` — `findWitnessLine` for the caps override.
+8. `engine/bots/index.ts` — bot registry.

@@ -1,6 +1,6 @@
 // Rules-faithful slap shuffle and cut.
 //
-// docs/rules.md: "The dealer shuffles the pack, performing 1–4
+// docs/specs/rules.md: "The dealer shuffles the pack, performing 1–4
 // overhand shuffles. Minimal shuffling is preferred — this preserves
 // the order of cards from the previous game to encourage high-value
 // betting. Once shuffled, the player to the left of the dealer may

@@ -2,7 +2,7 @@
 title: 304 — Deductions Audit
 status: OPEN, deferred from the 2026-05-26 info-set investigation
 audience: future Claude session, or a returning human reader
-sibling docs: caps_formalism.md (the spec), info-set-investigation-report.md (the bug-fix audit this defers from)
+sibling docs: ../specs/caps_formalism.md (the spec); v1 audit lives in git log only (commit adbb02a)
 ---
 
 # Why this file exists
@@ -69,8 +69,8 @@ external-caps reasoning only).
 ## 2.1 Forced-play retroactive deduction (the §T-8 case)
 
 **Rule:** if the trumper has priority, holds trump, and no other seat
-holds trump, the trumper *must* lead trump (Exhausted Trumps, rules.md
-"Exhausted Trumps", play_invariants.md §T8).
+holds trump, the trumper *must* lead trump (Exhausted Trumps,
+../specs/rules.md "Exhausted Trumps", ../specs/play_invariants.md §T8).
 
 **Inference the engine misses:** if you observe the trumper *not*
 leading trump in a position where §T8 *would have* forced it, then

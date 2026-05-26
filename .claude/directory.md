@@ -20,8 +20,8 @@ Read [`.claude/soul.md`](soul.md) first. This file is the **map**; the soul is t
 | **Tools** | `tools/puzzles/`, `tools/curator/` | Node CLIs run during development/release: puzzle generation, curation pipeline. Not shipped. | Engine. |
 | **Multiplayer** | `multiplayer/backend/`, `multiplayer/tests/` | FastAPI server + Python tests. **Not in production deploy.** `apps/play/transport/select.ts` probes for it; absent ⇒ in-browser play via `localTransport`. Currently depends on the retired Python engine in `_archive/game304/`, so it doesn't run out of the box — see [`multiplayer/README.md`](../multiplayer/README.md). |
 | **Archive** | `_archive/` | Retired code kept for reference. **Do not extend.** | Nothing reaches into this. |
-| **Docs** | `docs/` | Player + developer reference text (rules, caps formalism, play invariants, stats data). | Nothing. |
-| **Soul + standing instructions** | `.claude/` | `soul.md`, `gui-verification.md`, `session-commit.md`, this file. | Nothing. |
+| **Docs** | `docs/` | Three subtrees with separate lifecycles: `specs/` (rules, caps formalism, play invariants), `handoffs/` (live intra-session state, deleted when shipped), `explainers/` (plain-English lay-reader write-ups). See [`docs/README.md`](../docs/README.md) and [`.claude/docs-workflow.md`](docs-workflow.md). | Nothing. |
+| **Soul + standing instructions** | `.claude/` | `soul.md`, `gui-verification.md`, `auto-commit.md`, `docs-workflow.md`, this file. Hook script `auto-commit-push.sh` plus `settings.json`. | Nothing. |
 | **Node anchor** | `frontend/` | `package.json`, `node_modules/`, `vite.config.ts`, `tsconfig*.json`, `eslint.config.js`. **No source code.** | Everything Node-based. |
 
 The repo-root `node_modules` symlink points at `frontend/node_modules/` so Vite/Vitest resolve packages from anywhere under the tree.
@@ -38,7 +38,7 @@ Ask: *what layer is it?*
 - **Site-wide CSS** → `site/css/styles.css` (single file by current convention; split only if a real seam appears).
 - **Classic page-script** (no React) → `site/js/`.
 - **Puzzle data, generator, curator** → `tools/`.
-- **Player/dev reference doc** → `docs/`.
+- **Player/dev reference doc** → `docs/specs/` (durable spec), `docs/explainers/` (lay reader), or `docs/handoffs/` (live work). See [`.claude/docs-workflow.md`](docs-workflow.md) for the decision flow.
 - **Multiplayer backend extension** → `multiplayer/backend/` (but understand the exile rules first).
 
 **If a piece could plausibly live in two layers, push it down (toward `engine/`)** — that's the layer with the strongest invariants and the loosest coupling.

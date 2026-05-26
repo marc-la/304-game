@@ -33,7 +33,9 @@ import type {
 } from '../../../engine/state';
 import { botById } from '../../../engine/bots';
 
-// From docs/bot-speed-handoff.md §"Bench fixture seeds".
+// Bench fixture seeds — measurement standard, do not change. The
+// original bot-speed handoff (deleted post-ship; see git log) recorded
+// the rationale for this exact sequence.
 const FIXTURE_SEEDS = [
   1, 7, 23, 47, 91, 127, 199, 257, 401, 503,
   601, 743, 877, 991, 1009, 1117, 1259, 1381, 1487, 1543,

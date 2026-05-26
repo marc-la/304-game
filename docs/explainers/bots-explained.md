@@ -1,6 +1,6 @@
 ---
 title: 304 Bots, Explained
-purpose: A plain-English introduction to the eight 304 bots, written for 304 players (not programmers). Companion to the technical docs at docs/bots/.
+purpose: A plain-English introduction to the eight 304 bots, written for 304 players (not programmers). Lives alongside the other explainers in docs/explainers/.
 audience: anyone curious how the puzzle-generation and tournament bots actually "think"
 ---
 
@@ -144,7 +144,7 @@ There are two places these bots show up:
 
 ### 1. The tournament (`tools/bots/elo/`)
 
-The bots play round-robin against each other, every pairing playing many games. Each game is one full 8-round 304 with a fixed bid of 160 (no bidding phase — see [tournament protocol details](bot-speed-handoff.md)). The trumper-seat rotates across games so each team trumps half the time. Ratings are computed using Glicko-2 (the modern descendant of ELO; same intuition, but tracks uncertainty too).
+The bots play round-robin against each other, every pairing playing many games. Each game is one full 8-round 304 with a fixed bid of 160 (no bidding phase — see `tools/bots/elo/bin/run-tournament.ts` for protocol details). The trumper-seat rotates across games so each team trumps half the time. Ratings are computed using Glicko-2 (the modern descendant of ELO; same intuition, but tracks uncertainty too).
 
 This is the *open trump* tournament — every game is played face-up. There is no closed-trump tournament yet; the closed-trump-bot in `tools/curator/` is used only for puzzle generation, not for benchmarking.
 
@@ -152,7 +152,7 @@ This is the *open trump* tournament — every game is played face-up. There is n
 
 When generating 304dle puzzles, four copies of one bot play many games against each other with rules-faithful shuffling between games (the slap-shuffle that real 304 uses, not a uniform-random shuffle). Most games go nowhere — neither side sweeps. The interesting ones are the sweep games, where one team takes all 8 rounds. For each sweep, we compute *when* that team's information set first guaranteed the sweep — that's the caps moment, and that's the puzzle.
 
-The bot doing the playing matters here: stronger bots produce more interesting puzzles because they exploit subtler caps opportunities. The current closed-trump puzzle pipeline uses the heuristic closed-trump-bot (the closed-trump version of B3). Upgrading this to a closed-trump version of B5 or B6 is an open project — see [`docs/bot-speed-handoff.md`](bot-speed-handoff.md) and the closed-trump audit notes.
+The bot doing the playing matters here: stronger bots produce more interesting puzzles because they exploit subtler caps opportunities. The current closed-trump puzzle pipeline uses the heuristic closed-trump-bot (the closed-trump version of B3). Upgrading this to a closed-trump version of B5 or B6 is an open project tracked in [`docs/handoffs/`](../handoffs/) (the bot-hybrid handoff plus closed-trump audit notes).
 
 ---
 
@@ -167,7 +167,7 @@ The pragmatic ladder is:
 - **High-quality puzzle batches**: use B5 if you have ~10 minutes per puzzle to spare.
 - **Reference strongest play**: use B6 if you have all night.
 
-The work to make B6 fast enough for tournaments is ongoing — there's a [separate handoff doc](bot-speed-handoff.md) tracking it.
+The work to make B6 fast enough for tournaments is ongoing — see [`docs/handoffs/bot-hybrid-handoff.md`](../handoffs/bot-hybrid-handoff.md).
 
 ---
 
@@ -187,6 +187,5 @@ The work to make B6 fast enough for tournaments is ongoing — there's a [separa
 
 # Where to read more
 
-- [`docs/bots/`](bots/) — the auto-generated per-bot technical pages with strengths, limitations, big-O complexity, and (when available) measured ratings and head-to-head tables.
-- [`docs/bot-speed-handoff.md`](bot-speed-handoff.md) — the engineering plan to make B6 fast enough to actually use.
-- [`engine/bots/`](../engine/bots/) — the source code if you want to see exactly what each bot does.
+- [`docs/handoffs/bot-hybrid-handoff.md`](../handoffs/bot-hybrid-handoff.md) — the live engineering plan to make B6/B7 fast enough and strong enough for tournament use.
+- [`engine/bots/`](../../engine/bots/) — the source code if you want to see exactly what each bot does.

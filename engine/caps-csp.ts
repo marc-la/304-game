@@ -74,8 +74,8 @@ const initCtx = (state: EngineGameState, callerSeat: Seat): CSPCtx | null => {
   // lifted folded card), but it under-recognises obligations that
   // depend on knowing the trumper specifically holds that card.
   // Affects external-caps reasoning only; for caller-as-trumper the
-  // lifted card is already in callerHand. See F2 in
-  // docs/info-set-investigation-report.md for the followup.
+  // lifted card is already in callerHand. See the v1 info-set audit
+  // (commit adbb02a) and docs/handoffs/info-set-completeness-v2-handoff.md.
 
   const pool = new Set<CardId>();
   for (const c of PACK) if (!known.has(c)) pool.add(c);

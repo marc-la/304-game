@@ -1,6 +1,11 @@
 CLAUDE_CODE_CONTEXT.md
 .mock-screenshots/
 
+# Per-developer Claude Code settings (hooks, permission grants). The
+# repo-tracked .claude/settings.json holds the shared workflow; .local
+# is private to one machine.
+.claude/settings.local.json
+
 # Python
 __pycache__/
 *.py[cod]
@@ -45,4 +50,3 @@ Thumbs.db
 site/public/puzzles/pool*.jsonl
 site/public/puzzles/pool*.meta.json
 
-CLAUDE.md
