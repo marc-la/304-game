@@ -54,14 +54,14 @@ const buildState = (args: {
 describe('bot zoo: invariants (all bots)', () => {
   for (const { profile, play } of BOTS) {
     // Heavier bots need more time on full 8-card openings.
-    const timeoutMs = ['b6-dds-mc', 'b7-bridge-derived'].includes(profile.id)
+    const timeoutMs = profile.id === 'b6-dds-mc'
       ? 60_000
       : 5_000;
 
     it(`${profile.id} returns a legal play for a fresh deal`, () => {
       // 3 seeds for the heavy bots, 10 for the cheap ones.
       const maxSeed =
-        ['b6-dds-mc', 'b7-bridge-derived'].includes(profile.id) ? 2 : 6;
+        profile.id === 'b6-dds-mc' ? 2 : 6;
       for (let seed = 1; seed <= maxSeed; seed++) {
         const deal = dealForSeed(seed);
         const state = buildState({
@@ -209,7 +209,7 @@ describe('bot zoo: B5 caps-aware', () => {
 describe('bot zoo: property — every bot stays legal across many seeds', () => {
   for (const { profile, play } of BOTS) {
     // Heavier bots: fewer seeds, longer timeout.
-    const isHeavy = ['b6-dds-mc', 'b7-bridge-derived'].includes(profile.id);
+    const isHeavy = profile.id === 'b6-dds-mc';
     const seeds = isHeavy ? [11, 23] : [11, 23, 47, 91, 127];
     const timeoutMs = isHeavy ? 60_000 : 10_000;
     it(`${profile.id} produces only legal plays`, () => {

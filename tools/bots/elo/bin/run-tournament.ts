@@ -68,13 +68,15 @@ interface LeaderboardFile {
   }>;
 }
 
-// B6 (DDS Monte Carlo) and B7 (bridge-derived) are now included by
-// default following the tier-2 optimizations in dds-core.ts
-// (alpha-beta, bitmask hands, killer + bound TT, move ordering) that
-// make them tractable for tournament-scale runs. Exclude them
-// explicitly with `--bots b0-random,b1-high-low,...` if you need a
+// B6 (DDS Monte Carlo) is included by default following the tier-2
+// optimizations in dds-core.ts (alpha-beta, bitmask hands, killer +
+// bound TT, move ordering) that make it tractable for tournament-
+// scale runs. Exclude with `--bots b0-random,b1-high-low,...` for a
 // fast iteration loop. See git log around `dds-core.ts` (alpha-beta,
-// PVS, suit-equivalence) for the speed history.
+// PVS, suit-equivalence) for the speed history. B7 (bridge-derived)
+// was retired after the points-objective refactor — its independent
+// per-candidate sampling design amplified the new objective's
+// variance to the point of losing to B5.
 const DEFAULT_TOURNAMENT_BOTS = [
   'b0-random',
   'b1-high-low',
@@ -83,7 +85,7 @@ const DEFAULT_TOURNAMENT_BOTS = [
   'b4-infoset-1ply',
   'b5-csp-search',
   'b6-dds-mc',
-  'b7-bridge-derived',
+  'b6o-dds-mc-hybrid',
 ];
 
 const main = () => {

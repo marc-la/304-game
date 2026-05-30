@@ -6,8 +6,14 @@
 //   - Hands as Uint32Array(4) indexed by seat-index (N=0, W=1, S=2, E=3).
 //   - In-place state mutation with explicit undo on the recursion stack
 //     — no per-node Map or array allocation.
-//   - Alpha-beta on tricks-won-by-myTeam (the game is zero-sum in
-//     trick count, so a scalar suffices).
+//   - Alpha-beta on points-won-by-myTeam. 304 is decided on points
+//     (trumper team needs ≥160), and per-card values vary widely
+//     (J=30, 9=20, A=11, 10=10, K=3, Q=2, 8=0, 7=0). A pure
+//     tricks-won objective would treat a J+9+A trick (61 pts) as
+//     identical to a K+Q+8+7 trick (5 pts), so the search would
+//     gladly trade one for two. Points-scoring fixes that. The game
+//     is still zero-sum in *total* points (76·4 = 304), so a scalar
+//     suffices and alpha-beta still applies.
 //   - Move ordering: high-power-first within suit. Combined with a
 //     killer-move heuristic indexed by depth, this is what makes
 //     alpha-beta actually prune in DDS-style positions.
@@ -40,6 +46,10 @@ const SEAT_TEAM = new Uint8Array([0, 1, 0, 1]);
 
 const CARD_SUIT = new Uint8Array(32);
 const CARD_POWER = new Uint8Array(32);
+// Points by power-index, mirroring engine/card.ts POINTS:
+//   J=30, 9=20, A=11, 10=10, K=3, Q=2, 8=0, 7=0
+const POWER_POINTS = new Uint8Array([30, 20, 11, 10, 3, 2, 0, 0]);
+const CARD_POINTS = new Uint8Array(32);
 const CARDID_BY_IDX: CardId[] = new Array<CardId>(32);
 const IDX_BY_CARDID = new Map<string, number>();
 
@@ -49,12 +59,28 @@ const IDX_BY_CARDID = new Map<string, number>();
       const idx = (s << 3) | p;
       CARD_SUIT[idx] = s;
       CARD_POWER[idx] = p;
+      CARD_POINTS[idx] = POWER_POINTS[p];
       const cid = (RANKS_ORDER[p] + SUITS_ORDER[s]) as CardId;
       CARDID_BY_IDX[idx] = cid;
       IDX_BY_CARDID.set(cid, idx);
     }
   }
 })();
+
+// Sum of point values across all bits set in `mask`. Used to compute
+// the initial alpha-beta window (total points still in play).
+const maskPoints = (mask: number): number => {
+  let m = mask >>> 0;
+  let sum = 0;
+  while (m !== 0) {
+    const bit = m & -m;
+    // 31 - clz(bit) → bit index, but JS Math.clz32 covers this.
+    const idx = 31 - Math.clz32(bit);
+    sum += CARD_POINTS[idx];
+    m = (m & (m - 1)) >>> 0;
+  }
+  return sum;
+};
 
 export const cardToIdx = (c: CardId): number => {
   const v = IDX_BY_CARDID.get(c);
@@ -112,18 +138,21 @@ interface DDSState {
 interface DDSWork {
   trumpSuit: number;
   myTeam: number;            // 0 or 1
-  // TT value packs (lower+1, upper+1) into a single int.
-  // lower ∈ [-1, 33], upper ∈ [-1, 33]; sentinel "absent" is undefined.
+  // TT value packs (lower+1, upper+1) into a single int. Each slot is
+  // 12 bits, so values fit in [-1, 4094] — plenty for points-valued
+  // bounds, which live in [0, 304] (with fail-soft slack still well
+  // inside the slot). The +1 sentinel offset lets us tell "no value
+  // here" via Map.get() returning undefined.
   cache: Map<string, number>;
   killer: Int8Array;         // killer[depth] = card-idx (-1 = none)
   remaining: number;         // node budget
 }
 
 const encodeTT = (lower: number, upper: number): number =>
-  ((lower + 1) << 8) | (upper + 1);
+  ((lower + 1) << 12) | (upper + 1);
 
-const decodeLower = (v: number): number => (v >>> 8) - 1;
-const decodeUpper = (v: number): number => (v & 0xff) - 1;
+const decodeLower = (v: number): number => (v >>> 12) - 1;
+const decodeUpper = (v: number): number => (v & 0xfff) - 1;
 
 // Construct a TT key for the current state. The branching on trickLen
 // avoids allocating an unused trailing zero region in the common case.
@@ -293,7 +322,13 @@ const dds = (
   depth: number,
   w: DDSWork,
 ): number => {
-  if (w.remaining <= 0) return (alpha + beta) >> 1;
+  // Budget-exhaustion fallback: return `alpha` as a sound lower-bound
+  // proxy. The previous midpoint estimate was reasonable on a [0, 8]
+  // tricks window but became wildly noisy on the new [0, 304] points
+  // window. Returning alpha is pessimistic but at least consistent
+  // with the cutoff math (any caller that has alpha tightened by
+  // exhaustion will simply not improve).
+  if (w.remaining <= 0) return alpha;
   w.remaining--;
   s.nodes++;
 
@@ -306,7 +341,10 @@ const dds = (
   const key = makeKey(s);
   const entry = w.cache.get(key);
   let entryLower = -1;
-  let entryUpper = 99;
+  // Upper "absent" sentinel must be larger than any reachable points
+  // total. 305 is one more than the max (304) so a fresh entry never
+  // accidentally clamps the window.
+  let entryUpper = 305;
   if (entry !== undefined) {
     entryLower = decodeLower(entry);
     entryUpper = decodeUpper(entry);
@@ -336,7 +374,10 @@ const dds = (
   }
 
   const playForMe = SEAT_TEAM[seat] === w.myTeam;
-  let best = playForMe ? -1 : 99;
+  // Sentinels must straddle the points range [0, 304]. -1 / 305 keeps
+  // the first move's `best` comparison correct in both maximizing and
+  // minimizing branches.
+  let best = playForMe ? -1 : 305;
 
   for (let mi = 0; mi < moves.length; mi++) {
     const card = moves[mi];
@@ -362,7 +403,13 @@ const dds = (
     let value: number;
     if (s.trickLen === 4) {
       const winner = trickWinner(s, w.trumpSuit);
-      const won = SEAT_TEAM[winner] === w.myTeam ? 1 : 0;
+      // Sum the four card-points of this trick; credit to the winner.
+      // 304 is decided on points, not trick count — see header.
+      const trickPts = CARD_POINTS[s.trickCards[0]]
+                     + CARD_POINTS[s.trickCards[1]]
+                     + CARD_POINTS[s.trickCards[2]]
+                     + CARD_POINTS[s.trickCards[3]];
+      const won = SEAT_TEAM[winner] === w.myTeam ? trickPts : 0;
       const prevLeader = s.leader;
       const prevLed = s.ledSuit;
       s.leader = winner;
@@ -451,11 +498,11 @@ export interface DDSInput {
 }
 
 export interface DDSResult {
-  tricksByMyTeam: number;
+  pointsByMyTeam: number;
   nodesVisited: number;
 }
 
-// Evaluate the input state and return tricks-won-by-myTeam under
+// Evaluate the input state and return points-won-by-myTeam under
 // double-dummy assumption. `cache` is reused across calls when supplied;
 // callers can clear() to start fresh.
 export const evalDDS = (
@@ -487,9 +534,16 @@ export const evalDDS = (
     walker = NEXT_SEAT[walker];
   }
 
-  const cardsLeft = popcount(s.hands[0]) + popcount(s.hands[1])
-                  + popcount(s.hands[2]) + popcount(s.hands[3]);
-  const tricksLeft = (cardsLeft + s.trickLen) >> 2;
+  // Initial alpha-beta window covers every point still in play: cards
+  // remaining in any hand plus cards already on the table (which will
+  // be credited when this trick resolves). This is the *tight* upper
+  // bound — no honest play can score more than this — so the initial
+  // search runs with the narrowest sound window.
+  let pointsLeft = maskPoints(s.hands[0]) + maskPoints(s.hands[1])
+                 + maskPoints(s.hands[2]) + maskPoints(s.hands[3]);
+  for (let i = 0; i < s.trickLen; i++) {
+    pointsLeft += CARD_POINTS[s.trickCards[i]];
+  }
 
   const w: DDSWork = {
     trumpSuit: SUIT_TO_IDX[config.trumpSuit],
@@ -499,6 +553,6 @@ export const evalDDS = (
     remaining: config.budget,
   };
 
-  const value = dds(s, 0, tricksLeft, 0, w);
-  return { tricksByMyTeam: value, nodesVisited: s.nodes };
+  const value = dds(s, 0, pointsLeft, 0, w);
+  return { pointsByMyTeam: value, nodesVisited: s.nodes };
 };

@@ -7,7 +7,7 @@
 //
 // Usage:
 //   npx tsx tools/bots/bench/run-bench.ts \
-//     --bots b6-dds-mc,b7-bridge-derived \
+//     --bots b6-dds-mc \
 //     --seeds 3
 //
 // The fixture seeds are intentionally a measurement standard — don't
@@ -199,7 +199,7 @@ interface Args {
 const parseArgs = (): Args => {
   const a = process.argv.slice(2);
   const out: Args = {
-    bots: ['b6-dds-mc', 'b7-bridge-derived'],
+    bots: ['b6-dds-mc'],
     seeds: 3,
     determinismCheck: false,
   };

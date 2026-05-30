@@ -175,14 +175,14 @@ const rationaleFor = (id: string): string => {
         'states; depth-limited so deep tactics may slip through.';
     case 'b6-dds-mc':
       return 'Targets ~2050. Ginsberg-GIB style: sample N worlds, full ' +
-        'double-dummy each, pick the play with highest mean future-trick ' +
-        'count. Reference "expert" play under the open-trump model; the ' +
-        'ceiling we can build without bridge-library imports.';
-    case 'b7-bridge-derived':
-      return 'Experimental. Adapts move-ordering and per-candidate fresh-' +
-        'sampling ideas from the bridge single-dummy literature (Frank/' +
-        'Basin 1992; Ginsberg 2001). Time-boxed spike; rating is ' +
-        'whatever the tournament returns.';
+        'double-dummy each, pick the play with highest mean future-' +
+        'points. Reference "expert" play under the open-trump model; ' +
+        'the ceiling we can build without bridge-library imports.';
+    case 'b6o-dds-mc-hybrid':
+      return 'Targets ~B6. Round-keyed hybrid: B5 for R1+R2 where ' +
+        'info-set uncertainty makes full DDS low-yield, then B6 for ' +
+        'R3+ where the search earns its cost. Strength ceiling is ' +
+        'B6\'s; wall-clock is dominated by R3+ moves alone.';
     default:
       return '(No rationale text.)';
   }

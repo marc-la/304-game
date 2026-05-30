@@ -13,7 +13,12 @@
 //   B4  infoset-1ply        — sampled-world expectation, 1-ply lookahead
 //   B5  csp-search          — adaptive CSP-style minimax (depth-limited)
 //   B6  dds-monte-carlo     — Ginsberg-style per-world double-dummy EV
-//   B7  bridge-derived      — spike from the GIB / single-dummy literature
+//   B6o dds-monte-carlo-hybrid — B5 for R1+R2 (cheap), refactored B6 for R3+
+//
+// B7 (bridge-derived) was retired after the points-objective refactor
+// — its independent per-candidate sampling design amplified the new
+// objective's variance to the point of losing to B5. See the
+// retirement note in the bot-hybrid handoff for the variance analysis.
 
 import { chooseRandom } from './b0-random';
 import { chooseHighLow } from './b1-high-low';
@@ -22,7 +27,7 @@ import { chooseHeuristic } from './b3-heuristic';
 import { chooseInfoSet1Ply } from './b4-infoset-1ply';
 import { chooseCSPSearch } from './b5-csp-search';
 import { chooseDDSMC } from './b6-dds-mc';
-import { chooseBridgeDerived } from './b7-bridge-derived';
+import { chooseDDSMCHybrid } from './b6o-dds-mc-hybrid';
 import type { BotChoice, BotContext, BotProfile, PlayBot } from './types';
 
 export type { BotChoice, BotContext, BotProfile, PlayBot } from './types';
@@ -171,23 +176,26 @@ export const BOTS: ReadonlyArray<BotEntry> = [
   },
   {
     profile: {
-      id: 'b7-bridge-derived',
-      name: 'Bridge-Derived',
+      id: 'b6o-dds-mc-hybrid',
+      name: 'DDS Monte Carlo Hybrid',
       description:
-        'Spike port of single-dummy expectation-search ideas from bridge (Frank/Basin 1998, Ginsberg 2001 GIB). Sample-then-DDS hybrid with a richer move ordering than B6.',
+        'Round-number-keyed hybrid: B5 (csp-search) for R1+R2 where ' +
+        'info-set uncertainty dominates, refactored B6 (dds-mc) for ' +
+        'R3+ where the search pays off. Same strength ceiling as B6 ' +
+        'at a fraction of the wall-clock cost.',
       strengths: [
-        'principled from the bridge literature',
-        'best move ordering',
+        'matches B6 at a fraction of B6\'s R1/R2 cost',
+        'caps-aware at every round (both delegates respect caps)',
       ],
       limitations: [
-        'experimental — limited tuning',
-        'similar cost to B6',
+        'compound surface: bugs in either B5 or B6 surface here too',
+        'cutover round is a static tuning knob, not adaptive',
       ],
       deterministic: true,
-      time: 'O(N·DDS)',
+      time: 'O(L) for R1+R2, O(N·DDS) for R3+',
       space: 'O(N)',
     },
-    play: chooseBridgeDerived,
+    play: chooseDDSMCHybrid,
   },
 ];
 

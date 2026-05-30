@@ -2,7 +2,8 @@
 //   1. Sample N consistent worlds from the bot's information set.
 //   2. For each (legalPlay, world) pair, run full double-dummy from
 //      this point assuming all four hands are known (the sampled world).
-//      Score = number of remaining tricks won by our team.
+//      Score = total card-points won by our team across remaining
+//      tricks (304 is decided on points; see dds-core header).
 //   3. Pick the play with the highest mean score across the sample.
 //
 // The heavy lifting (alpha-beta, bitmask hands, transposition table,
@@ -11,8 +12,10 @@
 // the *same* sampled world set, which lets the TT be shared across
 // candidates within a world — its main per-bot speedup over B7.
 
-import { suitOf } from '../card';
+import { pointsOf, suitOf } from '../card';
 import type { CardId, Suit } from '../card';
+import { checkCapsObligation } from '../caps';
+import { findWitnessLine } from '../caps-csp';
 import { buildInfoSet, enumerateWorlds } from '../info';
 import { SEAT_INDEX, teamOf } from '../seating';
 import {
@@ -91,6 +94,22 @@ export const chooseDDSMC = (ctx: BotContext): BotChoice => {
   if (legal.length === 0) throw new Error('B6: no legal plays');
   if (legal.length === 1) return { card: legal[0] };
 
+  // Caps-aware: when our team is caps-obligated and a witness line
+  // exists, play the witness's first card. The DDS itself doesn't
+  // model caps, so without this override B6 routinely fluffs caps
+  // positions B5 nails by construction. Mirrors B5's override.
+  try {
+    if (checkCapsObligation(ctx.state, ctx.seat)) {
+      const witness = findWitnessLine(ctx.state, ctx.seat);
+      if (witness !== null && witness.length > 0) {
+        const first = witness[0];
+        if (legal.includes(first)) return { card: first };
+      }
+    }
+  } catch {
+    // Predicate failed (e.g. world enumeration aborted); fall through.
+  }
+
   const samples = sampleWorlds(ctx, SAMPLE_CAP);
   if (samples.length === 0) return { card: legal[0] };
 
@@ -150,6 +169,10 @@ export const chooseDDSMC = (ctx: BotContext): BotChoice => {
       const trickCards = inProgCardsIdx.slice();
       trickCards.push(candIdx);
 
+      // preWon: full card-points of the trick this candidate completes
+      // (if it does, and our team wins). Matches the points-valued
+      // objective inside DDS so the candidate comparison stays on the
+      // same scale as `pointsByMyTeam`.
       let preWon = 0;
       let nextLeaderIdx = leaderIdx;
       let nextLedSuit: number;
@@ -161,7 +184,14 @@ export const chooseDDSMC = (ctx: BotContext): BotChoice => {
         );
         const winnerTeam =
           winnerIdx === 0 || winnerIdx === 2 ? 'team_a' : 'team_b';
-        if (winnerTeam === myTeam) preWon = 1;
+        if (winnerTeam === myTeam) {
+          // Sum points of every card in the completed trick. The first
+          // three card-idxs came from `inProg` (resolved on-the-table
+          // cards) plus our candidate idx. Map back through CARDID_BY_IDX
+          // via inProg's tuples + candidate.
+          preWon = inProg.reduce((s, [, c]) => s + pointsOf(c), 0)
+                 + pointsOf(candidate);
+        }
         nextLeaderIdx = winnerIdx;
         nextTrickCards = [];
         nextLedSuit = -1;
@@ -170,7 +200,7 @@ export const chooseDDSMC = (ctx: BotContext): BotChoice => {
         nextLedSuit = ledSuitIdx;
       }
 
-      const { tricksByMyTeam } = evalDDS(
+      const { pointsByMyTeam } = evalDDS(
         {
           hands,
           trickCards: nextTrickCards,
@@ -180,7 +210,7 @@ export const chooseDDSMC = (ctx: BotContext): BotChoice => {
         { trumpSuit, myTeam, budget: DDS_BUDGET },
         ws.cache,
       );
-      total += preWon + tricksByMyTeam;
+      total += preWon + pointsByMyTeam;
     }
 
     const mean = total / worldStates.length;
