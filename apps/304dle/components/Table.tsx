@@ -4,8 +4,6 @@ import type { RoundEntry } from '@engine/state';
 import type { Runtime } from '../runtime';
 import { turnOrder, whoseTurn } from '../runtime';
 import { CardBack, CardView } from './CardView';
-import { PublicInfo } from './PublicInfo';
-import type { WorldsCount } from '../worlds-counter';
 import { SUIT_SYMBOLS } from '../types';
 import { teamOf, type Seat } from '@engine/seating';
 
@@ -36,7 +34,6 @@ const viewerKnowsEntry = (
 
 interface Props {
   runtime: Runtime;
-  worlds: WorldsCount | null;
 }
 
 const SEAT_LABELS: Record<Seat, string> = {
@@ -97,7 +94,7 @@ const SeatRoles = ({
   );
 };
 
-export const Table = ({ runtime, worlds }: Props) => {
+export const Table = ({ runtime }: Props) => {
   const turn = whoseTurn(runtime);
   const counts = {
     north: runtime.hands.north.length,
@@ -311,8 +308,6 @@ export const Table = ({ runtime, worlds }: Props) => {
           </AnimatePresence>
         </div>
       </div>
-
-      <PublicInfo worlds={worlds} />
     </div>
   );
 };

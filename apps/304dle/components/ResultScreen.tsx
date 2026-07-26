@@ -2,6 +2,7 @@ import type { CardId } from '@engine/card';
 import type { Seat } from '@engine/seating';
 import type { ScriptedPuzzle } from '../types';
 import type { CapsVerdictKind } from '../scoring';
+import type { RefutingWorld } from '@engine/refute';
 import { HandsReveal } from './HandsReveal';
 
 // Deliberately spare. The previous version carried an emoji share
@@ -21,6 +22,7 @@ interface Props {
   callRound: number | null;
   obligatedAtRound: number | null;
   handsAtCall: Record<Seat, CardId[]> | null;
+  refutingWorld: RefutingWorld | null;
   streakCurrent: number;
   onReplay?: () => void;
 }
@@ -70,13 +72,32 @@ export const ResultScreen = (props: Props) => (
       {explain(props.verdict, props.callRound, props.obligatedAtRound)}
     </p>
 
-    {props.handsAtCall && (
+    {/* A premature call gets the counter-example, not the real
+        layout — the real one sweeps (every puzzle is curated to), so
+        showing it would contradict the verdict it is meant to
+        explain. Every other verdict gets the true remaining hands. */}
+    {props.verdict === 'wrong-not-obligated' && props.refutingWorld ? (
+      <HandsReveal
+        hands={props.refutingWorld.hands}
+        trumpSuit={props.puzzle.trump.suit}
+        trumperSeat={props.puzzle.trump.trumper}
+        title="One deal you hadn't ruled out"
+        caption={
+          `Of the ${props.refutingWorld.worldsChecked.toLocaleString()} deals still ` +
+          `consistent with what you'd seen, you sweep ` +
+          `${props.refutingWorld.worldsSwept.toLocaleString()}. Here is one of the ` +
+          `${(props.refutingWorld.worldsChecked - props.refutingWorld.worldsSwept).toLocaleString()} ` +
+          `where you drop a round.`
+        }
+      />
+    ) : props.handsAtCall ? (
       <HandsReveal
         hands={props.handsAtCall}
         trumpSuit={props.puzzle.trump.suit}
         trumperSeat={props.puzzle.trump.trumper}
+        title="What was left"
       />
-    )}
+    ) : null}
 
     <div className="dle-result-actions">
       {props.onReplay && (

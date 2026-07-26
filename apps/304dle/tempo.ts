@@ -19,7 +19,18 @@ export interface BotTempo {
   reason: string; // for debugging / future tell-animations
 }
 
-const jitter = (ms: number, frac = 0.15): number => {
+// ±15% was not enough separation to hide what these delays are derived
+// from. Measured: the `forced` band (238-322ms) and the
+// `partner-winning-sluff` band (357-483ms) never overlapped, so a 280ms
+// snap was a *proof* that the seat held exactly one legal card — a
+// deterministic readout of hidden state, available to anyone watching a
+// clock, and invisible to `buildInfoSet` so the deduction machinery
+// never accounted for it.
+//
+// A real tell is noisy and can lie (soul §IV.6). ±42% overlaps the
+// adjacent bands, so tempo still reads as character over many plays
+// while no single delay certifies anything.
+const jitter = (ms: number, frac = 0.42): number => {
   const span = ms * frac;
   return Math.round(ms + (Math.random() * 2 - 1) * span);
 };

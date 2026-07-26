@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from './store';
 import type { ScriptedPuzzle } from './types';
 import { Table } from './components/Table';
@@ -9,7 +9,6 @@ import { ResultScreen } from './components/ResultScreen';
 import { Onboarding } from './components/Onboarding';
 import { whoseTurn, turnOrder, isGameOver } from './runtime';
 import type { Runtime } from './runtime';
-import { countWorlds } from './worlds-counter';
 import { buildVerdict } from './scoring';
 import { SETTLE_MS, lingerMsForRound, tempoForBotPlay } from './tempo';
 import {
@@ -83,6 +82,35 @@ export const App = () => {
       persisted.todayResult === null,
   );
 
+  // Persist the moment the verdict EXISTS, not when the result screen
+  // renders. The verdict is revealed in the caps-reveal modal, which
+  // came before any write — so refreshing at the reveal replayed the
+  // day with the streak intact. The day is decided when you press the
+  // button; record it there.
+  const settled =
+    state.kind === 'caps-reveal' || state.kind === 'result' ? state : null;
+  const settledDate = settled?.date ?? null;
+  const settledVerdict = settled?.verdict ?? null;
+  useEffect(() => {
+    if (settled === null || isPreview) return;
+    if (persisted.todayResult?.date === settled.date) return;
+    const day = {
+      date: settled.date,
+      verdict: settled.verdict,
+      callRound:
+        settled.kind === 'result' ? settled.callRound : settled.runtime.roundNumber,
+      obligatedAtRound: settled.obligatedAtRound,
+      worldsAtCall: settled.worldsAtCall,
+      difficulty: settled.difficulty,
+    };
+    const next = recordResult(persisted, day, buildVerdict(day).extendsStreak);
+    saveState(next);
+    setPersisted(next);
+    // `persisted` is deliberately excluded: recordResult reads it, and
+    // including it would re-fire on the state this just wrote.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settledDate, settledVerdict, isPreview]);
+
   if (state.kind === 'loading') {
     return <main className="dle-loading">Loading today's puzzle…</main>;
   }
@@ -110,6 +138,7 @@ export const App = () => {
             callRound={r.callRound}
             obligatedAtRound={r.obligatedAtRound}
             handsAtCall={null}
+            refutingWorld={null}
             streakCurrent={persisted.streak.current}
             onReplay={() => useStore.getState().replayHand()}
           />
@@ -142,32 +171,6 @@ export const App = () => {
   }
 
   if (state.kind === 'result') {
-    if (
-      !isPreview &&
-      (persisted.todayResult === null ||
-        persisted.todayResult.date !== state.date)
-    ) {
-      const v = buildVerdict({
-        verdict: state.verdict,
-        callRound: state.callRound,
-        obligatedAtRound: state.obligatedAtRound,
-        worldsAtCall: state.worldsAtCall,
-      });
-      const next = recordResult(
-        persisted,
-        {
-          date: state.date,
-          verdict: state.verdict,
-          callRound: state.callRound,
-          obligatedAtRound: state.obligatedAtRound,
-          worldsAtCall: state.worldsAtCall,
-          difficulty: state.difficulty,
-        },
-        v.extendsStreak,
-      );
-      saveState(next);
-      setPersisted(next);
-    }
     return (
       <main className="dle-app">
         <ResultScreen
@@ -177,6 +180,7 @@ export const App = () => {
           callRound={state.callRound}
           obligatedAtRound={state.obligatedAtRound}
           handsAtCall={state.handsAtCall}
+          refutingWorld={state.refutingWorld}
           streakCurrent={persisted.streak.current}
           onReplay={() => useStore.getState().replayHand()}
         />
@@ -264,11 +268,6 @@ const PlayingShell = ({ runtime, appState }: ShellProps) => {
     }
   }, [appState.kind, runtime.roundNumber, skipCapsToResult, runtime]);
 
-  const worldsCount = useMemo(
-    () => countWorlds(runtime),
-    [runtime, runtime.roundNumber, runtime.currentRound.length],
-  );
-
   const scriptedCard = scriptedCardForSouth();
   const legalSet = new Set(scriptedCard !== null ? [scriptedCard] : []);
   const dateLabel = appState.kind === 'playing' ||
@@ -291,11 +290,12 @@ const PlayingShell = ({ runtime, appState }: ShellProps) => {
         className={`dle-table-wrap${awaitingAdvance ? ' dle-awaiting' : ''}`}
         onClick={canAdvance ? () => resolveCurrentRound() : undefined}
       >
-        <Table runtime={runtime} worlds={worldsCount} />
+        <Table runtime={runtime} />
       </div>
       <Hand
         hand={runtime.hands.south}
         legalSet={legalSet}
+        trumpSuit={runtime.trump.trumpSuit}
         trumpCard={runtime.trump.trumpCard}
         onPlay={turn === 'south' ? () => playScripted() : () => {}}
       />

@@ -4,6 +4,8 @@ import { create } from 'zustand';
 import type { CardId } from '@engine/card';
 import { checkCapsObligation, isCapsLate } from '@engine/caps';
 import { findWitnessLine } from '@engine/caps-csp';
+import { findRefutingWorld } from '@engine/refute';
+import type { RefutingWorld } from '@engine/refute';
 import type { Seat } from '@engine/seating';
 import type { CompletedRound } from '@engine/state';
 import type { ScriptedPuzzle } from './types';
@@ -50,6 +52,7 @@ export type AppState =
       difficulty: CapsDifficulty | null;
       obligatedAtRound: number | null;
       handsAtCall: Record<Seat, CardId[]>;
+      refutingWorld: RefutingWorld | null;
     }
   | {
       kind: 'result';
@@ -64,6 +67,11 @@ export type AppState =
       // post-mortem: this is where you see what you failed to rule
       // out. Not persisted, so it is absent after a reload.
       handsAtCall: Record<Seat, CardId[]> | null;
+      // Only for a premature call: one layout, consistent with what
+      // the player had seen, in which they drop a trick. See
+      // engine/refute.ts for why the ACTUAL hands are the wrong
+      // evidence to show here.
+      refutingWorld: RefutingWorld | null;
     };
 
 interface Store {
@@ -204,6 +212,13 @@ export const useStore = create<Store>((set, get) => ({
       verdict = 'wrong-not-obligated';
     }
 
+    // A premature call needs a counter-example, not the real layout:
+    // the puzzle is curated to sweep, so the true hands would show a
+    // position where the player's plan works and contradict the
+    // verdict. Bounded — returns null rather than stalling the UI.
+    const refutingWorld = verdict === 'wrong-not-obligated'
+      ? findRefutingWorld(engine, 'south')
+      : null;
     const handsAtCall = snapshotHands(s.runtime);
     const worldsCount = countWorlds(s.runtime, 'south');
     const worldsAtCall = measureForDifficulty(worldsCount);
@@ -222,6 +237,7 @@ export const useStore = create<Store>((set, get) => ({
         difficulty,
         obligatedAtRound,
         handsAtCall,
+        refutingWorld,
       },
     });
   },
@@ -240,6 +256,7 @@ export const useStore = create<Store>((set, get) => ({
         worldsAtCall: s.worldsAtCall,
         difficulty: s.difficulty,
         handsAtCall: s.handsAtCall,
+        refutingWorld: s.refutingWorld,
       },
     });
   },
@@ -284,6 +301,7 @@ export const useStore = create<Store>((set, get) => ({
         difficulty: null,
         // The hand ran out — there are no remaining cards to show.
         handsAtCall: null,
+        refutingWorld: null,
       },
     });
   },

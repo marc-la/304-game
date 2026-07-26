@@ -8,12 +8,16 @@ interface Props {
   selectable?: boolean;
   selected?: boolean;
   small?: boolean;
+  // Any card of the trump suit.
   isTrumpCard?: boolean;
+  // The specific card the trumper bid on. A stronger marker, and only
+  // ever one of them.
+  isBidCard?: boolean;
   onClick?: () => void;
 }
 
 export const CardView = ({
-  card, faded, selectable, selected, small, isTrumpCard, onClick,
+  card, faded, selectable, selected, small, isTrumpCard, isBidCard, onClick,
 }: Props) => {
   const rank = rankOf(card);
   const suit = suitOf(card);
@@ -26,6 +30,7 @@ export const CardView = ({
     selected ? 'dle-card-selected' : '',
     small ? 'dle-card-small' : '',
     isTrumpCard ? 'dle-card-trump' : '',
+    isBidCard ? 'dle-card-bid' : '',
   ].filter(Boolean).join(' ');
   return (
     <button
@@ -33,10 +38,11 @@ export const CardView = ({
       className={cls}
       onClick={onClick}
       disabled={!selectable && !onClick}
-      aria-label={`${rank} of ${suit}${isTrumpCard ? ' (trump card)' : ''}`}
+      aria-label={`${rank} of ${suit}${isTrumpCard ? ' — trump' : ''}${isBidCard ? ', the bid card' : ''}`}
     >
       <span className="dle-card-rank">{rank}</span>
       <span className="dle-card-suit">{SUIT_SYMBOLS[suit]}</span>
+      {isTrumpCard && <span className="dle-card-trump-pip" aria-hidden />}
     </button>
   );
 };

@@ -17,6 +17,8 @@ interface Props {
   hands: Record<Seat, CardId[]>;
   trumpSuit: string;
   trumperSeat: Seat;
+  title: string;
+  caption?: string;
 }
 
 const SEAT_LABELS: Record<Seat, string> = {
@@ -40,11 +42,14 @@ const sorted = (hand: ReadonlyArray<CardId>): CardId[] =>
 // Opposition first: they are the reason a caps call fails.
 const ROWS: Seat[] = ['west', 'east', 'north', 'south'];
 
-export const HandsReveal = ({ hands, trumpSuit, trumperSeat }: Props) => {
+export const HandsReveal = ({
+  hands, trumpSuit, trumperSeat, title, caption,
+}: Props) => {
   if (ROWS.every(s => hands[s].length === 0)) return null;
   return (
     <div className="dle-hands-reveal">
-      <h3 className="dle-hands-reveal-title">What was left</h3>
+      <h3 className="dle-hands-reveal-title">{title}</h3>
+      {caption && <p className="dle-hands-caption">{caption}</p>}
       {ROWS.map(seat => (
         <div
           key={seat}
