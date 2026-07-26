@@ -1,10 +1,10 @@
 name: Regenerate player play-style descriptions
 
-# When betting data changes, ask Claude for fresh one-line play-style
+# When betting data changes, generate fresh one-line play-style
 # portraits and commit them to data/player-styles.json. The Pages deploy
 # (triggered by that commit) folds them into leaderboard.json.
 #
-# Requires the ANTHROPIC_API_KEY repository secret. If it's absent the
+# Requires the GEMINI_API_KEY repository secret. If it's absent the
 # job skips gracefully rather than failing the push.
 
 on:
@@ -31,11 +31,11 @@ jobs:
       - name: Check for API key
         id: key
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          if [ -z "$ANTHROPIC_API_KEY" ]; then
+          if [ -z "$GEMINI_API_KEY" ]; then
             echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::ANTHROPIC_API_KEY secret not set — skipping play-style generation."
+            echo "::notice::GEMINI_API_KEY secret not set — skipping play-style generation."
           else
             echo "present=true" >> "$GITHUB_OUTPUT"
           fi
@@ -63,7 +63,7 @@ jobs:
       - name: Generate play-style descriptions
         if: steps.key.outputs.present == 'true'
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: node tools/leaderboard/generate-styles.mjs
 
       - name: Commit if changed
