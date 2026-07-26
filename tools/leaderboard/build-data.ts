@@ -235,10 +235,24 @@ export function buildLeaderboardData(): string {
   const betStats = Object.fromEntries(PLAYER_ORDER.map((p) => [p, {
     bets: 0, sets: 0,
     mix: {} as Record<string, number>, // tier -> count (60,70,H,100,...,250,PCC)
+    mixOutcomes: {} as Record<string, { w: number; l: number }>, // tier -> record
+    netStone: 0, // stone swing from this player's own bets (scoring-table stakes)
     wins: 0, losses: 0,
     capsPlain: 0, capsBonus: 0, capsLate: 0, capsWrong: 0,
     pccWin: 0, pccLoss: 0, penalties: 0,
   }]));
+
+  // Stakes from the scoring table (site/rules.html#scoring-table):
+  // 60–90 give 1 / receive 2 · 100–115 and Honest give 2 / receive 3 ·
+  // 250 gives 3 / receives 4 · PCC 5 / 5. Caps: +1 = 1 bonus stone,
+  // -L = loss + 1 extra, -W = flat 5-stone penalty. PN = 1 stone.
+  function stakes(bet: string): { win: number; loss: number } {
+    if (bet === 'PCC') return { win: 5, loss: 5 };
+    if (bet === '250') return { win: 3, loss: 4 };
+    if (bet.startsWith('H')) return { win: 2, loss: 3 };
+    const n = Number(bet);
+    return n >= 100 ? { win: 2, loss: 3 } : { win: 1, loss: 2 };
+  }
   const eventLog: Array<{ date: string | null; revId: string; setNo: number; player: string; token: string; type: string }> = [];
   const revEvents: Record<string, Partial<Record<Initial, string[]>>> = {};
 
@@ -256,19 +270,27 @@ export function buildLeaderboardData(): string {
             const ev = parseBetToken(tok);
             if (!ev) continue;
             const s = betStats[p];
+            const tierOf = () => (ev.type.startsWith('pcc') ? 'PCC' : (ev.bet ?? '?').replace(/^H\d*$/, 'H'));
+            const won = ev.type === 'pcc-win' || ev.type === 'caps-win' || ev.type === 'bet-win';
             switch (ev.type) {
-              case 'penalty': s.penalties++; break;
-              case 'pcc-win': s.pccWin++; s.bets++; s.wins++; break;
-              case 'pcc-loss': s.pccLoss++; s.bets++; s.losses++; break;
-              case 'caps-win': s.bets++; s.wins++; if (ev.bonus) s.capsBonus++; else s.capsPlain++; break;
-              case 'caps-late': s.bets++; s.losses++; s.capsLate++; break;
-              case 'caps-wrong': s.bets++; s.losses++; s.capsWrong++; break;
-              case 'bet-win': s.bets++; s.wins++; break;
-              case 'bet-loss': s.bets++; s.losses++; break;
+              case 'penalty': s.penalties++; s.netStone -= 1; break;
+              case 'pcc-win': s.pccWin++; s.bets++; s.wins++; s.netStone += 5; break;
+              case 'pcc-loss': s.pccLoss++; s.bets++; s.losses++; s.netStone -= 5; break;
+              case 'caps-win':
+                s.bets++; s.wins++;
+                s.netStone += stakes(tierOf()).win + (ev.bonus ? 1 : 0);
+                if (ev.bonus) s.capsBonus++; else s.capsPlain++;
+                break;
+              case 'caps-late': s.bets++; s.losses++; s.capsLate++; s.netStone -= stakes(tierOf()).loss + 1; break;
+              case 'caps-wrong': s.bets++; s.losses++; s.capsWrong++; s.netStone -= 5; break;
+              case 'bet-win': s.bets++; s.wins++; s.netStone += stakes(tierOf()).win; break;
+              case 'bet-loss': s.bets++; s.losses++; s.netStone -= stakes(tierOf()).loss; break;
             }
             if (ev.type !== 'penalty' && ev.type !== 'unknown') {
-              const tier = ev.type.startsWith('pcc') ? 'PCC' : (ev.bet ?? '?').replace(/^H\d*$/, 'H');
+              const tier = tierOf();
               betStats[p].mix[tier] = (betStats[p].mix[tier] ?? 0) + 1;
+              const rec = (betStats[p].mixOutcomes[tier] ??= { w: 0, l: 0 });
+              if (won) rec.w++; else rec.l++;
             }
             const isBig = ev.bet === '250' || Number(ev.bet) >= 100;
             if (NOTABLE.includes(ev.type) || isBig || ev.type === 'penalty') {

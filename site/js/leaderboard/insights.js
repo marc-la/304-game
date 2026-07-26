@@ -1,98 +1,339 @@
-// Leaderboard insights: betting-sheet-resolution player profiles.
-// Focus: the players as the central object — how each of them plays.
-// Coverage honesty is the governing rule — everything on this page counts
-// only the revolutions that have a betting sheet, and says so.
-// Contract: .claude/leaderboard-design.md §2, §5.
+// Leaderboard insights — the player as a character, with receipts.
+// Approved composition (2026-07-26): compass field centrepiece; per-player
+// cards carrying an earned epithet, the AI one-liner, a signature move,
+// the stat grid, and a two-ink verdict; all-time finishing shapes; and a
+// nulls footnote. Every claim is computed from the data; components render
+// nothing rather than stretch when a threshold isn't met.
+// Contract: .claude/leaderboard-design.md.
 import {
-  loadData, playerName, renderMeta, showMain, showError, fmtDate, esc, PLAYER_ORDER,
+  loadData, playerName, playerColors, onThemeChange,
+  renderMeta, showMain, showError, fmtDate, esc, PLAYER_ORDER,
 } from './core.js';
 
-const TIERS = ['60', '70', '80', '90', '100', '115', 'H', '250', 'PCC'];
+const LADDER = ['60', '70', '80', '90', '100', '115', 'H', '250', 'PCC'];
+const ladderIdx = (t) => LADDER.indexOf(t);
 
-function coverageBanner(data) {
-  const withSheets = Object.keys(data.bets);
-  const el = document.getElementById('lb-coverage');
-  const dates = withSheets
-    .map((id) => data.revolutions.find((r) => r.id === id))
-    .filter(Boolean)
-    .map((r) => fmtDate(r.date, true));
-  el.innerHTML = '<strong>Betting-sheet resolution:</strong> ' + withSheets.length + ' of ' +
-    data.revolutions.length + ' revolutions have a sheet (' + [...new Set(dates)].join(' · ') + ').';
-}
+/* ---------- computed characteristics ---------- */
 
-/* Stone economy per player, scoped to the revolutions that have a sheet.
-   A match score is stone given by that team, so per set:
-   given = own team's score, lost = opponents' score. */
-function stoneStats(data) {
+function characteristics(data) {
+  const out = {};
   const sheetRevs = new Set(Object.keys(data.bets));
-  const out = Object.fromEntries(PLAYER_ORDER.map((p) => [p, { given: 0, lost: 0, sets: 0 }]));
+
+  // pair win rates (all-time) for favourite/synergy computations
+  const pair = {};
+  const indiv = Object.fromEntries(PLAYER_ORDER.map((p) => [p, { w: 0, n: 0 }]));
   for (const m of data.matches) {
-    if (!sheetRevs.has(m.revId)) continue;
-    for (const p of PLAYER_ORDER) {
-      const inA = m.teamA.includes(p), inB = m.teamB.includes(p);
-      if (!inA && !inB) continue;
-      const s = out[p];
-      s.sets++;
-      s.given += inA ? m.scoreA : m.scoreB;
-      s.lost += inA ? m.scoreB : m.scoreA;
+    for (const [team, opp] of [[m.teamA, m.teamB], [m.teamB, m.teamA]]) {
+      const k = [...team].sort().join('-');
+      pair[k] ??= { w: 0, n: 0 };
+      pair[k].n++;
+      const won = team.every((p) => m.winner.includes(p));
+      if (won) pair[k].w++;
+      for (const p of team) { indiv[p].n++; if (won) indiv[p].w++; }
+      void opp;
     }
   }
+  const pairRate = (team) => { const e = pair[[...team].sort().join('-')]; return e ? e.w / e.n : 0.5; };
+
+  for (const p of PLAYER_ORDER) {
+    const s = data.betStats[p];
+    const c = { p, s };
+
+    // avg ladder height of bids (sheet scope)
+    let sum = 0, n = 0;
+    for (const [t, count] of Object.entries(s.mix)) { sum += ladderIdx(t) * count; n += count; }
+    c.avgLadder = n ? sum / n : 0;
+    c.betN = n;
+    c.convPct = (s.wins + s.losses) ? s.wins / (s.wins + s.losses) : 0;
+    c.netPerBet = c.betN ? s.netStone / c.betN : 0;
+
+    // signature: modal tier if it carries >= 40% of bids
+    let modal = null;
+    for (const [t, count] of Object.entries(s.mix)) if (!modal || count > s.mix[modal]) modal = t;
+    c.signature = modal && s.mix[modal] / Math.max(1, n) >= 0.4
+      ? { tier: modal, count: s.mix[modal], rec: s.mixOutcomes[modal] }
+      : null;
+
+    // stone economy per set (sheet scope) + clutch + set arc (all-time)
+    c.stone = { given: 0, lost: 0, sets: 0 };
+    c.clutch = { w: 0, l: 0 };
+    c.arc = [{ w: 0, n: 0 }, { w: 0, n: 0 }, { w: 0, n: 0 }];
+    c.favN = 0;
+    c.matchN = 0;
+    for (const m of data.matches) {
+      const inA = m.teamA.includes(p), inB = m.teamB.includes(p);
+      if (!inA && !inB) continue;
+      const team = inA ? m.teamA : m.teamB;
+      const own = inA ? m.scoreA : m.scoreB;
+      const opp = inA ? m.scoreB : m.scoreA;
+      const won = m.winner.includes(p);
+      c.matchN++;
+      if (sheetRevs.has(m.revId)) { c.stone.sets++; c.stone.given += own; c.stone.lost += opp; }
+      if (Math.min(m.scoreA, m.scoreB) >= 8) { won ? c.clutch.w++ : c.clutch.l++; }
+      const slot = Math.min(3, Math.max(1, m.setNo)) - 1;
+      c.arc[slot].n++; if (won) c.arc[slot].w++;
+      if (pairRate(team) > pairRate(inA ? m.teamB : m.teamA)) c.favN++;
+    }
+
+    // finishing shape (all-time)
+    c.ranks = [0, 0, 0, 0];
+    for (const r of data.revolutions) {
+      const pl = r.placements.find((x) => x.p === p);
+      if (pl) c.ranks[pl.rank - 1]++;
+    }
+    out[p] = c;
+  }
+
+  // nulls (table-level facts)
+  const trio = ['LX', 'ML', 'MN'];
+  const h2h = [];
+  for (let i = 0; i < trio.length; i++) for (let j = i + 1; j < trio.length; j++) {
+    let w = 0, nn = 0;
+    for (const m of data.matches) {
+      const aIn = m.teamA.includes(trio[i]) || m.teamB.includes(trio[i]);
+      const bIn = m.teamA.includes(trio[j]) || m.teamB.includes(trio[j]);
+      const sameTeam = [m.teamA, m.teamB].some((t) => t.includes(trio[i]) && t.includes(trio[j]));
+      if (!aIn || !bIn || sameTeam) continue;
+      nn++; if (m.winner.includes(trio[i])) w++;
+    }
+    h2h.push(w / nn);
+  }
+  let maxSynergy = 0;
+  for (const [k, e] of Object.entries(pair)) {
+    const [a, b] = k.split('-');
+    const ra = indiv[a].w / indiv[a].n, rb = indiv[b].w / indiv[b].n;
+    const expected = (ra + rb) / 2;
+    maxSynergy = Math.max(maxSynergy, Math.abs(e.w / e.n - expected));
+  }
+  out._table = {
+    h2hRange: [Math.min(...h2h), Math.max(...h2h)],
+    maxSynergy,
+    matches: data.matches.length,
+  };
   return out;
 }
 
-function mixCounts(mix) {
-  const parts = TIERS.filter((t) => mix[t]).map((t) =>
-    '<span class="lb-mix-item"><strong>' + t + '</strong>×' + mix[t] + '</span>');
-  return parts.length ? parts.join('') : '<span class="lb-footnote">no bets recorded</span>';
+/* ---------- epithets & verdicts (deterministic, receipts cited) ---------- */
+
+function assignEpithets(chars) {
+  const by = (fn, dir = 1) => [...PLAYER_ORDER].sort((a, b) => dir * (fn(chars[b]) - fn(chars[a])))[0];
+  const candidates = [
+    {
+      title: 'The Strongman',
+      pick: by((c) => c.avgLadder),
+      cite: (c) => 'highest average bid on the sheet' + (c.s.pccWin ? ' · the only PCC — won' : ''),
+    },
+    {
+      title: 'The Sniper',
+      pick: by((c) => c.convPct - (c.s.bets / Math.max(1, c.s.sets)) / 10),
+      cite: (c) => 'fewest bets, best conversion — ' + c.s.wins + 'W–' + c.s.losses + 'L',
+    },
+    {
+      title: 'The Sixty-Merchant',
+      pick: by((c) => (c.s.mix['60'] ?? 0) / Math.max(1, c.betN)),
+      cite: (c) => (c.s.mix['60'] ?? 0) + ' of ' + c.betN + ' bids are 60s' +
+        ((c.s.capsPlain + c.s.capsBonus + c.s.capsLate + c.s.capsWrong) === 0 ? ' · zero caps written in ' + c.betN + ' bids' : ''),
+    },
+    {
+      title: 'The Gambler',
+      pick: by((c) => c.netPerBet, -1),
+      cite: (c) => c.s.netStone + ' stone from own bets · ' + c.s.penalties + ' penalties',
+    },
+  ];
+  const result = {};
+  for (const cand of candidates) {
+    if (result[cand.pick]) continue;
+    result[cand.pick] = { title: cand.title, cite: cand.cite(chars[cand.pick]) };
+  }
+  for (const p of PLAYER_ORDER) result[p] ??= { title: 'The Regular', cite: '' };
+  return result;
 }
 
-function capsLine(s) {
-  const total = s.capsPlain + s.capsBonus + s.capsLate + s.capsWrong;
-  if (!total) return '<span class="lb-footnote">no caps calls</span>';
-  const wins = s.capsPlain + s.capsBonus;
-  const losses = s.capsLate + s.capsWrong;
-  const bits = [];
-  if (s.capsBonus) bits.push('<span class="lb-not lb-not--win" title="Correct Caps before R7 (+1 stone)">+1×' + s.capsBonus + '</span>');
-  if (s.capsPlain) bits.push('<span class="lb-not lb-not--win" title="Correct Caps, no bonus">+0×' + s.capsPlain + '</span>');
-  if (s.capsLate) bits.push('<span class="lb-not lb-not--loss" title="Late Caps">−L×' + s.capsLate + '</span>');
-  if (s.capsWrong) bits.push('<span class="lb-not lb-not--loss" title="Wrong Caps (5 stone)">−W×' + s.capsWrong + '</span>');
-  return '<span class="lb-caps-line"><span class="lb-profile-val">' + wins + 'W – ' + losses + 'L</span>' + bits.join('') + '</span>';
+function verdict(c, chars) {
+  const pros = [], cons = [];
+  // per-tier records with n >= 5
+  let bestTier = null, worstTier = null;
+  for (const [t, r] of Object.entries(c.s.mixOutcomes)) {
+    const nn = r.w + r.l;
+    if (nn < 5) continue;
+    if (!bestTier || r.w / nn > bestTier.rate) bestTier = { t, r, rate: r.w / nn };
+    if (!worstTier || r.w / nn < worstTier.rate) worstTier = { t, r, rate: r.w / nn };
+  }
+  if (bestTier && bestTier.rate >= 0.65) pros.push('owns the ' + bestTier.t + ' — ' + bestTier.r.w + '–' + bestTier.r.l);
+  if (c.clutch.w + c.clutch.l >= 10 && c.clutch.w / (c.clutch.w + c.clutch.l) >= 0.65) {
+    pros.push('wins the nail-biters — ' + c.clutch.w + '–' + c.clutch.l + ' in matches decided at 8+');
+  }
+  const capsWins = c.s.capsPlain + c.s.capsBonus;
+  if (capsWins >= 2 && c.s.capsLate + c.s.capsWrong === 0) pros.push('clean caps ledger — ' + capsWins + ' called, ' + capsWins + ' landed');
+  if (c.netPerBet > 0.3) pros.push('bets at a profit — +' + c.s.netStone + ' stone over the sheets');
+
+  if (worstTier && worstTier.rate <= 0.4) cons.push('bleeds at the ' + worstTier.t + ' — ' + worstTier.r.w + '–' + worstTier.r.l);
+  if (c.netPerBet < -0.5) cons.push('pays for the ladder — ' + c.s.netStone + ' stone from own bets');
+  const maxPen = Math.max(...PLAYER_ORDER.map((q) => chars[q].s.penalties));
+  if (c.s.penalties >= 3 && c.s.penalties === maxPen) cons.push('most penalised at the table — ' + c.s.penalties + ' PN');
+  if (c.betN >= 20 && capsWins + c.s.capsLate + c.s.capsWrong === 0) cons.push('never calls caps — 0 in ' + c.betN + ' bids');
+  if (c.clutch.w + c.clutch.l >= 10 && c.clutch.w / (c.clutch.w + c.clutch.l) <= 0.4) {
+    cons.push('folds in the nail-biters — ' + c.clutch.w + '–' + c.clutch.l + ' at 8+');
+  }
+  return { pro: pros[0] ?? null, con: cons[0] ?? null };
 }
 
-function renderProfiles(data) {
+/* ---------- renderers ---------- */
+
+function coverageBanner(data) {
+  const withSheets = Object.keys(data.bets);
+  const dates = [...new Set(withSheets
+    .map((id) => data.revolutions.find((r) => r.id === id))
+    .filter(Boolean)
+    .map((r) => fmtDate(r.date, true)))];
+  document.getElementById('lb-coverage').innerHTML =
+    '<strong>Betting-sheet resolution:</strong> ' + withSheets.length + ' of ' +
+    data.revolutions.length + ' revolutions have a sheet (' + dates.join(' · ') + ').';
+}
+
+function renderCompass(data, chars) {
+  const host = document.getElementById('lb-compass');
+  const colors = playerColors();
+  const W = 640, H = 330, padL = 70, padR = 130, padT = 24, padB = 46;
+  const iw = W - padL - padR, ih = H - padT - padB;
+
+  const xs = PLAYER_ORDER.map((p) => chars[p].avgLadder);
+  const xMin = Math.min(...xs) - 0.35, xMax = Math.max(...xs) + 0.35;
+  const x = (v) => padL + ((v - xMin) / (xMax - xMin)) * iw;
+  const y = (v) => padT + (1 - v) * ih; // conversion 0..1
+
+  const medianConv = 0.5;
+  let dots = '', labels = '';
+  // dodge labels vertically
+  const pts = PLAYER_ORDER.map((p) => ({ p, x: x(chars[p].avgLadder), y: y(chars[p].convPct) }))
+    .sort((a, b) => a.y - b.y);
+  let lastY = -Infinity;
+  for (const pt of pts) {
+    const ly = Math.max(pt.y, lastY + 16);
+    lastY = ly;
+    const c = chars[pt.p];
+    dots += '<circle cx="' + pt.x.toFixed(1) + '" cy="' + pt.y.toFixed(1) + '" r="6" fill="' + colors[pt.p] + '"/>';
+    labels += '<text class="lb-compass-label" x="' + (pt.x + 12).toFixed(1) + '" y="' + (ly + 4).toFixed(1) + '">' +
+      esc(playerName(data, pt.p)) + ' <tspan class="lb-compass-rec">' + c.s.wins + '–' + c.s.losses + '</tspan></text>';
+  }
+
+  host.innerHTML =
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Average bid height versus bid conversion for all four players" preserveAspectRatio="xMidYMid meet">' +
+    '<line class="lb-race-grid" x1="' + padL + '" x2="' + (W - padR) + '" y1="' + y(medianConv).toFixed(1) + '" y2="' + y(medianConv).toFixed(1) + '" stroke-dasharray="3 4"/>' +
+    '<text class="lb-race-tick" x="' + (padL - 8) + '" y="' + (y(1) + 4) + '" text-anchor="end">all won</text>' +
+    '<text class="lb-race-tick" x="' + (padL - 8) + '" y="' + (y(medianConv) + 4) + '" text-anchor="end">50%</text>' +
+    '<text class="lb-race-tick" x="' + (padL - 8) + '" y="' + (y(0) + 4) + '" text-anchor="end">all lost</text>' +
+    '<text class="lb-race-tick" x="' + padL + '" y="' + (H - 14) + '">all 60s ← bid height</text>' +
+    '<text class="lb-race-tick" x="' + (W - padR) + '" y="' + (H - 14) + '" text-anchor="end">the ladder’s top →</text>' +
+    dots + labels +
+    '</svg>';
+}
+
+function renderCards(data, chars) {
   const el = document.getElementById('lb-profiles');
-  const stone = stoneStats(data);
-  const maxPenalties = Math.max(...PLAYER_ORDER.map((p) => data.betStats[p].penalties));
+  const epithets = assignEpithets(chars);
 
   el.innerHTML = PLAYER_ORDER.map((p) => {
-    const s = data.betStats[p];
-    const st = stone[p];
-    const perSet = s.sets ? (s.bets / s.sets).toFixed(1) : '0';
-    const givenAvg = st.sets ? (st.given / st.sets).toFixed(1) : '—';
-    const lostAvg = st.sets ? (st.lost / st.sets).toFixed(1) : '—';
+    const c = chars[p];
+    const s = c.s;
+    const e = epithets[p];
+    const v = verdict(c, chars);
     const style = data.styles && data.styles[p];
-    const pcc = (s.pccWin || s.pccLoss)
-      ? ' <span class="lb-not lb-not--big" title="Partner Closed Caps record">PCC ' + s.pccWin + 'W/' + s.pccLoss + 'L</span>' : '';
-    const penClass = s.penalties > 0 && s.penalties === maxPenalties ? ' lb-pen-max' : '';
+    const perSet = s.sets ? (s.bets / s.sets).toFixed(1) : '0';
+    const givenAvg = c.stone.sets ? (c.stone.given / c.stone.sets).toFixed(1) : '—';
+    const lostAvg = c.stone.sets ? (c.stone.lost / c.stone.sets).toFixed(1) : '—';
+    const net = (s.netStone > 0 ? '+' : '') + s.netStone;
+    const maxPen = Math.max(...PLAYER_ORDER.map((q) => chars[q].s.penalties));
+    const penClass = s.penalties > 0 && s.penalties === maxPen ? ' lb-pen-max' : '';
+    const capsWins = s.capsPlain + s.capsBonus;
+    const capsLosses = s.capsLate + s.capsWrong;
+    const capsTotal = capsWins + capsLosses;
+    const arcPct = c.arc.map((a) => (a.n ? Math.round((a.w / a.n) * 100) : 0));
+    const arcTrend = arcPct[2] > arcPct[0] + 5 ? ' ↗' : arcPct[2] < arcPct[0] - 5 ? ' ↘' : '';
+
+    const sig = c.signature
+      ? '<span class="lb-sig-not">' + esc(c.signature.tier) + ' ×' + c.signature.count + '</span>' +
+        '<span class="lb-sig-rec">' + c.signature.rec.w + '–' + c.signature.rec.l + '</span>'
+      : '<span class="lb-sig-not">the whole ladder · 60 → ' +
+        esc(LADDER.filter((t) => s.mix[t]).at(-1) ?? '60') + '</span>';
+
     return '<article class="lb-profile" style="--pc: var(--player-' + p + ')">' +
-      '<h3 class="lb-profile-h"><i class="lb-dot lb-dot--lg"></i>' + esc(playerName(data, p)) + '</h3>' +
+      '<header class="lb-profile-head">' +
+        '<h3 class="lb-profile-h"><i class="lb-dot lb-dot--lg"></i>' + esc(playerName(data, p)) + '</h3>' +
+        '<p class="lb-epithet">' + esc(e.title) + '</p>' +
+        (e.cite ? '<p class="lb-epithet-cite">' + esc(e.cite) + '</p>' : '') +
+      '</header>' +
       (style ? '<p class="lb-profile-style">&ldquo;' + esc(style) + '&rdquo;</p>' : '') +
+      '<div class="lb-sig"><span class="lb-profile-label">Signature</span>' + sig + '</div>' +
       '<div class="lb-profile-grid">' +
         '<span class="lb-profile-label">Bets / set</span><span class="lb-profile-val">' + perSet + '</span>' +
         '<span class="lb-profile-label">Record</span><span class="lb-profile-val">' + s.wins + 'W – ' + s.losses + 'L</span>' +
-        '<span class="lb-profile-label">Stone given / set</span><span class="lb-profile-val">' + givenAvg + ' <span class="lb-profile-sub">(' + st.given + ' total)</span></span>' +
-        '<span class="lb-profile-label">Stone lost / set</span><span class="lb-profile-val">' + lostAvg + ' <span class="lb-profile-sub">(' + st.lost + ' total)</span></span>' +
-        '<span class="lb-profile-label">Bid mix</span><span class="lb-mix-counts">' + mixCounts(s.mix) + '</span>' +
-        '<span class="lb-profile-label">Caps</span><span>' + capsLine(s) + pcc + '</span>' +
+        '<span class="lb-profile-label">Stone, own bets</span><span class="lb-profile-val ' + (s.netStone > 0 ? 'lb-val-win' : s.netStone < 0 ? 'lb-val-loss' : '') + '">' + net + '</span>' +
+        '<span class="lb-profile-label">Stone given / set</span><span class="lb-profile-val">' + givenAvg + '</span>' +
+        '<span class="lb-profile-label">Stone lost / set</span><span class="lb-profile-val">' + lostAvg + '</span>' +
+        '<span class="lb-profile-label">Caps</span><span>' +
+          (capsTotal
+            ? '<span class="lb-profile-val">' + capsWins + 'W – ' + capsLosses + 'L</span>' +
+              (s.pccWin || s.pccLoss ? ' <span class="lb-not lb-not--big">PCC ' + s.pccWin + 'W/' + s.pccLoss + 'L</span>' : '')
+            : '<span class="lb-footnote">none called</span>') + '</span>' +
         '<span class="lb-profile-label">Penalties</span><span class="lb-profile-val' + penClass + '">' + s.penalties + '</span>' +
+        '<span class="lb-profile-divider" aria-hidden="true"></span>' +
+        '<span class="lb-profile-scope">All-time · 92 matches</span>' +
+        '<span class="lb-profile-label">Clutch (8+)</span><span class="lb-profile-val">' + c.clutch.w + 'W – ' + c.clutch.l + 'L</span>' +
+        '<span class="lb-profile-label">Sets 1 → 3</span><span class="lb-profile-val">' + arcPct.join('·') + '%' + arcTrend + '</span>' +
       '</div>' +
+      ((v.pro || v.con)
+        ? '<div class="lb-verdict">' +
+            (v.pro ? '<p class="lb-verdict-pro">✓ ' + esc(v.pro) + '</p>' : '') +
+            (v.con ? '<p class="lb-verdict-con">✗ ' + esc(v.con) + '</p>' : '') +
+          '</div>'
+        : '') +
     '</article>';
   }).join('');
 }
 
+function renderFinishes(data, chars) {
+  const el = document.getElementById('lb-finishes');
+  const total = data.revolutions.length;
+  el.innerHTML = PLAYER_ORDER.map((p) => {
+    const c = chars[p];
+    const segs = c.ranks.map((n, i) => {
+      const w = (n / total) * 100;
+      const cls = i === 0 ? ' lb-fin-first' : '';
+      return n ? '<span class="lb-fin-seg' + cls + '" style="width:' + w.toFixed(1) + '%" title="' + (i + 1) + ordSuffix(i + 1) + ' ×' + n + '">' +
+        (i === 0 ? '★ ' : '') + n + '</span>' : '';
+    }).join('');
+    return '<div class="lb-fin-row">' +
+      '<span class="lb-fin-name"><i class="lb-dot" style="background:var(--player-' + p + ')"></i>' + esc(playerName(data, p)) + '</span>' +
+      '<span class="lb-fin-bar">' + segs + '</span>' +
+    '</div>';
+  }).join('') +
+  '<p class="lb-footnote">Segments left to right: 1st · 2nd · 3rd · 4th place finishes across all ' + total + ' revolutions.</p>';
+}
+
+function ordSuffix(n) { return n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'; }
+
+function renderNulls(data, chars) {
+  const t = chars._table;
+  const vmFav = chars.VM.favN;
+  document.getElementById('lb-nulls').innerHTML =
+    '<span>No pair over- or under-performs the sum of its players (largest deviation ' +
+    (t.maxSynergy * 100).toFixed(0) + ' points — within noise at this sample).</span>' +
+    '<span>No bogey opponents — Lewei, Marc and Matthew sit at ' +
+    Math.round(t.h2hRange[0] * 100) + '–' + Math.round(t.h2hRange[1] * 100) + '% head-to-head: a perfect triangle.</span>' +
+    '<span>Vithusayan has been the on-paper favourite in ' + vmFav + ' of his ' + chars.VM.matchN + ' matches.</span>';
+}
+
+/* ---------- init ---------- */
+
 loadData().then((data) => {
   renderMeta(data);
   coverageBanner(data);
-  renderProfiles(data);
+  const chars = characteristics(data);
+  renderCompass(data, chars);
+  renderCards(data, chars);
+  renderFinishes(data, chars);
+  renderNulls(data, chars);
+  onThemeChange(() => renderCompass(data, chars));
   showMain();
 }).catch(showError);
