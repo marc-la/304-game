@@ -207,12 +207,19 @@ function applyFilters(state) {
     const winnerOk = !state.winner || (el.dataset.winners || '').split(' ').includes(state.winner);
     el.hidden = !winnerOk;
   });
-  // hide empty date groups
+  // Hide empty date groups, but keep season headers visible with an
+  // updated applicable-revolution count ("3 of 12 revolutions").
   document.querySelectorAll('.lb-day').forEach((g) => {
     g.hidden = !g.querySelector('.lb-rev:not([hidden])');
   });
   document.querySelectorAll('.lb-season-group').forEach((g) => {
-    g.hidden = !g.querySelector('.lb-rev:not([hidden])');
+    const total = g.querySelectorAll('.lb-rev').length;
+    const visible = g.querySelectorAll('.lb-rev:not([hidden])').length;
+    const meta = g.querySelector('.lb-season-meta');
+    if (meta) {
+      const word = total === 1 ? 'revolution' : 'revolutions';
+      meta.textContent = state.winner ? visible + ' of ' + total + ' ' + word : total + ' ' + word;
+    }
   });
 }
 
@@ -281,22 +288,6 @@ function render(data) {
     sg.appendChild(wrap);
     container.appendChild(sg);
   }
-
-  // past seasons collapsed behind a toggle
-  const groups = [...container.querySelectorAll('.lb-season-group')];
-  groups.slice(1).forEach((g) => {
-    const details = document.createElement('details');
-    details.className = 'lb-season-fold';
-    const s = document.createElement('summary');
-    s.className = 'lb-season-fold-summary';
-    s.innerHTML = g.querySelector('.lb-season-h').outerHTML + '<span class="lb-chevron" aria-hidden="true"></span>';
-    g.querySelector('.lb-season-h').remove();
-    details.appendChild(s);
-    const inner = document.createElement('div');
-    while (g.firstChild) inner.appendChild(g.firstChild);
-    details.appendChild(inner);
-    g.appendChild(details);
-  });
 }
 
 function openFromHash() {
@@ -304,8 +295,6 @@ function openFromHash() {
   if (!id) return;
   const el = document.getElementById(id);
   if (!el || !el.classList.contains('lb-rev')) return;
-  const fold = el.closest('.lb-season-fold');
-  if (fold) fold.open = true;
   el.open = true;
   el.scrollIntoView({ block: 'start' });
 }

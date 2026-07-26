@@ -36,8 +36,7 @@ function renderStandings(data, scope) {
       '</div>'
     );
   }).join('') +
-  '<p class="lb-footnote">Ranked by revolutions won, then matches, then stone · form pips = last 5 placements, oldest left' +
-  (scope === 'all' ? '' : ' · win rate within ' + (scope === 'all' ? '' : 'season ' + scope)) + '</p>';
+  '<p class="lb-footnote">Ranked by revolutions won · pips = last 5 placements</p>';
   // Keep the max in reserve for future emphasis (leader detection).
   void maxRevs;
 }
@@ -169,10 +168,6 @@ function renderPartnerships(data, scope) {
   const el = document.getElementById('lb-partnerships');
   const pairs = partnerships(data, scope);
   if (!pairs.length) { el.innerHTML = '<p class="lb-footnote">No matches yet this season.</p>'; return; }
-  const counts = [...new Set(pairs.map((x) => x.played))];
-  const caption = counts.length === 1
-    ? 'each pair has played ' + counts[0] + (counts[0] === 1 ? ' match' : ' matches')
-    : 'pairs have played ' + Math.min(...counts) + '–' + Math.max(...counts) + ' matches';
   el.innerHTML = pairs.map((pr) => {
     const rate = Math.round((pr.won / pr.played) * 100);
     const [a, b] = pr.players;
@@ -183,7 +178,7 @@ function renderPartnerships(data, scope) {
       '<span class="lb-pair-pct">' + rate + '%</span>' +
       '<span class="lb-pair-rec">' + pr.won + '–' + (pr.played - pr.won) + '</span>' +
     '</div>';
-  }).join('') + '<p class="lb-footnote">' + caption + ' · rule at 50%</p>';
+  }).join('');
 }
 
 /* ---- init ---- */

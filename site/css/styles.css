@@ -1976,32 +1976,44 @@ dd {
 }
 
 .lb-dash {
-  flex: 1;
   display: grid;
   grid-template-columns: 5fr 7fr;
   grid-template-rows: auto auto;
   grid-template-areas:
     "standings race"
     "pairs     race";
-  gap: 12px 24px;
+  align-content: start;
+  gap: 20px 24px;
   min-height: 0;
 }
 
 .lb-dash-standings { grid-area: standings; }
 .lb-dash-race { grid-area: race; min-width: 0; }
-.lb-dash-pairs { grid-area: pairs; align-self: end; }
+.lb-dash-pairs { grid-area: pairs; }
 
+/* Two-line row: the name owns line 1 and can never be squeezed out by
+   the bar/pips, which live on line 2. */
 .lb-standing {
   display: grid;
-  grid-template-columns: 18px 10px 1fr auto minmax(90px, 140px) auto;
+  grid-template-columns: 18px 10px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "rank swatch name revs"
+    ".    .      rate form";
   align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
+  gap: 4px 10px;
+  padding: 10px 14px;
   border: 1px solid var(--clr-border);
   border-radius: 6px;
   background: var(--clr-surface);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
+
+.lb-standing-rank { grid-area: rank; }
+.lb-standing-swatch { grid-area: swatch; }
+.lb-standing-name { grid-area: name; }
+.lb-standing-revs { grid-area: revs; justify-self: end; }
+.lb-standing-rate { grid-area: rate; }
+.lb-standing-form { grid-area: form; justify-self: end; }
 
 .lb-standing-rank {
   font-family: var(--font-mono);
@@ -2011,7 +2023,7 @@ dd {
 
 .lb-standing-swatch {
   width: 10px;
-  height: 22px;
+  height: 20px;
   border-radius: 3px;
   background: var(--pc);
 }
@@ -2255,12 +2267,7 @@ dd {
 
 /* --- history --- */
 
-.lb-gloss {
-  font-family: var(--font-heading);
-  font-size: 0.78rem;
-  color: var(--clr-text-muted);
-  margin-bottom: 12px;
-}
+
 
 .lb-toolbar {
   display: flex;
@@ -2330,15 +2337,9 @@ dd {
   margin-left: 10px;
 }
 
-.lb-season-fold-summary {
-  cursor: pointer;
-  list-style: none;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
 
-.lb-season-fold-summary .lb-season-h { margin: 28px 0 4px; }
+
+
 
 .lb-day-h {
   font-family: var(--font-heading);
@@ -2384,8 +2385,7 @@ details[open] > summary .lb-chevron { transform: rotate(45deg); }
 
 .lb-rev-summary::-webkit-details-marker,
 .lb-match-summary::-webkit-details-marker,
-.lb-legend summary::-webkit-details-marker,
-.lb-season-fold-summary::-webkit-details-marker { display: none; }
+.lb-legend summary::-webkit-details-marker { display: none; }
 
 .lb-rev-num {
   font-family: var(--font-heading);
@@ -2678,117 +2678,42 @@ details[open] > summary .lb-chevron { transform: rotate(45deg); }
   font-size: 0.85rem;
 }
 
-.lb-mix {
-  display: flex;
-  height: 12px;
-  border-radius: 3px;
-  overflow: hidden;
-  border: 1px solid var(--clr-border);
-  min-width: 80px;
-}
 
-.lb-mix-seg { display: block; }
-.lb-mix-seg + .lb-mix-seg { border-left: 2px solid var(--clr-surface); }
 
-.lb-mix-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  margin-top: 10px;
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: var(--clr-text-muted);
-}
 
-.lb-mix-legend i {
-  display: inline-block;
-  width: 9px;
-  height: 9px;
-  border-radius: 2px;
-  margin-right: 4px;
-}
 
-.lb-caps-bit {
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  margin-right: 8px;
-}
 
-.lb-stone {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
-}
 
-.lb-stone-h {
-  font-family: var(--font-heading);
-  font-size: 0.76rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 0 0 6px;
-}
 
-.lb-stone-h a {
-  color: var(--clr-text-muted);
-  text-decoration: none;
-}
 
-.lb-stone-h a:hover { color: var(--clr-accent); }
 
-.lb-stone-row {
-  display: grid;
-  grid-template-columns: minmax(80px, auto) 1fr 3ch;
-  align-items: center;
-  gap: 8px;
-  padding: 2px 0;
-  font-family: var(--font-heading);
-  font-size: 0.78rem;
-}
 
-.lb-stone-bar { height: 8px; }
 
-.lb-stone-val {
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  text-align: right;
-}
 
-.lb-event-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
 
-.lb-event {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  padding: 7px 0;
-  border-bottom: 1px solid var(--clr-border);
-  font-family: var(--font-heading);
-  font-size: 0.82rem;
-  flex-wrap: wrap;
-}
 
-.lb-event-date {
-  font-size: 0.74rem;
-  color: var(--clr-text-muted);
-  width: 130px;
-}
 
-.lb-event-date a {
-  color: inherit;
-}
 
-.lb-event-tok {
-  font-family: var(--font-mono);
-  font-weight: 700;
-}
 
-.lb-event-label {
-  color: var(--clr-text-muted);
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* --- responsive --- */
 
@@ -2809,9 +2734,9 @@ details[open] > summary .lb-chevron { transform: rotate(45deg); }
   .lb-dash-pairs { align-self: start; }
 
   .lb-standing {
-    grid-template-columns: 14px 8px minmax(0, 1fr) auto minmax(60px, 1fr) auto;
-    gap: 8px;
-    padding: 7px 10px;
+    grid-template-columns: 14px 8px minmax(0, 1fr) auto;
+    gap: 3px 8px;
+    padding: 8px 10px;
   }
 
   .lb-standing-name { font-size: 1rem; }
@@ -2829,4 +2754,38 @@ details[open] > summary .lb-chevron { transform: rotate(45deg); }
   .lb-pair-bar { display: none; }
   .lb-strip { gap: 8px; }
   .lb-seg-item { padding: 5px 10px; font-size: 0.76rem; }
+}
+
+/* insights: profile detail styles */
+.lb-profile-sub {
+  font-family: var(--font-heading);
+  font-size: 0.7rem;
+  color: var(--clr-text-muted);
+  white-space: nowrap;
+}
+
+.lb-mix-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--clr-text-muted);
+}
+
+.lb-mix-item strong {
+  color: var(--clr-text);
+  font-weight: 600;
+}
+
+.lb-caps-line {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lb-pen-max {
+  color: var(--clr-loss);
+  font-weight: 700;
 }
