@@ -476,8 +476,9 @@ the two and applies policy.
   suit-exhaustion events, and §T9 reveals — not from the absence
   of plays the rules would have forced. Adding this would require
   modelling the legal-plays predicate as a per-world consistency
-  constraint. See [handoffs/deductions-audit.md](../handoffs/deductions-audit.md) and the
-  followup-investigations handoff.
+  constraint. This is a known, deliberate non-goal rather than an
+  oversight; the analysis behind it was in the deductions-audit and
+  info-set-followup handoffs, deleted 2026-07-27 (see git log).
 - **Higher-order epistemic reasoning.** "V learns about W's
   beliefs from W's non-call / false-call" is out of scope. Caps
   requires certainty deductions about hidden state, not
