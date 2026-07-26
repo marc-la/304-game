@@ -39,10 +39,11 @@ segmented control plus a right-aligned "updated 25 Jul" meta line IS the header.
 - **Seasons** are data-driven: a revolution whose Notes match `/SEASON (\d+)
   START/i` begins that season. Never hard-code a season boundary.
 - **Scope honesty is non-negotiable.** Bet-sheet stats (caps, penalties, bet
-  mix, stone ledgers) cover only revolutions with a CSV. They live on the
-  insights page under an explicit coverage banner ("Betting-sheet resolution:
-  N of M revolutions") and never sit beside all-time stats without a label.
-  Counts, not percentages, while n is small.
+  mix, stone ledgers) cover only revolutions with a CSV. On the insights page
+  the coverage sentence ("Bet-level numbers cover the N of M revolutions with
+  a betting sheet…") lives in the nulls footnote, and every profile card
+  labels its all-time block; sheet-scope and all-time stats never sit
+  together without a label. Counts, not percentages, while n is small.
 - **Ranking rule** (revolutions won → matches won → stone) is stated in
   microcopy wherever a ranking is shown. Tied revolution wins credit every
   tied player; if a sum can visibly exceed the revolution count, say so.

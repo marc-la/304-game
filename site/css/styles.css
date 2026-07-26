@@ -2611,20 +2611,41 @@ details[open] > summary .lb-chevron { transform: rotate(45deg); }
 
 /* --- insights --- */
 
-.lb-coverage {
-  font-family: var(--font-heading);
-  font-size: 0.8rem;
-  line-height: 1.6;
-  color: var(--clr-text-muted);
-  border: 1px solid var(--clr-border);
-  border-left: 3px solid var(--clr-accent);
-  border-radius: 6px;
-  background: var(--clr-surface);
-  padding: 10px 14px;
-  margin-bottom: 24px;
+.lb-title {
+  font-family: var(--font-body);
+  font-size: 1.9rem;
+  font-weight: 700;
+  margin: 6px 0 18px;
 }
 
-.lb-page section + section { margin-top: 32px; }
+/* page composition: compass beside the finishing shapes + nulls rail,
+   profiles full-width beneath */
+.lb-ins {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
+  grid-template-areas:
+    "compass rail"
+    "profiles profiles";
+  gap: 28px 32px;
+  align-items: start;
+}
+
+.lb-ins-compass { grid-area: compass; }
+.lb-ins-rail { grid-area: rail; min-width: 0; }
+.lb-ins-profiles { grid-area: profiles; }
+
+.lb-ins-rail .lb-nulls { margin-top: 20px; max-width: none; }
+
+@media (max-width: 900px) {
+  .lb-ins {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "compass"
+      "profiles"
+      "rail";
+    gap: 28px;
+  }
+}
 
 .lb-profiles {
   display: grid;
@@ -2797,10 +2818,50 @@ details[open] > summary .lb-chevron { transform: rotate(45deg); }
   border-radius: 6px;
   background: var(--clr-surface);
   padding: 12px 8px 4px;
-  max-width: 720px;
 }
 
 .lb-compass svg { display: block; width: 100%; height: auto; }
+
+.lb-compass-plot {
+  fill: none;
+  stroke: var(--clr-border);
+  stroke-opacity: 0.55;
+}
+
+.lb-compass-grid {
+  stroke: var(--clr-border);
+  stroke-opacity: 0.4;
+  stroke-width: 1;
+}
+
+.lb-compass-grid--even {
+  stroke: var(--clr-text-muted);
+  stroke-opacity: 0.7;
+  stroke-dasharray: 3 4;
+}
+
+.lb-compass-tick {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  fill: var(--clr-text-muted);
+}
+
+.lb-compass-axis {
+  font-family: var(--font-heading);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  fill: var(--clr-text-muted);
+}
+
+.lb-compass-quad {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 12.5px;
+  fill: var(--clr-text-muted);
+  opacity: 0.75;
+}
 
 .lb-compass-label {
   font-family: var(--font-heading);
@@ -2890,7 +2951,6 @@ details[open] > summary .lb-chevron { transform: rotate(45deg); }
 .lb-verdict-pro { color: var(--clr-win); }
 .lb-verdict-con { color: var(--clr-loss); }
 
-.lb-finishes { max-width: 720px; }
 
 .lb-fin-row {
   display: grid;

@@ -180,31 +180,50 @@ function verdict(c, chars) {
 
 /* ---------- renderers ---------- */
 
-function coverageBanner(data) {
-  const withSheets = Object.keys(data.bets);
-  const dates = [...new Set(withSheets
-    .map((id) => data.revolutions.find((r) => r.id === id))
-    .filter(Boolean)
-    .map((r) => fmtDate(r.date, true)))];
-  document.getElementById('lb-coverage').innerHTML =
-    '<strong>Betting-sheet resolution:</strong> ' + withSheets.length + ' of ' +
-    data.revolutions.length + ' revolutions have a sheet (' + dates.join(' · ') + ').';
-}
-
 function renderCompass(data, chars) {
   const host = document.getElementById('lb-compass');
   const colors = playerColors();
-  const W = 640, H = 330, padL = 70, padR = 130, padT = 24, padB = 46;
+  const W = 640, H = 400, padL = 58, padR = 132, padT = 40, padB = 64;
   const iw = W - padL - padR, ih = H - padT - padB;
 
   const xs = PLAYER_ORDER.map((p) => chars[p].avgLadder);
-  const xMin = Math.min(...xs) - 0.35, xMax = Math.max(...xs) + 0.35;
+  const xMin = Math.min(...xs) - 0.45, xMax = Math.max(...xs) + 0.45;
   const x = (v) => padL + ((v - xMin) / (xMax - xMin)) * iw;
   const y = (v) => padT + (1 - v) * ih; // conversion 0..1
+  const right = W - padR;
 
-  const medianConv = 0.5;
+  // grid: a rule per ladder rung inside the domain, labelled with the bid
+  let grid = '';
+  for (let i = Math.ceil(xMin); i <= Math.floor(xMax); i++) {
+    const gx = x(i).toFixed(1);
+    grid += '<line class="lb-compass-grid" x1="' + gx + '" x2="' + gx + '" y1="' + padT + '" y2="' + (H - padB) + '"/>' +
+      '<text class="lb-compass-tick" x="' + gx + '" y="' + (H - padB + 16) + '" text-anchor="middle">' + esc(LADDER[i]) + '</text>';
+  }
+  // grid: conversion quarters, with the 50% line named
+  for (const v of [0.25, 0.5, 0.75]) {
+    const gy = y(v).toFixed(1);
+    grid += '<line class="lb-compass-grid' + (v === 0.5 ? ' lb-compass-grid--even' : '') +
+      '" x1="' + padL + '" x2="' + right + '" y1="' + gy + '" y2="' + gy + '"/>' +
+      '<text class="lb-compass-tick" x="' + (padL - 8) + '" y="' + (+gy + 4) + '" text-anchor="end">' + v * 100 + '%</text>';
+  }
+  grid += '<text class="lb-compass-tick" x="' + (padL + 6) + '" y="' + (y(0.5) - 5) + '">breaks even</text>';
+
+  // axis captions in plain words
+  const axes =
+    '<text class="lb-compass-axis" x="' + padL + '" y="16">share of bets won ↑</text>' +
+    '<text class="lb-compass-axis" x="' + padL + '" y="' + (H - 12) + '">← bids small</text>' +
+    '<text class="lb-compass-axis" x="' + right + '" y="' + (H - 12) + '" text-anchor="end">bids big →</text>' +
+    '<text class="lb-compass-axis lb-compass-axis--mid" x="' + ((padL + right) / 2) + '" y="' + (H - 12) + '" text-anchor="middle">average bid</text>';
+
+  // corner captions give the quadrants meaning without pretending to a hard split
+  const quads =
+    '<text class="lb-compass-quad" x="' + (padL + 10) + '" y="' + (padT + 18) + '">bids small, lands them</text>' +
+    '<text class="lb-compass-quad" x="' + (right - 10) + '" y="' + (padT + 18) + '" text-anchor="end">bids big, lands them</text>' +
+    '<text class="lb-compass-quad" x="' + (padL + 10) + '" y="' + (H - padB - 10) + '">bids small, still pays</text>' +
+    '<text class="lb-compass-quad" x="' + (right - 10) + '" y="' + (H - padB - 10) + '" text-anchor="end">bids big, pays for it</text>';
+
   let dots = '', labels = '';
-  // dodge labels vertically
+  // dodge name labels vertically
   const pts = PLAYER_ORDER.map((p) => ({ p, x: x(chars[p].avgLadder), y: y(chars[p].convPct) }))
     .sort((a, b) => a.y - b.y);
   let lastY = -Infinity;
@@ -218,14 +237,9 @@ function renderCompass(data, chars) {
   }
 
   host.innerHTML =
-    '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Average bid height versus bid conversion for all four players" preserveAspectRatio="xMidYMid meet">' +
-    '<line class="lb-race-grid" x1="' + padL + '" x2="' + (W - padR) + '" y1="' + y(medianConv).toFixed(1) + '" y2="' + y(medianConv).toFixed(1) + '" stroke-dasharray="3 4"/>' +
-    '<text class="lb-race-tick" x="' + (padL - 8) + '" y="' + (y(1) + 4) + '" text-anchor="end">all won</text>' +
-    '<text class="lb-race-tick" x="' + (padL - 8) + '" y="' + (y(medianConv) + 4) + '" text-anchor="end">50%</text>' +
-    '<text class="lb-race-tick" x="' + (padL - 8) + '" y="' + (y(0) + 4) + '" text-anchor="end">all lost</text>' +
-    '<text class="lb-race-tick" x="' + padL + '" y="' + (H - 14) + '">all 60s ← bid height</text>' +
-    '<text class="lb-race-tick" x="' + (W - padR) + '" y="' + (H - 14) + '" text-anchor="end">the ladder’s top →</text>' +
-    dots + labels +
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Average bid height versus share of bets won, for all four players" preserveAspectRatio="xMidYMid meet">' +
+    '<rect class="lb-compass-plot" x="' + padL + '" y="' + padT + '" width="' + iw + '" height="' + ih + '"/>' +
+    grid + axes + quads + dots + labels +
     '</svg>';
 }
 
@@ -316,7 +330,14 @@ function ordSuffix(n) { return n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' 
 function renderNulls(data, chars) {
   const t = chars._table;
   const vmFav = chars.VM.favN;
+  const withSheets = Object.keys(data.bets);
+  const dates = [...new Set(withSheets
+    .map((id) => data.revolutions.find((r) => r.id === id))
+    .filter(Boolean)
+    .map((r) => fmtDate(r.date, true)))];
   document.getElementById('lb-nulls').innerHTML =
+    '<span>Bet-level numbers cover the ' + withSheets.length + ' of ' + data.revolutions.length +
+    ' revolutions with a betting sheet (' + dates.join(' · ') + '); match-level numbers cover everything.</span>' +
     '<span>No pair over- or under-performs the sum of its players (largest deviation ' +
     (t.maxSynergy * 100).toFixed(0) + ' points — within noise at this sample).</span>' +
     '<span>No bogey opponents — Lewei, Marc and Matthew sit at ' +
@@ -328,7 +349,6 @@ function renderNulls(data, chars) {
 
 loadData().then((data) => {
   renderMeta(data);
-  coverageBanner(data);
   const chars = characteristics(data);
   renderCompass(data, chars);
   renderCards(data, chars);
