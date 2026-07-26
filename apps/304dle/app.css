@@ -448,6 +448,21 @@
   background: var(--clr-surface);
 }
 
+/* ?date= preview session. Deliberately plain — it is a testing
+   affordance, not part of the game's surface. */
+.dle-preview-tag {
+  margin-left: 10px;
+  padding: 2px 8px;
+  border: 1px dashed var(--clr-border);
+  border-radius: 5px;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--clr-text-muted);
+  vertical-align: middle;
+}
+
 /* Call Caps is the only irreversible act in the game and the only
    control that matters. It gets its own weight class — previously it
    was a generic `.dle-btn-primary`, visually identical to the

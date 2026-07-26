@@ -47,20 +47,41 @@ const loadDailyPuzzle = async (date: string): Promise<ScriptedPuzzle | null> => 
   }
 };
 
+// `?date=YYYY-MM-DD` plays a specific day instead of today's. This
+// exists so the shipped window can actually be play-tested — otherwise
+// the only reachable puzzle is the one matching the system clock.
+//
+// A preview session is NOT recorded: no result written, no streak
+// touched, and the already-played gate is skipped so the same hand can
+// be replayed as many times as you like. It gives a player nothing
+// they couldn't get by fetching the JSON directly, so it isn't a
+// cheat vector — but it must never be able to *inflate* a streak.
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+const previewDate = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  const q = new URLSearchParams(window.location.search).get('date');
+  return q !== null && DATE_RE.test(q) ? q : null;
+};
+
 const usePuzzleLoader = () => {
   const setPuzzle = useStore(s => s.setPuzzle);
   useEffect(() => {
-    const today = todayDateString();
-    loadDailyPuzzle(today).then(p => setPuzzle(p, today));
+    const date = previewDate() ?? todayDateString();
+    loadDailyPuzzle(date).then(p => setPuzzle(p, date));
   }, [setPuzzle]);
 };
 
 export const App = () => {
   usePuzzleLoader();
   const state = useStore(s => s.state);
+  const isPreview = previewDate() !== null;
   const [persisted, setPersisted] = useState(loadState);
   const [showOnboarding, setShowOnboarding] = useState(
-    () => persisted.history.length === 0 && persisted.todayResult === null,
+    () =>
+      !isPreview &&
+      persisted.history.length === 0 &&
+      persisted.todayResult === null,
   );
 
   if (state.kind === 'loading') {
@@ -70,14 +91,16 @@ export const App = () => {
     return (
       <main className="dle-loading">
         <h1>No puzzle for {state.date}</h1>
-        <p>Check back tomorrow.</p>
+        <p>{isPreview ? 'That date is outside the generated window.' : 'Check back tomorrow.'}</p>
       </main>
     );
   }
 
   if (state.kind === 'intro') {
     const today = state.date;
-    if (isAlreadyPlayed(persisted, today) && persisted.todayResult) {
+    // Preview sessions skip the already-played tombstone so the same
+    // hand can be replayed while testing.
+    if (!isPreview && isAlreadyPlayed(persisted, today) && persisted.todayResult) {
       const r = persisted.todayResult;
       return (
         <main className="dle-app">
@@ -100,7 +123,10 @@ export const App = () => {
       <main className="dle-app dle-intro">
         {showOnboarding && <Onboarding onClose={() => setShowOnboarding(false)} />}
         <h1>304dle</h1>
-        <p className="dle-intro-date">{state.date}</p>
+        <p className="dle-intro-date">
+          {state.date}
+          {isPreview && <span className="dle-preview-tag">preview · not recorded</span>}
+        </p>
         <p className="dle-intro-blurb">
           You are South. Plays are scripted — your only decision is when to call Caps.
         </p>
@@ -120,8 +146,9 @@ export const App = () => {
 
   if (state.kind === 'result') {
     if (
-      persisted.todayResult === null ||
-      persisted.todayResult.date !== state.date
+      !isPreview &&
+      (persisted.todayResult === null ||
+        persisted.todayResult.date !== state.date)
     ) {
       const v = buildVerdict({
         verdict: state.verdict,
