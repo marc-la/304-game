@@ -84,7 +84,9 @@ const externalDirsServe = (): Plugin => ({
     server.middlewares.use((req, _res, next) => {
       const url = req.url ?? '';
       const path = url.split('?')[0];
-      if (/^\/(apps|engine|data)\//.test(path)) {
+      // /data/bets/ maps to the repo-root CSVs; the rest of /data/ (the
+      // generated leaderboard.json) is served from publicDir as normal.
+      if (/^\/(apps|engine)\//.test(path) || /^\/data\/bets\//.test(path)) {
         req.url = '/@fs' + repoRoot + url;
       }
       next();
@@ -122,7 +124,10 @@ const buildInputs: Record<string, string> = {
   rules: resolve(siteRoot, 'rules.html'),
   cheatsheet: resolve(siteRoot, 'cheatsheet.html'),
   capsFormalism: resolve(siteRoot, 'caps-formalism.html'),
-  stats: resolve(siteRoot, 'stats.html'),
+  stats: resolve(siteRoot, 'stats.html'), // redirect to leaderboard.html
+  leaderboard: resolve(siteRoot, 'leaderboard.html'),
+  leaderboardHistory: resolve(siteRoot, 'leaderboard-history.html'),
+  leaderboardInsights: resolve(siteRoot, 'leaderboard-insights.html'),
   practice: resolve(siteRoot, 'practice.html'),
 };
 if (!excludePlay) {

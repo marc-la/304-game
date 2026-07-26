@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <title>304 — Insights</title>
+  <meta name="description" content="Betting profiles, stone ledgers, and notable events at betting-sheet resolution.">
+  <!-- @include partials/site-head.html -->
+</head>
+<body data-section="leaderboard">
+
+<!-- @include partials/site-nav.html -->
+
+<div class="lb-page">
+
+  <div id="lb-loading" class="lb-loading"><p>Loading…</p></div>
+  <div id="lb-error" class="lb-error" hidden>
+    <p>Couldn’t load the leaderboard data. Try refreshing in a moment.</p>
+  </div>
+
+  <div id="lb-main" hidden>
+
+    <header class="lb-strip">
+      <nav class="lb-seg lb-seg--pages" aria-label="Leaderboard pages">
+        <a class="lb-seg-item" href="leaderboard.html">Standings</a>
+        <a class="lb-seg-item" href="leaderboard-history.html">History</a>
+        <a class="lb-seg-item is-active" aria-current="page" href="leaderboard-insights.html">Insights</a>
+      </nav>
+      <span class="lb-updated" id="lb-updated"></span>
+    </header>
+
+    <p id="lb-coverage" class="lb-coverage"></p>
+
+    <section aria-label="Betting profiles">
+      <h2 class="lb-h">How each of us bets</h2>
+      <div id="lb-profiles" class="lb-profiles"></div>
+      <div id="lb-mix-legend"></div>
+      <p class="lb-footnote">Bid-mix bar runs the ladder 60 → PCC; darker = higher tier. Caps and penalties live here (not on the dashboard) because they only exist at sheet resolution.</p>
+    </section>
+
+    <section aria-label="Stone ledger">
+      <h2 class="lb-h">Stone, sheet by sheet</h2>
+      <div id="lb-stone" class="lb-stone"></div>
+    </section>
+
+    <section aria-label="Notable events">
+      <h2 class="lb-h">The record <span class="lb-h-sub">every big bet, caps fail, and PCC</span></h2>
+      <div id="lb-events"></div>
+    </section>
+
+  </div>
+</div>
+
+<script type="module" src="js/theme.js"></script>
+<script src="js/site-nav.js"></script>
+<script type="module" src="js/leaderboard/insights.js"></script>
+</body>
+</html>

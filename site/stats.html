@@ -1,88 +1,13 @@
 <!DOCTYPE html>
 <html lang="en-AU">
 <head>
-  <title>304 Game — Leaderboard</title>
-  <meta name="description" content="Match statistics and player rankings for our 304 card game group.">
-  <!-- @include partials/site-head.html -->
-  <!-- Hoisted with defer so the (large) data libraries download in parallel
-       with HTML parsing, then execute in document order before stats.js. -->
-  <script defer src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <title>304 — Leaderboard</title>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex">
+  <meta http-equiv="refresh" content="0; url=leaderboard.html">
+  <script>location.replace('leaderboard.html' + location.hash);</script>
 </head>
-<body data-section="stats">
-
-<!-- @include partials/site-nav.html -->
-
-<div class="stats-content">
-
-  <!-- Loading state -->
-  <div id="stats-loading" class="stats-loading">
-    <p>Loading statistics<span class="dots">...</span></p>
-  </div>
-
-  <!-- Error state -->
-  <div id="stats-error" class="stats-error" hidden>
-    <p>We couldn’t load the latest stats right now. Please try refreshing in a moment.</p>
-  </div>
-
-  <!-- Main content (hidden until data loads) -->
-  <div id="stats-main" hidden>
-
-    <h1>Leaderboard</h1>
-    <p class="subtitle">Revolution and match statistics for the 304 group.</p>
-    <p class="last-updated" id="last-updated"></p>
-
-    <nav class="stats-jump" aria-label="Leaderboard sections">
-      <a href="#overall-rankings">Rankings</a>
-      <a href="#trends">Trends</a>
-      <a href="#player-stats">Players</a>
-      <a href="#partnerships">Partnerships</a>
-      <a href="#history">History</a>
-    </nav>
-
-    <section id="overall-rankings">
-      <h2>Overall Rankings</h2>
-      <div class="leaderboard-hero" id="leaderboard-hero"></div>
-    </section>
-
-    <section id="trends">
-      <h2>Trends</h2>
-      <div class="chart-card">
-        <h3>Cumulative revolutions won</h3>
-        <p class="chart-caption">Winner = most matches in the revolution; ties broken on score, with any remaining tie crediting each tied player.</p>
-        <div class="chart-canvas-wrap"><canvas id="cumulative-revs-chart"></canvas></div>
-      </div>
-    </section>
-
-    <section id="player-stats">
-      <h2>Player Statistics</h2>
-      <div class="player-grid" id="player-grid"></div>
-    </section>
-
-    <section id="partnerships">
-      <h2>Partnership Win Rates</h2>
-      <div class="partnership-grid" id="partnership-grid"></div>
-      <details class="partnership-trend">
-        <summary><span class="tree-chevron">▶</span> Show partnership win rate over time</summary>
-        <div class="chart-card">
-          <p class="chart-caption">Each pair&rsquo;s running win rate as more matches are played. Lines start once a partnership has played at least two matches together.</p>
-          <div class="chart-canvas-wrap"><canvas id="partnerships-chart"></canvas></div>
-        </div>
-      </details>
-    </section>
-
-    <section id="history">
-      <h2>History</h2>
-      <p class="chart-caption">Click a revolution to expand its matches; expand a match to see its betting sheet (when available).</p>
-      <div class="filter-bar" id="match-filters"></div>
-      <div class="history-tree" id="history-tree"></div>
-    </section>
-
-  </div>
-</div>
-
-<script type="module" src="js/theme.js"></script>
-<script src="js/site-nav.js"></script>
-<script type="module" src="js/stats.js"></script>
+<body>
+  <p>The leaderboard has moved to <a href="leaderboard.html">leaderboard.html</a>.</p>
 </body>
 </html>

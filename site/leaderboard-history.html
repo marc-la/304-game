@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <title>304 — History</title>
+  <meta name="description" content="Every revolution, match, and betting sheet from the 304 group's archive.">
+  <!-- @include partials/site-head.html -->
+</head>
+<body data-section="leaderboard">
+
+<!-- @include partials/site-nav.html -->
+
+<div class="lb-page">
+
+  <div id="lb-loading" class="lb-loading"><p>Loading…</p></div>
+  <div id="lb-error" class="lb-error" hidden>
+    <p>Couldn’t load the leaderboard data. Try refreshing in a moment.</p>
+  </div>
+
+  <div id="lb-main" hidden>
+
+    <header class="lb-strip">
+      <nav class="lb-seg lb-seg--pages" aria-label="Leaderboard pages">
+        <a class="lb-seg-item" href="leaderboard.html">Standings</a>
+        <a class="lb-seg-item is-active" aria-current="page" href="leaderboard-history.html">History</a>
+        <a class="lb-seg-item" href="leaderboard-insights.html">Insights</a>
+      </nav>
+      <span class="lb-updated" id="lb-updated"></span>
+    </header>
+
+    <p class="lb-gloss">Each row: winner first, then the field · <span class="lb-rev-score">n·m</span> = matches won · stone given. Expand a revolution for its sets; expand a set for the betting sheet.</p>
+
+    <div class="lb-toolbar">
+      <div id="lb-filters" class="lb-filters" role="group" aria-label="Filter revolutions"></div>
+      <details class="lb-legend">
+        <summary>Notation</summary>
+        <div class="lb-legend-body">
+          <span><span class="lb-not lb-not--win">60</span> bid won</span>
+          <span><span class="lb-not lb-not--loss">60−</span> bid lost</span>
+          <span><span class="lb-not lb-not--win lb-not--caps">60+1</span> Caps before R7 (+1 stone)</span>
+          <span><span class="lb-not lb-not--win lb-not--caps">60+0</span> Caps, no bonus</span>
+          <span><span class="lb-not lb-not--loss lb-not--caps">60−L</span> Late Caps</span>
+          <span><span class="lb-not lb-not--loss lb-not--big">60−W</span> Wrong Caps (5 stone)</span>
+          <span><span class="lb-not lb-not--win lb-not--big">PCC</span> Partner Closed Caps</span>
+          <span><span class="lb-not lb-not--win">H</span> Honest</span>
+          <span><span class="lb-not lb-not--pn">PN</span> penalty (1 stone)</span>
+        </div>
+      </details>
+    </div>
+
+    <div id="lb-history"></div>
+
+  </div>
+</div>
+
+<script type="module" src="js/theme.js"></script>
+<script src="js/site-nav.js"></script>
+<script type="module" src="js/leaderboard/history.js"></script>
+</body>
+</html>

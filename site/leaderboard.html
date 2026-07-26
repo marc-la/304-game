@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <title>304 — Leaderboard</title>
+  <meta name="description" content="Standings and results for the 304 group.">
+  <!-- @include partials/site-head.html -->
+</head>
+<body data-section="leaderboard">
+
+<!-- @include partials/site-nav.html -->
+
+<div class="lb-page lb-page--dashboard">
+
+  <div id="lb-loading" class="lb-loading"><p>Loading…</p></div>
+  <div id="lb-error" class="lb-error" hidden>
+    <p>Couldn’t load the leaderboard data. Try refreshing in a moment.</p>
+  </div>
+
+  <div id="lb-main" hidden>
+
+    <header class="lb-strip">
+      <nav class="lb-seg lb-seg--pages" aria-label="Leaderboard pages">
+        <a class="lb-seg-item is-active" aria-current="page" href="leaderboard.html">Standings</a>
+        <a class="lb-seg-item" href="leaderboard-history.html">History</a>
+        <a class="lb-seg-item" href="leaderboard-insights.html">Insights</a>
+      </nav>
+      <div id="lb-seasons"></div>
+      <span class="lb-updated" id="lb-updated"></span>
+    </header>
+
+    <div class="lb-dash">
+      <section class="lb-dash-standings" aria-label="Standings">
+        <h2 class="lb-h">Standings</h2>
+        <div id="lb-standings"></div>
+      </section>
+
+      <section class="lb-dash-race" aria-label="The race">
+        <h2 class="lb-h">The race <span class="lb-h-sub">revolutions won, all-time</span></h2>
+        <div id="lb-race" class="lb-race"></div>
+      </section>
+
+      <section class="lb-dash-pairs" aria-label="Partnerships">
+        <h2 class="lb-h">Partnerships</h2>
+        <div id="lb-partnerships"></div>
+      </section>
+    </div>
+
+  </div>
+</div>
+
+<script type="module" src="js/theme.js"></script>
+<script src="js/site-nav.js"></script>
+<script type="module" src="js/leaderboard/dashboard.js"></script>
+</body>
+</html>

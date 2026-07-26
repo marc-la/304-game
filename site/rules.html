@@ -4,6 +4,30 @@
   <title>304 Game — Rules</title>
   <meta name="description" content="Complete rules for 304, the four-player partnership trick-taking card game from Sri Lanka. House rules variant.">
   <!-- @include partials/site-head.html -->
+  <style>
+    /* Page-local: sidebar tier labels, native <details> worked examples,
+       and legacy anchor spans. */
+    .sidebar-tier-label {
+      font-family: var(--font-heading);
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--clr-text-muted);
+      margin: 16px 0 4px;
+    }
+    .sidebar nav .sidebar-tier-label:first-child { margin-top: 0; }
+    details.example > summary.example-header { cursor: pointer; list-style: none; }
+    details.example > summary.example-header::-webkit-details-marker { display: none; }
+    details.example > summary .chevron { display: inline-block; transition: transform 0.15s; }
+    details.example[open] > summary .chevron { transform: rotate(180deg); }
+    .legacy-anchor { display: block; height: 0; }
+    @media print {
+      /* Print worked examples expanded (JS opens them on beforeprint;
+         this covers browsers that support ::details-content). */
+      details.example::details-content { content-visibility: visible; display: block; }
+    }
+  </style>
 </head>
 <body data-section="rules" data-page="rules">
 
@@ -17,8 +41,17 @@
       <h2>Contents</h2>
     </div>
     <nav>
+      <h3 class="sidebar-tier-label">Quick lookups</h3>
       <ul>
         <li><a href="cheatsheet.html" class="sidebar-cheatsheet-link">Cheat Sheet &rarr;</a></li>
+        <li><a href="#scoring-table">Scoring table</a></li>
+        <li><a href="#caps-summary">Caps outcomes</a></li>
+        <li><a href="#penalties">Penalties</a></li>
+        <li><a href="#bidding-below-200">Bidding limits</a></li>
+        <li><a href="#redeal">Redeal &amp; pass-on</a></li>
+      </ul>
+      <h3 class="sidebar-tier-label">The full rules</h3>
+      <ul>
         <li><a href="#introduction">Introduction</a></li>
         <li><a href="#objective">Objective</a>
           <ul>
@@ -95,7 +128,7 @@
           </a>
         </g>
         <g class="phase-node">
-          <a href="#betting-8-cards">
+          <a href="#second-deal">
             <circle cx="350" cy="30" r="18"/>
             <text x="350" y="35" class="phase-num-text">4</text>
             <text x="350" y="74" class="phase-label-text">Deal 4</text>
@@ -146,18 +179,7 @@
       <h3 id="units-of-play">Units of Play</h3>
       <p>A <strong>round</strong> is a single trick (all four players play one card each). A <strong>game</strong> consists of 8 rounds, at the end of which a team wins or loses stone. A <strong>match</strong> is a series of games, ending when one team has given away all 10 stone. A <strong>revolution</strong> is where all combinations of players play against each other across multiple matches to determine the overall winner.</p>
       <p>A match typically lasts 30 minutes to an hour. A revolution (3 matches covering all player combinations) runs 3–4 hours.</p>
-
-      <h3 id="phases">Phases of a Game</h3>
-      <p>Each game proceeds through the following phases:</p>
-      <ol>
-        <li><strong>Shuffling and First Deal</strong> — The dealer shuffles and deals the first batch of 4 cards to each player.</li>
-        <li><strong>4-Card Betting</strong> — Players bid on their first 4 cards.</li>
-        <li><strong>Choosing Trump</strong> — The highest 4-card bidder places one of their cards face down to indicate trump.</li>
-        <li><strong>Second Deal</strong> — The dealer deals the remaining 4 cards to each player.</li>
-        <li><strong>8-Card Betting</strong> — A second round of bidding after all 8 cards are dealt.</li>
-        <li><strong>Play</strong> — 8 rounds of trick-taking.</li>
-        <li><strong>Scrutiny</strong> — Teams count points and determine whether the betting team met their threshold. Caps calls are verified. Stone is exchanged accordingly. This phase can involve spirited deliberation.</li>
-      </ol>
+      <p id="phases">The phase timeline at the top of this page shows how a single game flows: shuffle and first deal, 4-card betting, choosing trump, second deal, 8-card betting, play, then <strong>scrutiny</strong> (counting points, verifying Caps calls, exchanging stone).</p>
     </section>
 
     <hr>
@@ -255,7 +277,7 @@
     <!-- Dealing -->
     <section id="dealing">
       <h2>Dealing</h2>
-      <p>The <strong>dealer</strong> shuffles the pack, performing 1–4 overhand shuffles. Minimal shuffling is preferred — this preserves the order of cards from the previous game to encourage high-value betting. Once shuffled, the player to the <strong>left</strong> of the dealer may cut the pack once, or tap the top of the deck to decline the cut. No further shuffles from the dealer after the cut.</p>
+      <p>The <strong>dealer</strong> shuffles the pack using <strong>slap shuffles</strong> — pull a packet from the middle of the deck and slap it on top. Two slap shuffles is typical; 1–3 is acceptable. Minimal shuffling is preferred — this preserves the order of cards from the previous game to encourage high-value betting. Once shuffled, the player to the <strong>left</strong> of the dealer may cut the pack once, or tap the top of the deck to decline the cut. No further shuffles from the dealer after the cut.</p>
       <p>The dealer then deals the top 4 cards to the player on their <strong>right</strong>, then 4 to the next player (anticlockwise), and so on, finishing with themselves. This deals half the pack (4 cards each).</p>
       <p>Between games, the dealer rotates one seat anticlockwise.</p>
       <p class="house-rule-block"><strong>Riffle remedy.</strong> If <strong>three consecutive 4-card redeals</strong> occur at the same seat (i.e. the priority player or their partnered partner triggers a redeal three deals in a row), the dealer may perform one <strong>riffle shuffle</strong> to break up clumped low cards before the next deal. The trigger threshold is at the players&rsquo; discretion — the table may agree to riffle earlier or later.</p>
@@ -283,40 +305,40 @@
         </li>
       </ul>
 
-      <h4>Skips</h4>
+      <h4 id="skips">Skips</h4>
       <p>Bidding proceeds anticlockwise. When bidding reaches a player, they are <strong>skipped</strong> (silent — no bid, no pass, no event) under either of the following conditions:</p>
       <ul class="rule-list">
-        <li><span class="rule-tag">§B-1</span> <strong>Partnered-player skip.</strong> Their first speech was used by their partner asking them to bid. Their normal turn is skipped exactly once (the next time bidding reaches their seat). On subsequent circuits, they speak normally.</li>
-        <li><span class="rule-tag">§B-2</span> <strong>Current-bid-holder skip.</strong> They currently hold the highest bid. They are skipped on every subsequent turn until another player overtakes the highest bid, at which point they re-enter rotation.</li>
-        <li><span class="rule-tag">§B-3</span> A skipped turn is silent: it neither advances nor resets the consecutive-pass counter.</li>
+        <li><span class="rule-tag" id="B-1">§B-1</span> <strong>Partnered-player skip.</strong> Their first speech was used by their partner asking them to bid. Their normal turn is skipped exactly once (the next time bidding reaches their seat). On subsequent circuits, they speak normally.</li>
+        <li><span class="rule-tag" id="B-2">§B-2</span> <strong>Current-bid-holder skip.</strong> They currently hold the highest bid. They are skipped on every subsequent turn until another player overtakes the highest bid, at which point they re-enter rotation.</li>
+        <li><span class="rule-tag" id="B-3">§B-3</span> A skipped turn is silent: it neither advances nor resets the consecutive-pass counter.</li>
       </ul>
 
-      <h4>Termination</h4>
-      <p><span class="rule-tag">§B-4</span> Bidding ends when <strong>both</strong> of the following are true:</p>
+      <h4 id="termination">Termination</h4>
+      <p><span class="rule-tag" id="B-4">§B-4</span> Bidding ends when <strong>both</strong> of the following are true:</p>
       <ul>
         <li>Every player has had a first speech (a bid, pass, or partner action — including a partnered bid/pass, which counts as the partner&rsquo;s first speech).</li>
         <li><strong>Three consecutive passes</strong> have occurred since the last bid (or since the start of bidding if no bid has been made).</li>
       </ul>
-      <p><span class="rule-tag">§B-5</span> Any bid (including a partnered bid) resets the consecutive-pass counter to zero. Skips do not affect the counter. Once 3 consecutive passes have accumulated and all 4 players have had a first speech, bidding ends — <strong>even if a skip would otherwise have been actuated next</strong>. The skip is not a &ldquo;free turn&rdquo; the bid-holder can use to extend the auction; once the termination conditions are met, the auction is closed and the bid-holder wins at their last bid.</p>
+      <p><span class="rule-tag" id="B-5">§B-5</span> Any bid (including a partnered bid) resets the consecutive-pass counter to zero. Skips do not affect the counter. Once 3 consecutive passes have accumulated and all 4 players have had a first speech, bidding ends — <strong>even if a skip would otherwise have been actuated next</strong>.</p>
       <div class="edge-case">
         <strong>Edge case.</strong> A holds the highest bid. B passes, C passes, D passes (counter = 3, all four spoke). Bidding ends. A is <strong>not</strong> given a &ldquo;next turn&rdquo; via skip — the auction is over, A wins at their last bid. The current-bid-holder skip exists to bypass A while bidding circulates, not to grant A an extra speech once the auction has closed.
       </div>
       <p>If termination occurs without any bid having been placed, a <strong>pass-on</strong> is triggered (see below).</p>
 
-      <h4>Constraints on Bidding Below 200</h4>
+      <h4 id="bidding-below-200">Constraints on Bidding Below 200</h4>
       <p>Bids below 200 are subject to two constraints:</p>
       <ul class="rule-list">
-        <li><span class="rule-tag">§B-6</span> <strong>First speech only.</strong> A player can bid below 200 only on their first opportunity to speak. After they have bet, passed, or had their first speech consumed via partnering, their minimum bid becomes 200.</li>
-        <li><span class="rule-tag">§B-7</span> <strong>Cannot undercut your own partner.</strong> If your partner currently holds the highest bid, you cannot bid below 200 — you must bid 200 or higher to take over, or pass. Bidding below 200 to overtake the <em>opposing</em> team&rsquo;s bid (e.g. bidding 180 over their 170 on your first speech) is fine.</li>
+        <li><span class="rule-tag" id="B-6">§B-6</span> <strong>First speech only.</strong> A player can bid below 200 only on their first opportunity to speak. After they have bet, passed, or had their first speech consumed via partnering, their minimum bid becomes 200.</li>
+        <li><span class="rule-tag" id="B-7">§B-7</span> <strong>Cannot undercut your own partner.</strong> If your partner currently holds the highest bid, you cannot bid below 200 — you must bid 200 or higher to take over, or pass. Bidding below 200 to overtake the <em>opposing</em> team&rsquo;s bid (e.g. bidding 180 over their 170 on your first speech) is fine.</li>
       </ul>
       <p>There is no upper limit on 4-card bids in principle — a player could theoretically bid 220 or higher, including PCC, on 4 cards. In practice, this is extremely unwise (you are committing without seeing 4 of your cards), and bids of 220+ on 4 cards are virtually never made.</p>
 
       <!-- Worked Example: Simple -->
-      <div class="example">
-        <div class="example-header">
+      <details class="example">
+        <summary class="example-header">
           <span>Worked Example — 4-Card Betting (Simple)</span>
           <span class="chevron">&#9660;</span>
-        </div>
+        </summary>
         <div class="example-body">
           <p>Players are seated anticlockwise from the dealer: <strong>A</strong> (right of dealer), <strong>B</strong>, <strong>C</strong> (A&rsquo;s partner), <strong>D</strong> (B&rsquo;s partner, dealer).</p>
           <ol>
@@ -331,14 +353,14 @@
           </ol>
           <p>In practice, the trailing &ldquo;C passes, D passes&rdquo; in step 8 are formalities and rarely spoken aloud once a bid is established and the next speaker has already passed. Formally they are still required for the counter to reach 3.</p>
         </div>
-      </div>
+      </details>
 
       <!-- Worked Example: Partnering -->
-      <div class="example">
-        <div class="example-header">
+      <details class="example">
+        <summary class="example-header">
           <span>Worked Example — 4-Card Betting (Partnering)</span>
           <span class="chevron">&#9660;</span>
-        </div>
+        </summary>
         <div class="example-body">
           <p>Same seating. A has cards in multiple suits and no strong trump preference.</p>
           <ol>
@@ -353,9 +375,9 @@
           </ol>
           <p>Alternative scenario with no bid: <em>A=partner → C=pass, B=pass, (C skip), D=pass.</em> Counter advances to 3 at D&rsquo;s pass; all 4 have spoken; no bid was placed → <strong>pass-on</strong>.</p>
         </div>
-      </div>
+      </details>
 
-      <h4>Redeal on 4 Cards (low points)</h4>
+      <h4 id="redeal">Redeal on 4 Cards (low points)</h4>
       <p>A <strong>redeal</strong> (the <em>same</em> dealer reshuffles and deals again) may be triggered if:</p>
       <ul>
         <li>The player to the dealer&rsquo;s right (priority player), <strong>or</strong> <span class="house-rule">House Rule</span> their partner if the priority player partnered to them, holds 4 cards totalling <strong>less than 15 points</strong> (i.e. 14 or lower); <strong>and</strong></li>
@@ -363,7 +385,7 @@
       </ul>
       <p>Standard rules restrict this to the priority player only; our group extends to the partnered partner. Redeal is optional — a brave player may continue.</p>
 
-      <h4>Pass-on on 4 Cards (no bid placed)</h4>
+      <h4 id="pass-on-4">Pass-on on 4 Cards (no bid placed)</h4>
       <p>If 4-card betting terminates with no bid placed, a <strong>pass-on</strong> occurs: the deal moves to the next dealer (anticlockwise).</p>
 
       <h3 id="choosing-trump">Choosing a Trump Suit</h3>
@@ -372,23 +394,23 @@
       <p>Not to be confused with the 45th &amp; 47th President of the United States of America, <a href="https://en.wikipedia.org/wiki/Donald_Trump">Donald J. Trump</a>.</p>
 
       <h3 id="betting-8-cards">Betting on 8 Cards</h3>
-      <p>After the Trump card is placed, the dealer deals the second batch of 4 cards to each player (same dealing order). After everyone has seen their 8 cards, a second round of betting begins.</p>
+      <p id="second-deal">After the Trump card is placed, the dealer deals the second batch of 4 cards to each player (same dealing order). After everyone has seen their 8 cards, a second round of betting begins.</p>
       <p class="house-rule-block"><span class="house-rule">House Rule</span> 8-card betting begins with the player to the dealer&rsquo;s right, the same as 4-card betting. (Standard rules start with the highest bidder from the 4-card round.)</p>
       <p class="house-rule-block"><span class="house-rule">House Rule</span> On 8 cards, players may <strong>only bet or pass</strong> — partnering is not allowed. (Standard rules permit partnering on 8 cards; we do not.)</p>
       <p>The minimum 8-card bid is <strong>220</strong>, referred to as <strong>&ldquo;Honest&rdquo;</strong> <span class="house-rule">House Rule</span> <em>(standard rules set the 8-card minimum at 250)</em>. If the existing 4-card bid is 220 or higher, the 8-card bid must exceed it. Bids from 220 onwards proceed in increments of <strong>5</strong>. Bids above Honest are named accordingly: Honest 5 (225), Honest 10 (230), and so on up to Honest 25 (245). A bid of 250 is simply called &ldquo;250.&rdquo;</p>
-      <p>The skip and termination mechanics from 4-card betting apply identically to 8-card betting (current-bid-holder skip; bidding ends after all 4 first speeches and 3 consecutive passes).</p>
+      <p>The skip and termination mechanics from 4-card betting apply identically to 8-card betting (current-bid-holder skip; bidding ends after all 4 first speeches and 3 consecutive passes). (On 8 cards there is no partner action, so the partnered-player skip cannot occur — only bid or pass.)</p>
       <p>If no player bids on 8 cards — which is the most common scenario — the 4-card bid remains the prevailing bet and play proceeds accordingly.</p>
       <p>If any player bids on 8 cards, this <strong>supersedes</strong> the 4-card bid entirely. The 4-card Trumper picks up their Trump card. The new highest 8-card bidder becomes the Trumper and selects a new Trump card from their 8-card hand. The original 4-card Trumper may also overbet on 8 cards if they wish to remain Trumper (or to change their Trump suit).</p>
 
-      <h4>Constraints on Bidding Below 250</h4>
+      <h4 id="bidding-below-250">Constraints on Bidding Below 250</h4>
       <p>The same first-speech constraint as 4-card betting applies, with 250 as the threshold:</p>
       <ul class="rule-list">
-        <li><span class="rule-tag">§B-8</span> <strong>First speech only.</strong> A player can bid below 250 only on their first opportunity to speak in the 8-card round. After speaking, their minimum becomes 250.</li>
-        <li><span class="rule-tag">§B-9</span> <strong>Cannot undercut your own partner.</strong> If your partner holds the highest 8-card bid, you must bid 250 or higher to take over.</li>
+        <li><span class="rule-tag" id="B-8">§B-8</span> <strong>First speech only.</strong> A player can bid below 250 only on their first opportunity to speak in the 8-card round. After speaking, their minimum becomes 250.</li>
+        <li><span class="rule-tag" id="B-9">§B-9</span> <strong>Cannot undercut your own partner.</strong> If your partner holds the highest 8-card bid, you must bid 250 or higher to take over.</li>
       </ul>
       <p>The only legal bid higher than 250 is <strong>PCC (Partner Closed Caps)</strong>.</p>
 
-      <h4>Pass-on on 8 Cards (low points)</h4>
+      <h4 id="pass-on-8">Pass-on on 8 Cards (low points)</h4>
       <p class="house-rule-block"><span class="house-rule">House Rule</span> A player may elect a <strong>pass-on</strong> if their hand totals <strong>less than 25 points</strong> on 8 cards. This must be declared on the player&rsquo;s <em>first</em> 8-card speech — once they have bet, passed, or been skipped past, the option is waived. Pass-on moves the deal to the next dealer.</p>
 
       <h4 id="absolute-hand">Absolute Hand</h4>
@@ -436,27 +458,27 @@
       <p>Most games are played as <strong>Closed Trump</strong>. The Trump card remains face down from the betting phase. While the Trump card is face down, any player who cannot follow the led suit must play their card <strong>face down</strong> (folded).</p>
       <p>Playing a card face down is either an attempt to <strong>cut</strong> (play a card of the Trump suit to win the round) or a <strong>minus</strong> (play a worthless non-Trump card, conceding the round). Since other players do not initially know the Trump suit, cutting involves guesswork and skill.</p>
 
-      <h4>Constraints on the Trumper in Closed Trump</h4>
+      <h4 id="trumper-constraints">Constraints on the Trumper in Closed Trump</h4>
       <ul class="rule-list">
-        <li><span class="rule-tag">§T-1</span> <strong>No trump-lead on round 1 from priority.</strong> The Trumper cannot lead with the Trump suit on the first round when they have priority. If the Trumper wishes to open with Trump, they must declare Open Trump before play begins.</li>
-        <li><span class="rule-tag">§T-2</span> <strong>When the folded Trump card may be played.</strong> The Trump card itself can only be played:
+        <li><span class="rule-tag" id="T-1">§T-1</span> <strong>No trump-lead on round 1 from priority.</strong> The Trumper cannot lead with the Trump suit on the first round when they have priority. If the Trumper wishes to open with Trump, they must declare Open Trump before play begins.</li>
+        <li><span class="rule-tag" id="T-2">§T-2</span> <strong>When the folded Trump card may be played.</strong> The Trump card itself can only be played:
           <ul>
             <li>Face down, to cut a non-Trump round led by another player, <strong>or</strong></li>
             <li>In the 8th round, when it is the Trumper&rsquo;s last remaining card.</li>
           </ul>
         </li>
-        <li><span class="rule-tag">§T-3</span> <strong>Cut-or-minus when unable to follow.</strong> If the Trumper cannot follow the led suit, they may choose to:
+        <li><span class="rule-tag" id="T-3">§T-3</span> <strong>Cut-or-minus when unable to follow.</strong> If the Trumper cannot follow the led suit, they may choose to:
           <ul>
             <li><strong>Cut</strong> using the folded Trump card (played face down), or</li>
             <li><strong>Minus</strong> — fold a non-led, non-Trump-suit card. Useful when the Trumper&rsquo;s partner is winning the round, or when the Trumper wants to discard a constraining card.</li>
           </ul>
         </li>
-        <li><span class="rule-tag">§T-4</span> <strong>No folding in-hand trumps.</strong> The Trumper cannot fold an in-hand trump-suit card. In-hand trump-suit cards (those <em>not</em> on the table as the folded Trump card) may only be played <strong>face up</strong> — never folded. Concretely, the Trumper&rsquo;s face-down options are restricted to (a) cutting with the folded Trump card or (b) minusing a non-trump-suit card. If the Trumper holds <em>only</em> trump-suit cards in hand plus the folded Trump card, and is unable to follow a non-trump led suit, they must cut with the folded Trump card (no minus is possible).</li>
-        <li><span class="rule-tag">§T-5</span> <strong>Trump-led, in-hand trumps available.</strong> If the led suit happens to be the Trump suit and the Trumper holds in-hand trump-suit cards (in addition to the folded Trump card on the table), the Trumper <strong>must follow suit normally with a face-up in-hand trump card</strong>. The standard &ldquo;follow suit if able&rdquo; rule applies — the folded Trump card on the table does not count as being &ldquo;in hand&rdquo; for the purpose of following suit, but the in-hand trumps do, and they must be played face up like any other follow-suit card. (This may incidentally reveal that the led suit is the trump suit, but the obligation to follow suit overrides any informational concern.)</li>
-        <li><span class="rule-tag">§T-6</span> <strong>Trump-led, only the folded trump remains.</strong> If the led suit is the Trump suit and the Trumper has no Trump in hand except the folded Trump card on the table, the Trumper cannot follow suit (the folded Trump card cannot be played face up while it remains the indicator on the table). They must minus a non-trump-suit card face down.</li>
+        <li><span class="rule-tag" id="T-4">§T-4</span> <strong>No folding in-hand trumps.</strong> The Trumper cannot fold an in-hand trump-suit card. In-hand trump-suit cards (those <em>not</em> on the table as the folded Trump card) may only be played <strong>face up</strong> — never folded. Concretely, the Trumper&rsquo;s face-down options are restricted to (a) cutting with the folded Trump card or (b) minusing a non-trump-suit card. If the Trumper holds <em>only</em> trump-suit cards in hand plus the folded Trump card, and is unable to follow a non-trump led suit, they must cut with the folded Trump card (no minus is possible).</li>
+        <li><span class="rule-tag" id="T-5">§T-5</span> <strong>Trump-led, in-hand trumps available.</strong> If the led suit happens to be the Trump suit and the Trumper holds in-hand trump-suit cards (in addition to the folded Trump card on the table), the Trumper <strong>must follow suit normally with a face-up in-hand trump card</strong>. The standard &ldquo;follow suit if able&rdquo; rule applies — the folded Trump card on the table does not count as being &ldquo;in hand&rdquo; for the purpose of following suit, but the in-hand trumps do, and they must be played face up like any other follow-suit card. (This may incidentally reveal that the led suit is the trump suit, but the obligation to follow suit overrides any informational concern.)</li>
+        <li><span class="rule-tag" id="T-6">§T-6</span> <strong>Trump-led, only the folded trump remains.</strong> If the led suit is the Trump suit and the Trumper has no Trump in hand except the folded Trump card on the table, the Trumper cannot follow suit (the folded Trump card cannot be played face up while it remains the indicator on the table). They must minus a non-trump-suit card face down.</li>
       </ul>
 
-      <h4>Resolving Folded Cards</h4>
+      <h4 id="folded-cards">Resolving Folded Cards</h4>
       <p>At the end of each round, if any cards were played face down, the Trumper inspects them privately:</p>
       <ul>
         <li><strong>No Trump among the folded cards:</strong> The folded cards remain face down and no one else may look at them. The round is won by the highest card of the led suit.</li>
@@ -495,22 +517,22 @@
       <h2>Caps</h2>
       <p>Winning <strong>all 8 rounds</strong> is called <strong>Caps</strong>. Winning all 304 points but losing a zero-point round does <strong>not</strong> count as Caps — it is purely about winning every round.</p>
 
-      <h3>When to Call Caps</h3>
+      <h3 id="caps-when">When to Call Caps</h3>
       <p>A player <strong>must</strong> call Caps at the point where, given all information available to them (cards played, cards in hand, suits opponents are exhausted of, etc.), they have a <strong>strategy</strong> for playing their remaining cards that <strong>guarantees</strong> winning all remaining rounds, <strong>for every distribution of unseen cards consistent with what they know</strong>, and <strong>for every legal way the other players could play.</strong></p>
-      <p>The strategy may be <strong>adaptive</strong> — the calling player may choose what to play in a later round based on what other players reveal in earlier rounds. There is no requirement to commit to a single fixed sequence of cards in advance. What must be true is that <em>for every consistent world</em>, <em>some</em> line of play (possibly conditioned on opp/partner moves observed during the call) wins every remaining round.</p>
-      <p class="house-rule-block"><span class="house-rule">Adaptive — codified at this group&rsquo;s table</span> Earlier wordings of this rule required a &ldquo;specific order&rdquo; of play, fixed at the moment of the call. In practice the table has long validated calls where the caller demonstrated they could win against any line opps might choose — sometimes branching mid-line (&ldquo;if east plays X I play Y; if east plays Z I play W&rdquo;). The adaptive rule formalises that practice.</p>
+      <p>The strategy may be <strong>adaptive</strong> — the calling player may choose what to play in a later round based on what other players reveal in earlier rounds. There is no requirement to commit to a single fixed sequence of cards in advance.</p>
+      <p class="house-rule-block"><span class="house-rule">Adaptive — codified at this group&rsquo;s table</span> Earlier wordings required a &ldquo;specific order&rdquo; of play, fixed at the moment of the call; the adaptive rule formalises the table&rsquo;s long-standing practice of validating branching calls.</p>
       <p>The critical distinction is between <strong>choice</strong> and <strong>deducible certainty</strong>. You cannot rely on your partner making an optimal or intelligent play — you cannot assume they will <em>choose</em> to play a particular card when they have options. However, if you can <strong>deduce</strong> from the cards played that your partner holds a specific card, and the rules force a guaranteed outcome (e.g. your partner holds the last remaining card of a suit and must therefore win a round when that suit is led), then you <strong>can</strong> factor that into a Caps call. The test is whether the outcome is guaranteed by the rules alone, not by hoping your partner plays well.</p>
-      <p>This is what makes Caps genuinely difficult — and why it has not been well implemented in online versions of the game. It requires not just tracking your own hand, but deducing the state of all hands from the history of play, and identifying that <em>some</em> winning line exists in every consistent world.</p>
+      <p>This is what makes Caps genuinely difficult. It requires not just tracking your own hand, but deducing the state of all hands from the history of play, and identifying that <em>some</em> winning line exists in every consistent world.</p>
       <p>When calling Caps, the player puts their cards down and may state <strong>one demonstration line</strong> of play — <em>&ldquo;this is one way I can win every remaining round&rdquo;</em>. The opposition may scrutinise to verify there are no holes in the claim. If opp play during the called sequence diverges from the player&rsquo;s stated line, the player may continue with any other winning continuation; the demonstration line is not a binding commitment, only an opening move-set offered for clarity.</p>
       <p>In strict play, Caps should be called on the precise card at which certainty is first achieved — potentially mid-round. In practice, calling Caps before the calling player makes their next play is acceptable, giving a brief grace period to recognise the situation.</p>
       <p><strong>Caps cannot be called after the final card of round 8 is played.</strong> Once the game ends, the call window is closed. Scrutiny may retroactively determine that a Caps situation was missed and apply Late Caps (see below), but no new call can be made.</p>
 
       <!-- Worked Example: Caps -->
-      <div class="example">
-        <div class="example-header">
+      <details class="example">
+        <summary class="example-header">
           <span>Worked Example — Caps</span>
           <span class="chevron">&#9660;</span>
-        </div>
+        </summary>
         <div class="example-body">
           <p>Trumps are Clubs. It is the start of Round 5 (4 rounds played). Your hand:</p>
           <p class="card-row"><span class="card card-black">J<span class="card-suit">&#9827;</span></span><span class="card card-black">9<span class="card-suit">&#9827;</span></span><span class="card card-black">A<span class="card-suit">&#9827;</span></span><span class="card card-red">J<span class="card-suit">&#9829;</span></span></p>
@@ -524,14 +546,14 @@
           <p><strong>You must call Caps now</strong>, before playing your card in Round 5. The order is: <span class="card card-inline card-black">J<span class="card-suit">&#9827;</span></span>, <span class="card card-inline card-black">9<span class="card-suit">&#9827;</span></span>, <span class="card card-inline card-black">A<span class="card-suit">&#9827;</span></span>, <span class="card card-inline card-red">J<span class="card-suit">&#9829;</span></span>.</p>
           <p>If you had waited until Round 6 to call Caps, that would be <strong>Late Caps</strong>. If you had called Caps in Round 4 (before seeing what opponents played in Round 4), that could be <strong>Early/Wrong Caps</strong> — you didn&rsquo;t yet have enough information to guarantee the result.</p>
         </div>
-      </div>
+      </details>
 
       <!-- Worked Example: Caps via Partner Deduction -->
-      <div class="example">
-        <div class="example-header">
+      <details class="example">
+        <summary class="example-header">
           <span>Worked Example — Caps via Partner Deduction</span>
           <span class="chevron">&#9660;</span>
-        </div>
+        </summary>
         <div class="example-body">
           <p>Trumps are Spades. It is the start of Round 7 (6 rounds played). You won Round 6, so you have priority. Your hand:</p>
           <p class="card-row"><span class="card card-red">9<span class="card-suit">&#9830;</span></span><span class="card card-red">7<span class="card-suit">&#9830;</span></span></p>
@@ -546,14 +568,14 @@
           <p><strong>You must call Caps now.</strong> Even though your partner wins both remaining rounds, you are not relying on their <em>choice</em>. Every outcome is forced: partner must follow Diamonds with <span class="card card-inline card-red">J<span class="card-suit">&#9830;</span></span>, opponents cannot beat it (out of Diamonds, no Trumps), and partner&rsquo;s last card is the highest remaining Heart.</p>
           <p>Note: If you merely <em>suspected</em> your partner held the <span class="card card-inline card-red">J<span class="card-suit">&#9830;</span></span> but could not deduce it with certainty, this would <strong>not</strong> be grounds for Caps.</p>
         </div>
-      </div>
+      </details>
 
       <!-- Worked Example: Caps via Adaptive Play -->
-      <div class="example">
-        <div class="example-header">
+      <details class="example">
+        <summary class="example-header">
           <span>Worked Example — Caps via Adaptive Play (no fixed order required)</span>
           <span class="chevron">&#9660;</span>
-        </div>
+        </summary>
         <div class="example-body">
           <p>Some genuinely cap-callable hands have <em>no fixed order</em> that wins in every consistent world. The adaptive rule covers them.</p>
           <p><strong>Shape of the situation.</strong> You hold trump and side-suit kings. Opps are void in your side suits and hold one outstanding higher trump (say <span class="card card-inline card-red">J<span class="card-suit">&#9829;</span></span>) plus one card you haven&rsquo;t pinned to a seat. Whichever opp turns out to hold the <span class="card card-inline card-red">J<span class="card-suit">&#9829;</span></span> matters.</p>
@@ -563,58 +585,57 @@
           </ul>
           <p><strong>Adaptive resolution.</strong> Your strategy is &ldquo;lead the side-suit king that draws the discard I need to see; <em>then</em>, depending on which trump the opp threw, lead trump or the other side-suit king to mop up.&rdquo; Mid-line you branch — <em>&ldquo;if east plays the higher trump I play A; if east plays the other card I play B&rdquo;</em>. Every consistent world is covered by some legal continuation.</p>
           <p><strong>You may call Caps</strong>, even though you cannot pre-commit to a single fixed permutation. State <em>one</em> demonstration line for clarity (typically the most informative opening); if opp play diverges, continue with the line that handles the world they revealed. <em>The obligation is the existence of a per-world winning strategy — not a single sequence that wins in every world.</em></p>
-          <p>This codifies what the table has long done: validated Caps calls where the player demonstrated they could win against any line opps might choose, branching as needed.</p>
         </div>
-      </div>
+      </details>
 
-      <h3>Correct Caps</h3>
+      <h3 id="caps-correct">Correct Caps</h3>
       <ul class="rule-list">
-        <li><span class="rule-tag">§C-1</span> Calling Caps correctly, at the first opportunity, and <strong>before the start of the 7th round</strong>, rewards the team with <strong>+1 stone</strong> on top of the normal win (e.g. a correct Caps on Honest = 2 + 1 = 3 stone given).</li>
-        <li><span class="rule-tag">§C-2</span> After the start of the 7th round, a player must still call Caps at the first opportunity, but a correct call attracts <strong>no bonus</strong> — the win is scored normally. (By the 7th round, there is typically enough information for any competent player to recognise Caps, so no reward is given.)</li>
+        <li><span class="rule-tag" id="C-1">§C-1</span> Calling Caps correctly, at the first opportunity, and <strong>before the start of the 7th round</strong>, rewards the team with <strong>+1 stone</strong> on top of the normal win (e.g. a correct Caps on Honest = 2 + 1 = 3 stone given).</li>
+        <li><span class="rule-tag" id="C-2">§C-2</span> After the start of the 7th round, a player must still call Caps at the first opportunity, but a correct call attracts <strong>no bonus</strong> — the win is scored normally. (By the 7th round, there is typically enough information for any competent player to recognise Caps, so no reward is given.)</li>
       </ul>
 
-      <h3>Late Caps</h3>
+      <h3 id="caps-late">Late Caps</h3>
       <ul class="rule-list">
-        <li><span class="rule-tag">§C-3</span> <strong>Definition.</strong> Late Caps occurs in either of two cases:
+        <li><span class="rule-tag" id="C-3">§C-3</span> <strong>Definition.</strong> Late Caps occurs in either of two cases:
           <ul>
             <li>(a) The player calls Caps <em>after</em> the first opportunity at which they could have called correctly; or</li>
             <li>(b) The team wins all 8 rounds during play without ever calling Caps, and scrutiny determines a first opportunity existed during play.</li>
           </ul>
         </li>
-        <li><span class="rule-tag">§C-4</span> <strong>Trumper standard.</strong> The Trumper is held to a higher standard than the partner. The Trumper has full visibility of every played card (including folded cards revealed at end of round); by the final rounds the Trumper should know what they hold and what opponents have left, so a missed Caps from the Trumper&rsquo;s seat is rarely defensible.</li>
-        <li><span class="rule-tag">§C-5</span> <strong>Penalty.</strong> Late Caps is punished by <strong>loss + 1 stone</strong> on top of the usual loss for the bid, even if the team won enough points to meet their original bid (e.g. Late Caps on Honest = 3 + 1 = 4 stone received by the betting team). A Late Caps loss flips the game outcome: even though Caps was achieved physically, the team scores it as a loss. <span class="house-rule">House Rule</span> Standard rules treat late and early Caps identically as &ldquo;Wrong Caps.&rdquo;</li>
+        <li><span class="rule-tag" id="C-4">§C-4</span> <strong>Trumper standard.</strong> The Trumper is held to a higher standard than the partner. The Trumper has full visibility of every played card (including folded cards revealed at end of round); by the final rounds the Trumper should know what they hold and what opponents have left, so a missed Caps from the Trumper&rsquo;s seat is rarely defensible.</li>
+        <li><span class="rule-tag" id="C-5">§C-5</span> <strong>Penalty.</strong> Late Caps is punished by <strong>loss + 1 stone</strong> on top of the usual loss for the bid, even if the team won enough points to meet their original bid (e.g. Late Caps on Honest = 3 + 1 = 4 stone received by the betting team). A Late Caps loss flips the game outcome: even though Caps was achieved physically, the team scores it as a loss. <span class="house-rule">House Rule</span> Standard rules treat late and early Caps identically as &ldquo;Wrong Caps.&rdquo;</li>
       </ul>
 
-      <h3>Wrong/Early Caps</h3>
+      <h3 id="caps-wrong">Wrong/Early Caps</h3>
       <ul class="rule-list">
-        <li><span class="rule-tag">§C-6</span> <strong>Definition.</strong> Wrong/Early Caps occurs when:
+        <li><span class="rule-tag" id="C-6">§C-6</span> <strong>Definition.</strong> Wrong/Early Caps occurs when:
           <ul>
             <li>The player calls Caps too early — no winning adaptive strategy exists yet from this state; some consistent world admits a line of opp play that takes a remaining trick; or</li>
             <li>The player calls Caps incorrectly (e.g. misremembering which cards have been played, or forgetting that the opposition has already won a round); or</li>
             <li>The player <strong>deliberately throws a round to conceal a Caps situation</strong> (revealed during scrutiny by analysis of card play).</li>
           </ul>
         </li>
-        <li><span class="rule-tag">§C-7</span> <strong>Penalty.</strong> Punished by <strong>5 stone</strong>. <span class="house-rule">House Rule</span> Standard rules distinguish between Wrong Caps where you still win all tricks (2 token penalty) and losing a trick after calling Caps (5 token penalty). We collapse both into 5 stone.</li>
-        <li><span class="rule-tag">§C-8</span> <strong>Caps loss supersedes points.</strong> A Caps loss <strong>supersedes</strong> the points threshold for regular betting — if you failed to call Caps correctly but won more than enough points for your bid, this is still a loss punishable by the Caps penalty.</li>
+        <li><span class="rule-tag" id="C-7">§C-7</span> <strong>Penalty.</strong> Punished by <strong>5 stone</strong>. <span class="house-rule">House Rule</span> Standard rules distinguish between Wrong Caps where you still win all tricks (2 token penalty) and losing a trick after calling Caps (5 token penalty). We collapse both into 5 stone.</li>
+        <li><span class="rule-tag" id="C-8">§C-8</span> <strong>Caps loss supersedes points.</strong> A Caps loss <strong>supersedes</strong> the points threshold for regular betting — if you failed to call Caps correctly but won more than enough points for your bid, this is still a loss punishable by the Caps penalty.</li>
       </ul>
 
-      <h3>External Caps (Caps from Opposition)</h3>
+      <h3 id="caps-external">External Caps (Caps from Opposition)</h3>
       <ul class="rule-list">
-        <li><span class="rule-tag">§C-9</span> The non-Trumping team may also call Caps when they win all 8 rounds. The same &ldquo;deducible certainty&rdquo; test applies.</li>
-        <li><span class="rule-tag">§C-10</span> <strong>PCC carve-out.</strong> External Caps <strong>does not apply to PCC</strong> (PCC is decided purely on the Trumper winning all 8 rounds).</li>
-        <li><span class="rule-tag">§C-11</span> <strong>Window.</strong> External Caps must be called during play, no later than before the final card of round 8 is played.</li>
-        <li><span class="rule-tag">§C-12</span> <strong>Lenient standard.</strong> The external team&rsquo;s information is more limited than the Trumper&rsquo;s (they have not seen folded cards, and have less ability to deduce hand contents), so scrutiny applies a more lenient &ldquo;first opportunity&rdquo; standard than for the Trumping team.</li>
+        <li><span class="rule-tag" id="C-9">§C-9</span> The non-Trumping team may also call Caps when they win all 8 rounds. The same &ldquo;deducible certainty&rdquo; test applies.</li>
+        <li><span class="rule-tag" id="C-10">§C-10</span> <strong>PCC carve-out.</strong> External Caps <strong>does not apply to PCC</strong> (PCC is decided purely on the Trumper winning all 8 rounds).</li>
+        <li><span class="rule-tag" id="C-11">§C-11</span> <strong>Window.</strong> External Caps must be called during play, no later than before the final card of round 8 is played.</li>
+        <li><span class="rule-tag" id="C-12">§C-12</span> <strong>Lenient standard.</strong> The external team&rsquo;s information is more limited than the Trumper&rsquo;s (they have not seen folded cards, and have less ability to deduce hand contents), so scrutiny applies a more lenient &ldquo;first opportunity&rdquo; standard than for the Trumping team.</li>
       </ul>
 
-      <h4>External Caps Outcomes</h4>
+      <h4 id="caps-external-outcomes">External Caps Outcomes</h4>
       <ul class="rule-list">
-        <li><span class="rule-tag">§C-13</span> <strong>Correct External Caps before the start of Round 7.</strong> The external team&rsquo;s win is bumped — the betting team gives <strong>+1 additional stone</strong> on top of the normal loss (e.g. on a 160 bid, betting team gives 2 + 1 = 3 stone to the external team).</li>
-        <li><span class="rule-tag">§C-14</span> <strong>Correct External Caps in or after Round 7.</strong> No bonus — normal opposition win is scored, betting team gives the usual stone for the bid amount.</li>
-        <li><span class="rule-tag">§C-15</span> <strong>Late External Caps.</strong> The external team won all 8 rounds but, in scrutiny&rsquo;s judgement, had a first opportunity to call Caps during play and missed it. Even though they won every round physically, they <strong>lose</strong> the game on the technicality, and the betting team takes a <strong>win + 1 stone</strong> outcome (e.g. on Honest, betting team gives 2 + 1 = 3 stone <em>to the external team</em>). This is harsh by design, exceedingly rare in practice, and exists to ensure the external team takes External Caps seriously when they have the deductive ability to recognise it.</li>
-        <li><span class="rule-tag">§C-16</span> <strong>Wrong External Caps.</strong> The external team called Caps but the call doesn&rsquo;t hold up under scrutiny (no winning adaptive strategy exists, or the external team had not in fact won every round). The external team takes a <strong>5-stone penalty</strong> (receives 5 stone).</li>
+        <li><span class="rule-tag" id="C-13">§C-13</span> <strong>Correct External Caps before the start of Round 7.</strong> The external team&rsquo;s win is bumped — the betting team gives <strong>+1 additional stone</strong> on top of the normal loss (e.g. on a 160 bid, betting team gives 2 + 1 = 3 stone to the external team).</li>
+        <li><span class="rule-tag" id="C-14">§C-14</span> <strong>Correct External Caps in or after Round 7.</strong> No bonus — normal opposition win is scored, betting team gives the usual stone for the bid amount.</li>
+        <li><span class="rule-tag" id="C-15">§C-15</span> <strong>Late External Caps.</strong> The external team won all 8 rounds but, in scrutiny&rsquo;s judgement, had a first opportunity to call Caps during play and missed it. Even though they won every round physically, they <strong>lose</strong> the game on the technicality, and the betting team takes a <strong>win + 1 stone</strong> outcome (e.g. on Honest, betting team gives 2 + 1 = 3 stone <em>to the external team</em>). Harsh by design — External Caps is not optional when you can see it.</li>
+        <li><span class="rule-tag" id="C-16">§C-16</span> <strong>Wrong External Caps.</strong> The external team called Caps but the call doesn&rsquo;t hold up under scrutiny (no winning adaptive strategy exists, or the external team had not in fact won every round). The external team takes a <strong>5-stone penalty</strong> (receives 5 stone).</li>
       </ul>
 
-      <h3>Caps Decision Flow</h3>
+      <h3 id="caps-flow">Caps Decision Flow</h3>
       <figure class="caps-flowchart" aria-label="Caps decision flowchart">
         <svg viewBox="0 0 720 540" role="img">
           <defs>
@@ -708,7 +729,7 @@
         <figcaption>Decision flow for Caps outcomes (regular Caps; PCC and External Caps follow analogous structures — see <a href="#pcc">PCC</a> and the External Caps section above). Late Caps applies only when scrutiny finds a missed first opportunity; otherwise, winning all 8 without calling is just a normal win at the bid level.</figcaption>
       </figure>
 
-      <h3>Summary of Caps Outcomes</h3>
+      <h3 id="caps-summary">Summary of Caps Outcomes</h3>
       <div class="table-wrapper">
         <table>
           <thead>
@@ -728,13 +749,10 @@
         </table>
       </div>
 
+      <!-- Legacy #caps-formalism anchor: the article moved to caps-formalism.html;
+           the span keeps old bookmarks landing at the pointer below. -->
+      <span id="caps-formalism" class="legacy-anchor" aria-hidden="true"></span>
       <p class="article-pointer"><strong>Going deeper.</strong> For an advanced treatment of why &ldquo;deducible certainty&rdquo; means what it means &mdash; the formal single-dummy test scrutiny actually applies &mdash; see <a href="caps-formalism.html">Caps Formalism &rarr;</a>. Beginners can skip it; the headline rule above is enough for normal play.</p>
-    </section>
-
-    <!-- Caps Formalism moved to caps-formalism.html. The empty stub keeps
-         the legacy #caps-formalism anchor working for old bookmarks. -->
-    <section id="caps-formalism" class="article-stub-anchor">
-      <p class="article-pointer"><strong>Caps Formalism &mdash; moved to its own page.</strong> The advanced article on what &ldquo;deducible certainty&rdquo; means under scrutiny now lives at <a href="caps-formalism.html">caps-formalism.html &rarr;</a>.</p>
     </section>
 
     <hr>
@@ -746,7 +764,7 @@
       <p>At the end of each game, both teams count the card points in their won rounds. The betting team must win points <strong>equal to or greater than</strong> their bid. If they succeed, they <strong>give</strong> stone to the opponents (moving closer to winning the match). If they fall short, they <strong>receive</strong> stone from the opponents (moving further from winning).</p>
       <p>Note on thresholds: The betting team&rsquo;s threshold is simply their bid (e.g. a bid of 160 requires 160+ points). The opposing team&rsquo;s threshold is 304 &minus; bid + 1 (e.g. opposing a 160 bid requires 145+ points). These are <strong>mutually exclusive</strong> — there is no possibility of a tie, since the total points in the pack is 304.</p>
 
-      <h3>Scoring Table</h3>
+      <h3 id="scoring-table">Scoring Table</h3>
       <div class="table-wrapper">
         <table>
           <thead>
@@ -774,12 +792,12 @@
             <tr><td>235</td><td>&ldquo;Honest 15&rdquo;</td><td>2</td><td>3</td><td>70</td><td>8-card, first speech</td></tr>
             <tr><td>240</td><td>&ldquo;Honest 20&rdquo;</td><td>2</td><td>3</td><td>65</td><td>8-card, first speech</td></tr>
             <tr><td>245</td><td>&ldquo;Honest 25&rdquo;</td><td>2</td><td>3</td><td>60</td><td>8-card, first speech</td></tr>
-            <tr><td>250</td><td>&ldquo;250&rdquo;</td><td>3</td><td>4</td><td>55</td><td>8-card, subsequent speech</td></tr>
-            <tr><td>PCC</td><td>&ldquo;Partner Closed Caps&rdquo;</td><td>5</td><td>5</td><td>&mdash;</td><td>8-card, subsequent speech</td></tr>
+            <tr><td>250</td><td>&ldquo;250&rdquo;</td><td>3</td><td>4</td><td>55</td><td>8-card, any speech</td></tr>
+            <tr><td>PCC</td><td>&ldquo;Partner Closed Caps&rdquo;</td><td>5</td><td>5</td><td>&mdash;</td><td>8-card, any speech</td></tr>
           </tbody>
         </table>
       </div>
-      <p>The <strong>Min. Phase / Speech</strong> column gives the <em>minimum</em> phase and speech at which each bid level becomes legal — i.e. the earliest point in the auction it can first be called. Higher bids remain legal at all later positions. In theory, any bid (including 220+ and PCC) is also legal on 4 cards in a subsequent speech, but bids of 220 and above on 4 cards are extremely unwise (you are committing without seeing 4 of your cards) and virtually never occur in practice.</p>
+      <p>The <strong>Min. Phase / Speech</strong> column gives the <em>minimum</em> phase and speech at which each bid level becomes legal — i.e. the earliest point in the auction it can first be called. Higher bids remain legal at all later positions; for the (theoretical) legality of 220+ bids on 4 cards, see <a href="#bidding-below-200">Constraints on Bidding Below 200</a>.</p>
       <p>PCC is decided solely by whether the Trumper wins all 8 rounds — Caps and External Caps modifiers do not apply.</p>
     </section>
 
@@ -791,7 +809,7 @@
       <p>Certain behaviours attract penalties during a game as they unfairly divulge information or alter the course of play. The standard penalty is <strong>1 stone received</strong> by the offending team (i.e. the opposing team gives 1 stone to the offenders, which is bad for the offenders). A penalty applies if the 3 non-offending players reach consensus that one is warranted. If consensus is not reached, the case is adjourned and no penalty applies — penalties are sportsmanship-driven and not strict-liability.</p>
       <p>There is a fair bit of pride involved in this game, and good sportsmanship is expected. Beginner players may be given more leeway, but intermediate-to-advanced players should expect stricter enforcement. The lists below are non-exhaustive — the principle is the rule, not the list.</p>
 
-      <h3>Examples of Penalisable Behaviour (1 stone)</h3>
+      <h3 id="penalties-1-stone">Examples of Penalisable Behaviour (1 stone)</h3>
       <ul>
         <li>Telling your partner how to play (e.g. &ldquo;Play the Jack of Spades&rdquo;).</li>
         <li>Revealing information about your own hand (e.g. &ldquo;I have the Jack of that suit&rdquo;).</li>
@@ -804,7 +822,7 @@
         <li>Falsely calling Spoilt Trumps (the opposition did in fact hold trumps).</li>
       </ul>
 
-      <h3>Severe Penalties (automatic loss + 1 stone)</h3>
+      <h3 id="penalties-severe">Severe Penalties (automatic loss + 1 stone)</h3>
       <p>Some behaviours are so egregious that the offending team <strong>automatically loses the game</strong> — regardless of the points collected — and receives 1 additional stone on top of the normal loss for their bid:</p>
       <ul>
         <li>Playing a non-led suit when you hold a card of the led suit (i.e. reneging/revoking).</li>
@@ -818,7 +836,7 @@
     <!-- ===== House Rules diff appendix ===== -->
     <section id="house-rules-diff">
       <h2>Appendix: House Rules vs Standard</h2>
-      <p>Every divergence from the standard 304 ruleset (as documented on <a href="https://www.pagat.com/jass/304.html">Pagat</a> and by <a href="https://www.pagat.com/docs/304rules.txt">Aings Aingaran</a>), consolidated into one cite-able reference. Beginners can use it to quickly understand what to unlearn when playing with another group; experienced players can use it to settle &ldquo;is that house or standard?&rdquo; disputes mid-game.</p>
+      <p>Every divergence from the standard 304 ruleset (as documented on <a href="https://www.pagat.com/jass/304.html">Pagat</a> and by <a href="https://www.pagat.com/docs/304rules.txt">Aings Aingaran</a>), consolidated into one cite-able reference.</p>
 
       <div class="table-wrapper">
         <table class="table-house-diff">
@@ -832,8 +850,8 @@
             <tr><td>H-4</td><td>Partner action — return</td><td>Partner-back permitted</td><td>Partnered player cannot return the partner action</td><td><a href="#betting-4-cards">Betting on 4 Cards</a></td></tr>
             <tr><td>H-5</td><td>8-card opening seat</td><td>Highest 4-card bidder opens</td><td>Player to dealer&rsquo;s right opens</td><td><a href="#betting-8-cards">Betting on 8 Cards</a></td></tr>
             <tr><td>H-6</td><td>8-card minimum bid</td><td>250</td><td>220 (&ldquo;Honest&rdquo;)</td><td><a href="#betting-8-cards">Betting on 8 Cards</a></td></tr>
-            <tr><td>H-7</td><td>Redeal eligibility</td><td>Priority player only</td><td>Priority player <em>or</em> their partnered partner</td><td><a href="#betting">Redeal on 4 Cards</a></td></tr>
-            <tr><td>H-8</td><td>8-card pass-on</td><td>Not standard</td><td>Hand &lt; 25 points, declared on first 8-card speech</td><td><a href="#betting-8-cards">Pass-on on 8 Cards</a></td></tr>
+            <tr><td>H-7</td><td>Redeal eligibility</td><td>Priority player only</td><td>Priority player <em>or</em> their partnered partner</td><td><a href="#redeal">Redeal on 4 Cards</a></td></tr>
+            <tr><td>H-8</td><td>8-card pass-on</td><td>Not standard</td><td>Hand &lt; 25 points, declared on first 8-card speech</td><td><a href="#pass-on-8">Pass-on on 8 Cards</a></td></tr>
             <tr><td>H-9</td><td>Absolute hand</td><td>Not standard</td><td>Goodwill or post-game opposition claim → pass-on</td><td><a href="#absolute-hand">Absolute Hand</a></td></tr>
             <tr><td>H-10</td><td>PCC stake</td><td>Win 4 / Lose 5</td><td>Win 5 / Lose 5</td><td><a href="#pcc">PCC</a></td></tr>
             <tr><td>H-11</td><td>250+ open trump conversion</td><td>Bids ≥ 250 force trump reveal at end of R1; Open Trump from R2</td><td>Closed Trump stays closed regardless of bid</td><td><a href="#open-trump">Open Trump</a></td></tr>
@@ -846,7 +864,7 @@
         </table>
       </div>
 
-      <h3>Stake Comparison</h3>
+      <h3 id="stake-comparison">Stake Comparison</h3>
       <p>Where house and standard agree on the basic structure but differ on the exact stake:</p>
       <div class="table-wrapper">
         <table>
@@ -868,16 +886,11 @@
 
     <hr>
 
-    <!-- Cheat sheet moved to cheatsheet.html. The empty stub keeps the
-         legacy #cheatsheet anchor working for old bookmarks. -->
-    <section id="cheatsheet" class="article-stub-anchor">
-      <p class="article-pointer"><strong>Cheat Sheet &mdash; moved to its own page.</strong> The one-page printable reference (with a Print / Save as PDF button) now lives at <a href="cheatsheet.html">cheatsheet.html &rarr;</a>.</p>
-    </section>
-
-    <hr>
-
     <!-- Glossary -->
     <section id="glossary">
+      <!-- Legacy #cheatsheet anchor: the cheat sheet moved to cheatsheet.html
+           (linked from the sidebar and page top). -->
+      <span id="cheatsheet" class="legacy-anchor" aria-hidden="true"></span>
       <h2>Glossary</h2>
       <p>Terms are ordered to minimise forward references. Terms in <strong>bold</strong> within definitions refer to other glossary entries.</p>
 
@@ -931,7 +944,7 @@
         <dd>A silent turn in betting where a player is bypassed without bidding or passing. Two cases: (1) the partnered player&rsquo;s normal turn is skipped exactly once after they bid via partnering; (2) the current highest bidder is skipped on every subsequent turn until another player overtakes the bid. Skips do not advance or reset the consecutive-pass counter.</dd>
 
         <dt>First Speech</dt>
-        <dd>A player&rsquo;s first opportunity to bid, pass, or partner in a given betting phase (4-card or 8-card separately). A bid/pass placed via a partner action counts as the partnered player&rsquo;s first speech.</dd>
+        <dd>A player&rsquo;s first opportunity to act in a given betting phase (4-card: bid, pass, or partner; 8-card: bid or pass) &mdash; first speech is tracked separately per phase. A bid/pass placed via a partner action counts as the partnered player&rsquo;s first speech.</dd>
 
         <dt>Threshold</dt>
         <dd>The number of points a team needs to win. For the betting team, this is their bid. For the opposing team, this is 304 &minus; bid + 1.</dd>
