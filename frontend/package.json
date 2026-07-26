@@ -15,7 +15,8 @@
     "pool:select": "tsx ../tools/curator/bin/select-from-pool.ts",
     "pool:inspect": "tsx ../tools/curator/bin/inspect-pool.ts",
     "bots:tournament": "tsx ../tools/bots/elo/bin/run-tournament.ts",
-    "bots:docs": "tsx ../tools/bots/docs/generate.ts"
+    "bots:docs": "tsx ../tools/bots/docs/generate.ts",
+    "puzzles:audit": "tsx ../tools/puzzles/audit-obligation.ts"
   },
   "dependencies": {
     "framer-motion": "^12.38.0",
