@@ -17,6 +17,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: player-styles
@@ -79,3 +80,8 @@ jobs:
           git add data/player-styles.json
           git commit -m "Refresh AI play-style descriptions"
           git push
+          # Pushes made with GITHUB_TOKEN don't trigger other workflows
+          # (recursion guard), so kick the Pages deploy explicitly.
+          gh workflow run deploy-pages.yml
+        env:
+          GH_TOKEN: ${{ github.token }}
