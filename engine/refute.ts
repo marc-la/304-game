@@ -21,7 +21,6 @@ import type { CardId } from './card';
 import { orderSweepsWorld } from './dd';
 import { buildInfoSet, enumerateWorlds } from './info';
 import type { World } from './info';
-import { roundTurnOrder } from './play';
 import type { Seat } from './seating';
 import { SEAT_INDEX } from './seating';
 import type { EngineGameState } from './state';
@@ -38,13 +37,18 @@ export interface RefutingWorld {
 }
 
 export interface RefuteOptions {
-  // Hard cap on worlds enumerated. The default keeps the search well
-  // under a second at the round counts where premature calls actually
-  // happen; beyond it the UI simply omits the counter-example.
+  // Hard cap on worlds enumerated.
   maxWorlds?: number;
-  // Cap on the caller's hand size. Permutation count is factorial, so
-  // refuse rather than crawl when the hand is still large.
+  // Cap on the caller's hand size. Cost is (hand!) orders x worlds x a
+  // game-tree search each, so this grows explosively: a 5-card hand at
+  // 4000 worlds is ~480k solver calls, which locks the browser tab for
+  // minutes. This ran on the main thread the moment a player pressed
+  // Call Caps, and an early call at R3 hung the page.
   maxHandSize?: number;
+  // Wall-clock budget. The backstop that actually guarantees the UI
+  // stays responsive regardless of how the other two are tuned —
+  // returning no counter-example is a fine outcome, freezing is not.
+  budgetMs?: number;
 }
 
 const permutations = (cards: ReadonlyArray<CardId>): CardId[][] => {
@@ -69,8 +73,10 @@ export const findRefutingWorld = (
   callerSeat: Seat,
   options: RefuteOptions = {},
 ): RefutingWorld | null => {
-  const maxWorlds = options.maxWorlds ?? 4000;
-  const maxHandSize = options.maxHandSize ?? 5;
+  const maxWorlds = options.maxWorlds ?? 400;
+  const maxHandSize = options.maxHandSize ?? 4;
+  const budgetMs = options.budgetMs ?? 250;
+  const deadline = Date.now() + budgetMs;
 
   let info;
   try {
@@ -85,19 +91,24 @@ export const findRefutingWorld = (
   // The caller's own cards are fixed across worlds; only the hidden
   // seats vary. Precompute the orders once.
   const orders = permutations(own);
-  const leader = play.currentRound.length === 0
-    ? play.priority
-    : roundTurnOrder(play.priority, state.pccPartnerOut)[0];
+  // `priority` is the leader of the round in progress (or of the next
+  // one when none is in progress), which is what the solver wants.
+  const leader = play.priority;
   const entries = play.currentRound
     .filter(e => e.card !== null)
     .map(e => ({ seat: e.seat, card: e.card as CardId }));
-  const roundsRemaining = own.length;
+  // Rounds left to win, NOT the caller's hand size — those differ
+  // whenever the caller has already played into the round in progress.
+  const roundsRemaining = 8 - play.completedRounds.length;
 
   let checked = 0;
   let swept = 0;
   let first: World | null = null;
 
   for (const w of enumerateWorlds(info, { maxWorlds })) {
+    // Check the clock before each world, not after: one world costs up
+    // to `orders.length` full solves.
+    if (Date.now() > deadline) break;
     checked++;
     const sweeps = orders.some(order => orderSweepsWorld({
       world: w,
