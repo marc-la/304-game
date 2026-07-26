@@ -52,6 +52,50 @@ const mapToHandsArr = (
   return arr;
 };
 
+
+// Equivalence-class reduction for a solver's move list.
+//
+// Two cards of the same suit in the SAME hand are strategically
+// identical when no card of that suit still in play sits between them:
+// whichever you play, the other takes its place in every subsequent
+// position. Collapsing those to one representative is the standard
+// double-dummy pruning, and without it these searches are unusable —
+// a seven-round position branches roughly (7^3)^7 before pruning.
+//
+// `inPlay` must be every card not yet played: all four hands plus the
+// cards already on the table this trick.
+const reduceEquivalent = (
+  legal: ReadonlyArray<CardId>,
+  hand: ReadonlyArray<CardId>,
+  inPlay: ReadonlySet<CardId>,
+): CardId[] => {
+  if (legal.length <= 1) return [...legal];
+  const RANKS = ['J', '9', 'A', '10', 'K', 'Q', '8', '7'];
+  const rank = (c: CardId): number => RANKS.indexOf(c.slice(0, c.length - 1));
+  const own = new Set(hand);
+  const keep: CardId[] = [];
+  const bySuit = new Map<Suit, CardId[]>();
+  for (const c of legal) {
+    const su = suitOf(c);
+    if (!bySuit.has(su)) bySuit.set(su, []);
+    bySuit.get(su)!.push(c);
+  }
+  for (const [su, cards] of bySuit) {
+    // All still-in-play cards of this suit, strongest first.
+    const global = [...inPlay].filter(c => suitOf(c) === su).sort((a, b) => rank(a) - rank(b));
+    const candidate = new Set(cards);
+    let prevWasOursAndKept = false;
+    for (const c of global) {
+      if (!own.has(c)) { prevWasOursAndKept = false; continue; }
+      if (!candidate.has(c)) { prevWasOursAndKept = false; continue; }
+      // Consecutive in the global ordering and both ours ⇒ equivalent.
+      if (!prevWasOursAndKept) keep.push(c);
+      prevWasOursAndKept = true;
+    }
+  }
+  return keep.length > 0 ? keep : [...legal];
+};
+
 export const orderSweepsWorld = (args: OrderSweepsArgs): boolean => {
   const simHands = worldHandsToMap(args.world.hands);
   const inProgress: Array<[Seat, CardId]> =
@@ -182,7 +226,10 @@ const solveCaps = (ctx: SolveCtx): boolean => {
   });
   if (legal.length === 0) return false;
 
-  for (const chosen of legal) {
+  const inPlay = new Set<CardId>();
+  for (const [, cs] of ctx.simHands) for (const c of cs) inPlay.add(c);
+  for (const [, c] of ctx.inProgress) inPlay.add(c);
+  for (const chosen of reduceEquivalent(legal, otherHand, inPlay)) {
     const ok = solveCaps({
       ...ctx,
       simHands: handRemove(ctx.simHands, nextSeatToPlay, chosen),
@@ -315,7 +362,10 @@ export const worldSweepsAdaptive = (args: WorldSweepArgs): boolean => {
     });
     if (legal.length === 0) return false;
     const isCaller = seat === args.callerSeat;
-    for (const c of legal) {
+    const inPlay = new Set<CardId>();
+    for (const [, cs] of hands) for (const c of cs) inPlay.add(c);
+    for (const [, c] of inProgress) inPlay.add(c);
+    for (const c of reduceEquivalent(legal, hand, inPlay)) {
       const next = new Map(hands);
       next.set(seat, hand.filter(x => x !== c));
       const ok = rec(next, leader, [...inProgress, [seat, c] as const], roundsRemaining);

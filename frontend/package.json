@@ -16,7 +16,8 @@
     "pool:inspect": "tsx ../tools/curator/bin/inspect-pool.ts",
     "bots:tournament": "tsx ../tools/bots/elo/bin/run-tournament.ts",
     "bots:docs": "tsx ../tools/bots/docs/generate.ts",
-    "puzzles:audit": "tsx ../tools/puzzles/audit-obligation.ts"
+    "puzzles:audit": "tsx ../tools/puzzles/audit-obligation.ts",
+    "puzzles:verify": "tsx ../tools/puzzles/verify-caps.ts"
   },
   "dependencies": {
     "framer-motion": "^12.38.0",
