@@ -506,7 +506,7 @@
           </ul>
           <p><strong>Can you call Caps?</strong> You have priority. You lead <span class="card card-inline card-black">J<span class="card-suit">&#9827;</span></span> — no one can beat it (you hold the top 3 Clubs and opponents are out of Clubs). Then <span class="card card-inline card-black">9<span class="card-suit">&#9827;</span></span>, then <span class="card card-inline card-black">A<span class="card-suit">&#9827;</span></span>. On Round 8, you lead <span class="card card-inline card-red">J<span class="card-suit">&#9829;</span></span> — the highest remaining Heart. You win all 4 remaining rounds regardless of what anyone plays.</p>
           <p><strong>You must call Caps now</strong>, before playing your card in Round 5. The order is: <span class="card card-inline card-black">J<span class="card-suit">&#9827;</span></span>, <span class="card card-inline card-black">9<span class="card-suit">&#9827;</span></span>, <span class="card card-inline card-black">A<span class="card-suit">&#9827;</span></span>, <span class="card card-inline card-red">J<span class="card-suit">&#9829;</span></span>.</p>
-          <p>If you had waited until Round 6 to call Caps, that would be <strong>Late Caps</strong>. If you had called Caps in Round 4 (before seeing what opponents played in Round 4), that could be <strong>Early/Wrong Caps</strong> — you didn&rsquo;t yet have enough information to guarantee the result.</p>
+          <p>If you had waited until Round 6 to call Caps, that would be <strong>Late Caps</strong>. If you had called Caps in Round 4 (before seeing what opponents played in Round 4), that would be <strong>Early Caps</strong> — you didn&rsquo;t yet have enough information to guarantee the result, and it is punished even if the sweep then happens.</p>
         </div>
       </details>
 
@@ -568,16 +568,16 @@
         <li><span class="rule-tag" id="C-5">§C-5</span> <strong>Penalty.</strong> Late Caps is punished by <strong>loss + 1 stone</strong> on top of the usual loss for the bid, even if the team won enough points to meet their original bid (e.g. Late Caps on Honest = 3 + 1 = 4 stone received by the betting team). A Late Caps loss flips the game outcome: even though Caps was achieved physically, the team scores it as a loss. <span class="house-rule">House Rule</span> Standard rules treat late and early Caps identically as &ldquo;Wrong Caps.&rdquo;</li>
       </ul>
 
-      <h3 id="caps-wrong">Wrong/Early Caps</h3>
+      <h3 id="caps-wrong">Wrong &amp; Early Caps</h3>
       <ul class="rule-list">
-        <li><span class="rule-tag" id="C-6">§C-6</span> <strong>Definition.</strong> Wrong/Early Caps occurs when:
+        <li><span class="rule-tag" id="C-6">§C-6</span> <strong>Definition.</strong> Two distinct failures share this penalty class:
           <ul>
-            <li>The player calls Caps too early — no winning adaptive strategy exists yet from this state; some consistent world admits a line of opp play that takes a remaining trick; or</li>
-            <li>The player calls Caps incorrectly (e.g. misremembering which cards have been played, or forgetting that the opposition has already won a round); or</li>
-            <li>The player <strong>deliberately throws a round to conceal a Caps situation</strong> (revealed during scrutiny by analysis of card play).</li>
+            <li><strong>Early Caps</strong> — the call was made before the sweep was provable: from the caller’s hand and information set, some consistent world still let the opposition take a remaining trick. A call made on instinct, signals, or vibes is Early <em>even if the team then wins all 8 rounds</em> — winning on a guess is still a guess.</li>
+            <li><strong>Wrong Caps</strong> — the sweep does not (or can no longer) happen: the team loses a round after calling, the call misremembers which cards have been played, or the opposition had already won a round before the call was made.</li>
+            <li>Also scored as Wrong Caps: <strong>deliberately throwing a round to conceal a Caps situation</strong> (revealed during scrutiny by analysis of card play).</li>
           </ul>
         </li>
-        <li><span class="rule-tag" id="C-7">§C-7</span> <strong>Penalty.</strong> Punished by <strong>5 stone</strong>. <span class="house-rule">House Rule</span> Standard rules distinguish between Wrong Caps where you still win all tricks (2 token penalty) and losing a trick after calling Caps (5 token penalty). We collapse both into 5 stone.</li>
+        <li><span class="rule-tag" id="C-7">§C-7</span> <strong>Penalty.</strong> Early and Wrong Caps are each punished by <strong>5 stone</strong>. <span class="house-rule">House Rule</span> Standard rules distinguish between Wrong Caps where you still win all tricks (2 token penalty) and losing a trick after calling Caps (5 token penalty). We collapse both into 5 stone.</li>
         <li><span class="rule-tag" id="C-8">§C-8</span> <strong>Caps loss supersedes points.</strong> A Caps loss <strong>supersedes</strong> the points threshold for regular betting — if you failed to call Caps correctly but won more than enough points for your bid, this is still a loss punishable by the Caps penalty.</li>
       </ul>
 
@@ -599,7 +599,7 @@
 
       <h3 id="caps-flow">Caps Decision Flow</h3>
       <figure class="caps-flowchart" aria-label="Caps decision flowchart">
-        <svg viewBox="0 0 990 610" role="img">
+        <svg viewBox="0 0 990 740" role="img">
           <defs>
             <marker id="caps-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
               <path d="M0,0 L10,5 L0,10 Z" class="caps-arrowhead" />
@@ -654,43 +654,57 @@
             <text x="0" y="14" class="caps-stone">loss + 1 stone</text>
           </g>
 
-          <!-- Called + didn't win all 8 → Wrong/Early Caps -->
+          <!-- Called + didn't win all 8 → Wrong Caps -->
           <g class="caps-node caps-outcome caps-bad" transform="translate(545 300)">
             <rect x="-80" y="-22" width="160" height="44" rx="6"/>
-            <text x="0" y="-2">Wrong/Early Caps</text>
+            <text x="0" y="-2">Wrong Caps</text>
             <text x="0" y="14" class="caps-stone">5 stone penalty</text>
           </g>
 
-          <!-- Called + won all 8 → was it the first opportunity? -->
+          <!-- Called + won all 8 → was the sweep provable when called? -->
           <g class="caps-node caps-decision" transform="translate(790 300)">
+            <rect x="-100" y="-26" width="200" height="52" rx="8"/>
+            <text x="0" y="-2">Could they prove the win</text>
+            <text x="0" y="16">when they called?</text>
+          </g>
+
+          <!-- Not provable → Early Caps (won on a guess) -->
+          <g class="caps-node caps-outcome caps-bad" transform="translate(640 430)">
+            <rect x="-80" y="-22" width="160" height="44" rx="6"/>
+            <text x="0" y="-2">Early Caps</text>
+            <text x="0" y="14" class="caps-stone">5 stone &middot; won on a guess</text>
+          </g>
+
+          <!-- Provable → was it the first opportunity? -->
+          <g class="caps-node caps-decision" transform="translate(850 430)">
             <rect x="-90" y="-26" width="180" height="52" rx="8"/>
             <text x="0" y="-2">Called at the first</text>
             <text x="0" y="16">opportunity?</text>
           </g>
 
           <!-- Called after first opportunity → Late Caps -->
-          <g class="caps-node caps-outcome caps-bad" transform="translate(640 430)">
+          <g class="caps-node caps-outcome caps-bad" transform="translate(700 555)">
             <rect x="-75" y="-22" width="150" height="44" rx="6"/>
             <text x="0" y="-2">Late Caps</text>
             <text x="0" y="14" class="caps-stone">loss + 1 stone</text>
           </g>
 
           <!-- First opportunity → bonus depends on timing -->
-          <g class="caps-node caps-decision" transform="translate(860 430)">
+          <g class="caps-node caps-decision" transform="translate(880 555)">
             <rect x="-85" y="-26" width="170" height="52" rx="8"/>
             <text x="0" y="-2">Called before</text>
             <text x="0" y="16">start of Round 7?</text>
           </g>
 
           <!-- In/after R7 → correct, no bonus -->
-          <g class="caps-node caps-outcome caps-good" transform="translate(700 555)">
+          <g class="caps-node caps-outcome caps-good" transform="translate(720 680)">
             <rect x="-75" y="-22" width="150" height="44" rx="6"/>
             <text x="0" y="-2">Correct Caps</text>
             <text x="0" y="14" class="caps-stone">win, no bonus</text>
           </g>
 
           <!-- Before R7 → correct + bonus -->
-          <g class="caps-node caps-outcome caps-good" transform="translate(895 555)">
+          <g class="caps-node caps-outcome caps-good" transform="translate(900 680)">
             <rect x="-85" y="-22" width="170" height="44" rx="6"/>
             <text x="0" y="-2">Correct Caps</text>
             <text x="0" y="14" class="caps-stone">win + 1 stone bonus</text>
@@ -719,15 +733,20 @@
 
           <line x1="728" y1="326" x2="653" y2="402" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
           <text x="672" y="368" class="caps-arrow-label">No</text>
-          <line x1="822" y1="326" x2="853" y2="398" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
-          <text x="853" y="366" class="caps-arrow-label">Yes</text>
+          <line x1="822" y1="326" x2="845" y2="398" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
+          <text x="850" y="366" class="caps-arrow-label">Yes</text>
 
           <line x1="795" y1="456" x2="712" y2="527" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
           <text x="733" y="496" class="caps-arrow-label">No</text>
-          <line x1="878" y1="456" x2="891" y2="527" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
-          <text x="903" y="496" class="caps-arrow-label">Yes</text>
+          <line x1="872" y1="456" x2="878" y2="527" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
+          <text x="892" y="496" class="caps-arrow-label">Yes</text>
+
+          <line x1="823" y1="581" x2="732" y2="652" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
+          <text x="753" y="621" class="caps-arrow-label">No</text>
+          <line x1="897" y1="581" x2="903" y2="652" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
+          <text x="917" y="621" class="caps-arrow-label">Yes</text>
         </svg>
-        <figcaption>Decision flow for a regular Caps call, from the calling team&rsquo;s side. A call only scores as Correct Caps if it was made at the first opportunity — before the start of Round 7 for the bonus. PCC and External Caps follow analogous structures — see <a href="#pcc">PCC</a> and the External Caps section above.</figcaption>
+        <figcaption>Decision flow for a regular Caps call, from the calling team&rsquo;s side. A call only scores as Correct Caps if the sweep was provable when it was made and it came at the first opportunity — before the start of Round 7 for the bonus. <strong>Early Caps</strong> (a guess that happened to work) and <strong>Wrong Caps</strong> (a sweep that fails) each cost 5 stone. PCC and External Caps follow analogous structures — see <a href="#pcc">PCC</a> and the External Caps section above.</figcaption>
       </figure>
 
       <h3 id="caps-summary">Summary of Caps Outcomes</h3>
@@ -740,7 +759,8 @@
             <tr><td>Correct Caps (before Round 7)</td><td>Win + 1 stone (bonus)</td></tr>
             <tr><td>Correct Caps (Round 7 onward)</td><td>Normal win, no bonus</td></tr>
             <tr><td>Late Caps</td><td>Normal loss + 1 stone (game flipped to loss)</td></tr>
-            <tr><td>Wrong/Early Caps</td><td>5 stone (received by offending team)</td></tr>
+            <tr><td>Early Caps (sweep not yet provable when called)</td><td>5 stone (received by offending team)</td></tr>
+            <tr><td>Wrong Caps (sweep fails or was already impossible)</td><td>5 stone (received by offending team)</td></tr>
             <tr><td>Correct External Caps (before Round 7)</td><td>Betting team&rsquo;s loss + 1 stone (extra to external)</td></tr>
             <tr><td>Correct External Caps (Round 7 onward)</td><td>Normal opposition win, no bonus</td></tr>
             <tr><td>Late External Caps</td><td>Betting team gives win + 1 stone (game flipped to external loss)</td></tr>
@@ -856,7 +876,7 @@
             <tr><td>H-9</td><td>Absolute hand</td><td>Not standard</td><td>Goodwill or post-game opposition claim → pass-on</td><td><a href="#absolute-hand">Absolute Hand</a></td></tr>
             <tr><td>H-10</td><td>PCC stake</td><td>Win 4 / Lose 5</td><td>Win 5 / Lose 5</td><td><a href="#pcc">PCC</a></td></tr>
             <tr><td>H-11</td><td>250+ open trump conversion</td><td>Bids ≥ 250 force trump reveal at end of R1; Open Trump from R2</td><td>Closed Trump stays closed regardless of bid</td><td><a href="#open-trump">Open Trump</a></td></tr>
-            <tr><td>H-12</td><td>Late vs Wrong Caps</td><td>Both treated as &ldquo;Wrong Caps&rdquo;</td><td>Distinguished: Late = loss + 1 stone; Wrong/Early = 5 stone</td><td><a href="#caps">Caps</a> (§C-3 to §C-7)</td></tr>
+            <tr><td>H-12</td><td>Late vs Wrong Caps</td><td>Both treated as &ldquo;Wrong Caps&rdquo;</td><td>Distinguished: Late = loss + 1 stone; Early and Wrong = 5 stone each</td><td><a href="#caps">Caps</a> (§C-3 to §C-7)</td></tr>
             <tr><td>H-13</td><td>Wrong Caps penalty</td><td>2 tokens (all tricks won) or 5 tokens (trick lost)</td><td>5 stone in all cases</td><td><a href="#caps">Caps</a> (§C-7)</td></tr>
             <tr><td>H-14</td><td>Riffle remedy</td><td>Not standard</td><td>After 3 consecutive 4-card redeals at same seat</td><td><a href="#dealing">Dealing</a></td></tr>
             <tr><td>H-15</td><td>Claim Balance</td><td>Not standard</td><td>Optional; wrong claim = auto-loss + 1 stone</td><td><a href="#penalties">Severe Penalties</a></td></tr>
@@ -980,8 +1000,11 @@
         <dt>Late Caps</dt>
         <dd>Calling Caps after the first opportunity, OR winning all 8 rounds without ever calling and missing a first opportunity identifiable in scrutiny. Punished by loss + 1 stone (game flipped to loss).</dd>
 
-        <dt>Wrong/Early Caps</dt>
-        <dd>Calling Caps incorrectly, too early, or deliberately throwing a round to conceal a Caps situation. Punished by 5 stone.</dd>
+        <dt>Early Caps</dt>
+        <dd>Calling Caps before the sweep was provable from your information set — a guess, punished by 5 stone even if all 8 rounds are then won.</dd>
+
+        <dt>Wrong Caps</dt>
+        <dd>Calling Caps when the sweep fails or was already impossible (a round lost after — or before — the call, misremembered cards), or deliberately throwing a round to conceal a Caps situation. Punished by 5 stone.</dd>
 
         <dt>External Caps</dt>
         <dd>Caps called by the non-Trumping team. Same correctness test as regular Caps but with a more lenient &ldquo;first opportunity&rdquo; standard given limited information. Does not apply to PCC. Outcomes mirror regular Caps in structure but framed against the betting team&rsquo;s loss.</dd>

@@ -391,13 +391,13 @@ In strict play, Caps should be called on the precise card at which certainty is 
 - **§C-4 Trumper standard.** The Trumper is held to a higher standard than the partner. The Trumper has full visibility of every played card (including folded cards revealed at end of round); by the final rounds the Trumper should know what they hold and what opponents have left, so a missed Caps from the Trumper's seat is rarely defensible.
 - **§C-5 Penalty.** Late Caps is punished by **loss + 1 stone** on top of the usual loss for the bid, even if the team won enough points to meet their original bid (e.g. Late Caps on Honest = 3 + 1 = 4 stone received by the betting team). A Late Caps loss flips the game outcome: even though Caps was achieved physically, the team scores it as a loss. **[House Rule — standard rules treat late and early Caps identically as "Wrong Caps".]**
 
-### Wrong/Early Caps
+### Wrong & Early Caps
 
-- **§C-6 Definition.** Wrong/Early Caps occurs when:
-  - The player calls Caps too early — no winning adaptive strategy exists yet from this state; some consistent world admits a line of opp play that takes a remaining trick; or
-  - The player calls Caps incorrectly (e.g. misremembering which cards have been played, or forgetting that the opposition has already won a round); or
-  - The player **deliberately throws a round to conceal a Caps situation** (revealed during scrutiny by analysis of card play).
-- **§C-7 Penalty.** Punished by **5 stone**. **[House Rule — standard rules distinguish between Wrong Caps where you still win all tricks (2 token penalty) and losing a trick after calling Caps (5 token penalty). We collapse both into 5 stone.]**
+- **§C-6 Definition.** Two distinct failures share this penalty class:
+  - **Early Caps** — the call was made before the sweep was provable: from the caller's hand and information set, some consistent world still let the opposition take a remaining trick. A call made on instinct, signals, or vibes is Early *even if the team then wins all 8 rounds* — winning on a guess is still a guess.
+  - **Wrong Caps** — the sweep does not (or can no longer) happen: the team loses a round after calling, the call misremembers which cards have been played, or the opposition had already won a round before the call was made.
+  - Also scored as Wrong Caps: **deliberately throwing a round to conceal a Caps situation** (revealed during scrutiny by analysis of card play).
+- **§C-7 Penalty.** Early and Wrong Caps are each punished by **5 stone**. **[House Rule — standard rules distinguish between Wrong Caps where you still win all tricks (2 token penalty) and losing a trick after calling Caps (5 token penalty). We collapse both into 5 stone.]**
 - **§C-8 Caps loss supersedes points.** A Caps loss **supersedes** the points threshold for regular betting — if you failed to call Caps correctly but won more than enough points for your bid, this is still a loss punishable by the Caps penalty.
 
 ### External Caps (Caps from Opposition)
@@ -421,7 +421,8 @@ In strict play, Caps should be called on the precise card at which certainty is 
 | Correct Caps (before Round 7) | Win + 1 stone (bonus) |
 | Correct Caps (Round 7 onward) | Normal win, no bonus |
 | Late Caps | Normal loss + 1 stone (game flipped to loss) |
-| Wrong/Early Caps | 5 stone (received by offending team) |
+| Early Caps (sweep not yet provable when called) | 5 stone (received by offending team) |
+| Wrong Caps (sweep fails or was already impossible) | 5 stone (received by offending team) |
 | Correct External Caps (before Round 7) | Betting team's loss + 1 stone (extra to external) |
 | Correct External Caps (Round 7 onward) | Normal opposition win, no bonus |
 | Late External Caps | Betting team gives win + 1 stone (game flipped to external loss) |
@@ -511,7 +512,7 @@ This appendix consolidates every divergence from the standard 304 ruleset (as do
 | H-9 | Absolute hand | Not standard | Goodwill declaration or post-game opposition claim → pass-on, no stone | Absolute Hand |
 | H-10 | PCC stake | Win 4 / Lose 5 | Win 5 / Lose 5 | PCC |
 | H-11 | 250+ open trump conversion | Bids of 250+ require trump reveal at end of round 1; play proceeds Open Trump from round 2 | Closed Trump games stay closed regardless of bid amount | Open Trump Games |
-| H-12 | Late vs Wrong Caps | Both treated identically as "Wrong Caps" | Distinguished: Late Caps = loss + 1 stone; Wrong/Early Caps = 5 stone | §C-3 to §C-7 |
+| H-12 | Late vs Wrong Caps | Both treated identically as "Wrong Caps" | Distinguished: Late Caps = loss + 1 stone; Early and Wrong Caps = 5 stone each | §C-3 to §C-7 |
 | H-13 | Wrong Caps penalty | 2 tokens if all tricks won, 5 tokens if a trick lost | Collapsed: 5 stone in all cases | §C-7 |
 | H-14 | Riffle remedy | Not standard | After 3 consecutive 4-card redeals at the same seat, dealer may riffle once | Dealing |
 | H-15 | Claim Balance | Not standard | Optional house exercise; wrong claim = auto-loss + 1 stone | Severe Penalties |
@@ -591,7 +592,9 @@ Terms are ordered to minimise forward references. Terms in **bold** within defin
 
 **Late Caps:** Calling Caps after the first opportunity, OR winning all 8 rounds without ever calling and missing a first opportunity identifiable in scrutiny. Punished by loss + 1 stone (game flipped to loss).
 
-**Wrong/Early Caps:** Calling Caps incorrectly, too early, or deliberately throwing a round to conceal a Caps situation. Punished by 5 stone.
+**Early Caps:** Calling Caps before the sweep was provable from your information set — a guess, punished by 5 stone even if all 8 rounds are then won.
+
+**Wrong Caps:** Calling Caps when the sweep fails or was already impossible, or deliberately throwing a round to conceal a Caps situation. Punished by 5 stone.
 
 **External Caps:** Caps called by the non-Trumping team. Same correctness test as regular Caps but with a more lenient "first opportunity" standard given limited information. Does not apply to PCC. Outcomes mirror regular Caps in structure but framed against the betting team's loss.
 
