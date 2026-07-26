@@ -174,15 +174,36 @@ export const formatWorlds = (w: WorldsCount): string => {
   return formatBigInt(w.estimate);
 };
 
+// Human banding, never scientific notation. `9.4e9` is not a quantity
+// anyone reads as tension — it reads as a machine artefact, and the
+// exponent steps quantise so coarsely that an ordinary card play often
+// showed no change at all while a discovered void showed a visible
+// double-step, effectively announcing "something important just
+// happened" without the player having noticed what.
+const SUFFIXES: ReadonlyArray<[bigint, string]> = [
+  [1_000_000_000_000n, 'T'],
+  [1_000_000_000n, 'B'],
+  [1_000_000n, 'M'],
+  [1_000n, 'k'],
+];
+
 const formatBigInt = (n: bigint): string => {
   if (n === 0n) return '0';
   if (n < 1000n) return n.toString();
-  const s = n.toString();
-  const exp = s.length - 1;
-  const mantissa =
-    s.length === 1 ? s
-    : s[0] + (s[1] === '0' ? '' : '.' + s[1]);
-  return `${mantissa}e${exp}`;
+  for (const [unit, suffix] of SUFFIXES) {
+    if (n >= unit) {
+      // One decimal below 10 units, none above: 9.4B, then 24B.
+      const whole = n / unit;
+      if (whole < 10n) {
+        const tenths = (n * 10n) / unit % 10n;
+        return tenths === 0n
+          ? `${whole}${suffix}`
+          : `${whole}.${tenths}${suffix}`;
+      }
+      return `${whole}${suffix}`;
+    }
+  }
+  return n.toString();
 };
 
 // Numeric measure for difficulty grading (Phase 4).

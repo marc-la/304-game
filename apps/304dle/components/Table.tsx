@@ -4,6 +4,8 @@ import type { RoundEntry } from '@engine/state';
 import type { Runtime } from '../runtime';
 import { turnOrder, whoseTurn } from '../runtime';
 import { CardBack, CardView } from './CardView';
+import { PublicInfo } from './PublicInfo';
+import type { WorldsCount } from '../worlds-counter';
 import { SUIT_SYMBOLS } from '../types';
 import { teamOf, type Seat } from '@engine/seating';
 
@@ -34,6 +36,7 @@ const viewerKnowsEntry = (
 
 interface Props {
   runtime: Runtime;
+  worlds: WorldsCount | null;
 }
 
 const SEAT_LABELS: Record<Seat, string> = {
@@ -43,16 +46,58 @@ const SEAT_LABELS: Record<Seat, string> = {
   south: 'You',
 };
 
+// The four-petal flower. Position encodes provenance — north's card
+// sits north, west's sits west — which is the whole of what soul §III.5
+// asks for: "who played what within a trick" stays readable.
+//
+// Rotation is NOT part of that. Turning each card to its placer's
+// orientation mimics a physical table, but at a physical table you can
+// move your head; on a screen it just leaves half the trick upside
+// down or sideways, and the trick is the thing the player is meant to
+// be reading. All four sit upright.
 const PETAL: Record<Seat, { row: 1 | 2 | 3; col: 1 | 2 | 3; rotate: number }> = {
-  north: { row: 1, col: 2, rotate: 180 },
-  west:  { row: 2, col: 1, rotate: 90 },
+  north: { row: 1, col: 2, rotate: 0 },
+  west:  { row: 2, col: 1, rotate: 0 },
   south: { row: 3, col: 2, rotate: 0 },
-  east:  { row: 2, col: 3, rotate: -90 },
+  east:  { row: 2, col: 3, rotate: 0 },
 };
 
 const orderedSeats: Seat[] = ['north', 'west', 'south', 'east'];
 
-export const Table = ({ runtime }: Props) => {
+// Role markers pinned to a seat. The trumper and the round's leader
+// were previously discoverable only from a header chip and from
+// watching who plays first — testing showed both got missed, and the
+// generated puzzles make guessing actively wrong: the trumper is north
+// about half the time, and south leads round 1 in roughly one puzzle
+// in eight. Both facts are public at a real table, so showing them
+// costs no deduction (soul §III.1) and their absence was just fog.
+const SeatRoles = ({
+  seat, trumperSeat, leaderSeat, trumpSuit, trumpKnown,
+}: {
+  seat: Seat;
+  trumperSeat: Seat;
+  leaderSeat: Seat;
+  trumpSuit: string;
+  trumpKnown: boolean;
+}) => {
+  const isTrumper = seat === trumperSeat;
+  const isLeader = seat === leaderSeat;
+  if (!isTrumper && !isLeader) return null;
+  return (
+    <span className="dle-seat-roles">
+      {isTrumper && (
+        <span className="dle-role dle-role-trumper" title="Trumper — won the bid and set trump">
+          {trumpKnown ? SUIT_SYMBOLS[trumpSuit as 's'] : '?'}
+        </span>
+      )}
+      {isLeader && (
+        <span className="dle-role dle-role-leader" title="Leads this round">↻</span>
+      )}
+    </span>
+  );
+};
+
+export const Table = ({ runtime, worlds }: Props) => {
   const turn = whoseTurn(runtime);
   const counts = {
     north: runtime.hands.north.length,
@@ -95,19 +140,24 @@ export const Table = ({ runtime }: Props) => {
               : `${trumperLabel} is the trumper. ${trumpModeLabel} trump.`
           }
         >
-          {trumperLabel === 'You' ? 'Your' : `${trumperLabel}'s`} Trump{' '}
-          <span aria-hidden>
+          {/* Name the trumper explicitly. The generator rotates the
+              caps-obligated seat into south, so the trumper is NOT
+              reliably you — it is north in roughly half the puzzles.
+              "Your Trump" was a coin-flip lie. */}
+          <span className="dle-trump-suit" aria-hidden>
             {runtime.trump.isRevealed || isViewerTrumper
               ? SUIT_SYMBOLS[runtime.trump.trumpSuit]
               : '?'}
-          </span>{' '}
-          <span className="dle-trump-mode" aria-hidden>· {trumpModeLabel}</span>
+          </span>
+          <span className="dle-trump-who">
+            {trumperLabel === 'You' ? 'you trump' : `${trumperLabel} trumps`}
+          </span>
         </motion.span>
-        <span className="dle-points-readout">
-          You/N <b>{runtime.pointsWon.team_a}</b>
-          <span className="dle-points-divider">·</span>
-          E/W <b>{runtime.pointsWon.team_b}</b>
-        </span>
+        {/* No points readout. Caps is "do I win every REMAINING
+            round" — the running total is irrelevant to that question,
+            and showing it hands over an aggregate the player didn't
+            compute (soul §VI.4). It also leaked the construction: every
+            puzzle is a sweep, so E/W was permanently 0. */}
         <span className="dle-round-chip">R {Math.min(runtime.roundNumber, 8)} / 8</span>
       </div>
 
@@ -134,7 +184,16 @@ export const Table = ({ runtime }: Props) => {
               <CardBack small key={i} />
             ))}
           </div>
-          <div className="dle-seat-label">{SEAT_LABELS.north}</div>
+          <div className="dle-seat-label">
+            {SEAT_LABELS.north}
+            <SeatRoles
+              seat="north"
+              trumperSeat={runtime.trump.trumperSeat}
+              leaderSeat={runtime.priority}
+              trumpSuit={runtime.trump.trumpSuit}
+              trumpKnown={runtime.trump.isRevealed || isViewerTrumper}
+            />
+          </div>
         </motion.div>
 
         {/* West */}
@@ -149,7 +208,16 @@ export const Table = ({ runtime }: Props) => {
               <CardBack small key={i} />
             ))}
           </div>
-          <div className="dle-seat-label">{SEAT_LABELS.west}</div>
+          <div className="dle-seat-label">
+            {SEAT_LABELS.west}
+            <SeatRoles
+              seat="west"
+              trumperSeat={runtime.trump.trumperSeat}
+              leaderSeat={runtime.priority}
+              trumpSuit={runtime.trump.trumpSuit}
+              trumpKnown={runtime.trump.isRevealed || isViewerTrumper}
+            />
+          </div>
         </motion.div>
 
         {/* East */}
@@ -164,8 +232,35 @@ export const Table = ({ runtime }: Props) => {
               <CardBack small key={i} />
             ))}
           </div>
-          <div className="dle-seat-label">{SEAT_LABELS.east}</div>
+          <div className="dle-seat-label">
+            {SEAT_LABELS.east}
+            <SeatRoles
+              seat="east"
+              trumperSeat={runtime.trump.trumperSeat}
+              leaderSeat={runtime.priority}
+              trumpSuit={runtime.trump.trumpSuit}
+              trumpKnown={runtime.trump.isRevealed || isViewerTrumper}
+            />
+          </div>
         </motion.div>
+
+        {/* South — you. No card fan (your hand is below the felt), but
+            the seat must exist on the table: with only three seats
+            drawn, your own role at the table had nowhere to be shown. */}
+        <div
+          className={`dle-seat dle-seat-south${turn === 'south' ? ' dle-seat-active' : ''}`}
+        >
+          <div className="dle-seat-label">
+            {SEAT_LABELS.south}
+            <SeatRoles
+              seat="south"
+              trumperSeat={runtime.trump.trumperSeat}
+              leaderSeat={runtime.priority}
+              trumpSuit={runtime.trump.trumpSuit}
+              trumpKnown={runtime.trump.isRevealed || isViewerTrumper}
+            />
+          </div>
+        </div>
 
         {/* Centre — 4-petal flower */}
         <div className="dle-flower">
@@ -216,6 +311,8 @@ export const Table = ({ runtime }: Props) => {
           </AnimatePresence>
         </div>
       </div>
+
+      <PublicInfo worlds={worlds} />
     </div>
   );
 };

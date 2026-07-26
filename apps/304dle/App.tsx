@@ -3,7 +3,6 @@ import { useStore } from './store';
 import type { ScriptedPuzzle } from './types';
 import { Table } from './components/Table';
 import { Hand } from './components/Hand';
-import { PublicInfo } from './components/PublicInfo';
 import { CapsConfirmModal } from './components/CapsConfirmModal';
 import { CapsRevealModal } from './components/CapsRevealModal';
 import { ResultScreen } from './components/ResultScreen';
@@ -110,10 +109,8 @@ export const App = () => {
             verdict={r.verdict}
             callRound={r.callRound}
             obligatedAtRound={r.obligatedAtRound}
-            worldsAtCall={r.worldsAtCall}
-            difficulty={r.difficulty}
+            handsAtCall={null}
             streakCurrent={persisted.streak.current}
-            streakLongest={persisted.streak.longest}
             onReplay={() => useStore.getState().replayHand()}
           />
         </main>
@@ -128,7 +125,7 @@ export const App = () => {
           {isPreview && <span className="dle-preview-tag">preview · not recorded</span>}
         </p>
         <p className="dle-intro-blurb">
-          You are South. Plays are scripted — your only decision is when to call Caps.
+          You are South. Your cards play themselves — the only decision is when to call Caps.
         </p>
         <button
           type="button"
@@ -179,10 +176,8 @@ export const App = () => {
           verdict={state.verdict}
           callRound={state.callRound}
           obligatedAtRound={state.obligatedAtRound}
-          worldsAtCall={state.worldsAtCall}
-          difficulty={state.difficulty}
+          handsAtCall={state.handsAtCall}
           streakCurrent={persisted.streak.current}
-          streakLongest={persisted.streak.longest}
           onReplay={() => useStore.getState().replayHand()}
         />
       </main>
@@ -222,14 +217,18 @@ const PlayingShell = ({ runtime, appState }: ShellProps) => {
   const turn = whoseTurn(runtime);
   const order = turnOrder(runtime);
   const roundComplete = runtime.currentRound.length === order.length;
-  // The table is holding for the player: round full, past the
-  // auto-advance midpoint, game still live.
-  const awaitingAdvance =
+  // The trick is complete and still on the table. Clicking always
+  // advances it — early rounds also auto-advance after their linger,
+  // rounds 5+ wait indefinitely. Making the click available in *both*
+  // cases is what lets the early lingers be generous: a player who has
+  // read the trick is never held there.
+  const canAdvance =
     appState.kind === 'playing' &&
     turn === null &&
     roundComplete &&
-    !isGameOver(runtime) &&
-    lingerMsForRound(runtime.roundNumber) === null;
+    !isGameOver(runtime);
+  const awaitingAdvance =
+    canAdvance && lingerMsForRound(runtime.roundNumber) === null;
 
   useEffect(() => {
     if (appState.kind !== 'playing') return;
@@ -290,11 +289,10 @@ const PlayingShell = ({ runtime, appState }: ShellProps) => {
           the caps call actually happens. */}
       <div
         className={`dle-table-wrap${awaitingAdvance ? ' dle-awaiting' : ''}`}
-        onClick={awaitingAdvance ? () => resolveCurrentRound() : undefined}
+        onClick={canAdvance ? () => resolveCurrentRound() : undefined}
       >
-        <Table runtime={runtime} />
+        <Table runtime={runtime} worlds={worldsCount} />
       </div>
-      <PublicInfo worlds={worldsCount} />
       <Hand
         hand={runtime.hands.south}
         legalSet={legalSet}

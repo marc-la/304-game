@@ -103,8 +103,16 @@ export const SETTLE_MS = 420;
 // call is expensive, and the hesitation is self-paced, which is the
 // thing the puzzle is actually measuring.
 //
+// The early rounds are where the suit ledger gets built — you are
+// watching four cards land and recording who played what of which
+// suit. The first pass at this (900–1300ms) swept them away before
+// they could be read. These are deliberately generous; a player who
+// has already read the trick clicks through, and clicking is always
+// available, so the cost of being too slow is nothing while the cost
+// of being too fast is an unreadable table.
+//
 // Returns null when the round must be advanced by the player.
 export const lingerMsForRound = (roundNumber: number): number | null => {
   if (roundNumber >= 5) return null;
-  return [0, 900, 1000, 1150, 1300][roundNumber] ?? 1300;
+  return [0, 3000, 2800, 2600, 2400][roundNumber] ?? 2400;
 };

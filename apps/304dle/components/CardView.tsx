@@ -41,8 +41,15 @@ export const CardView = ({
   );
 };
 
+// The back carries the game's own identity rather than a generic
+// gradient: the site's mono face (the "whiteboard notation" register
+// of soul §II), a ruled border like a scoring sheet, and a lattice of
+// the four suits. The 𝟑𝟎𝟒 mathematical-bold glyphs are dropped — they
+// render inconsistently across platforms and sit outside the site's
+// type system.
 export const CardBack = ({ small }: { small?: boolean }) => (
   <div className={`dle-card dle-card-back${small ? ' dle-card-small' : ''}`}>
-    <span aria-hidden="true">𝟑𝟎𝟒</span>
+    <span className="dle-card-back-rule" aria-hidden="true" />
+    <span className="dle-card-back-mark" aria-hidden="true">304</span>
   </div>
 );

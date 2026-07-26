@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import type { CardId } from '@engine/card';
 import { checkCapsObligation, isCapsLate } from '@engine/caps';
 import { findWitnessLine } from '@engine/caps-csp';
+import type { Seat } from '@engine/seating';
 import type { CompletedRound } from '@engine/state';
 import type { ScriptedPuzzle } from './types';
 import {
@@ -48,6 +49,7 @@ export type AppState =
       worldsAtCall: number | null;
       difficulty: CapsDifficulty | null;
       obligatedAtRound: number | null;
+      handsAtCall: Record<Seat, CardId[]>;
     }
   | {
       kind: 'result';
@@ -58,6 +60,10 @@ export type AppState =
       obligatedAtRound: number | null;
       worldsAtCall: number | null;
       difficulty: CapsDifficulty | null;
+      // Everyone's remaining cards at the moment of the call. The
+      // post-mortem: this is where you see what you failed to rule
+      // out. Not persisted, so it is absent after a reload.
+      handsAtCall: Record<Seat, CardId[]> | null;
     };
 
 interface Store {
@@ -74,6 +80,15 @@ interface Store {
   finishGame: () => void;
   replayHand: () => void;
 }
+
+// Freeze everyone's remaining cards. Taken by value — the runtime's
+// hand arrays are mutated in place by applyPlay.
+const snapshotHands = (rt: Runtime): Record<Seat, CardId[]> => ({
+  north: [...rt.hands.north],
+  west: [...rt.hands.west],
+  south: [...rt.hands.south],
+  east: [...rt.hands.east],
+});
 
 const buildRuntimeFromPuzzle = (p: ScriptedPuzzle): Runtime =>
   newRuntime({
@@ -189,6 +204,7 @@ export const useStore = create<Store>((set, get) => ({
       verdict = 'wrong-not-obligated';
     }
 
+    const handsAtCall = snapshotHands(s.runtime);
     const worldsCount = countWorlds(s.runtime, 'south');
     const worldsAtCall = measureForDifficulty(worldsCount);
     const difficulty = gradeDifficulty(worldsAtCall);
@@ -205,6 +221,7 @@ export const useStore = create<Store>((set, get) => ({
         worldsAtCall,
         difficulty,
         obligatedAtRound,
+        handsAtCall,
       },
     });
   },
@@ -222,6 +239,7 @@ export const useStore = create<Store>((set, get) => ({
         obligatedAtRound: s.obligatedAtRound,
         worldsAtCall: s.worldsAtCall,
         difficulty: s.difficulty,
+        handsAtCall: s.handsAtCall,
       },
     });
   },
@@ -264,6 +282,8 @@ export const useStore = create<Store>((set, get) => ({
         obligatedAtRound: stamp?.obligatedAtRound ?? null,
         worldsAtCall: null,
         difficulty: null,
+        // The hand ran out — there are no remaining cards to show.
+        handsAtCall: null,
       },
     });
   },

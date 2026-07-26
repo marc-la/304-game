@@ -1,7 +1,18 @@
-import { useState } from 'react';
+import type { CardId } from '@engine/card';
+import type { Seat } from '@engine/seating';
 import type { ScriptedPuzzle } from '../types';
-import type { CapsDifficulty, CapsVerdictKind } from '../scoring';
-import { buildShareGrid } from '../share';
+import type { CapsVerdictKind } from '../scoring';
+import { HandsReveal } from './HandsReveal';
+
+// Deliberately spare. The previous version carried an emoji share
+// grid, a difficulty badge with a blurb, and a five-row definition
+// list (called-at / obligation-arose / late-by / worlds-at-call /
+// streak). None of it was readable at a glance and most of it was
+// scoring machinery leaking into the player's face.
+//
+// What survives is the three things that answer "what happened":
+// the verdict, one sentence of why, and the position you were
+// actually reading when you called.
 
 interface Props {
   puzzle: ScriptedPuzzle;
@@ -9,32 +20,16 @@ interface Props {
   verdict: CapsVerdictKind;
   callRound: number | null;
   obligatedAtRound: number | null;
-  worldsAtCall: number | null;
-  difficulty: CapsDifficulty | null;
+  handsAtCall: Record<Seat, CardId[]> | null;
   streakCurrent: number;
-  streakLongest: number;
   onReplay?: () => void;
 }
 
 const VERDICT_LABEL: Record<CapsVerdictKind, string> = {
   correct: 'Caps',
-  late: 'Late Caps',
-  'wrong-not-obligated': 'Called too early',
-  missed: 'Caps was missed',
-};
-
-const DIFFICULTY_LABEL: Record<CapsDifficulty, string> = {
-  master: 'Master',
-  competent: 'Competent',
-  standard: 'Standard',
-  trivial: 'Trivial',
-};
-
-const DIFFICULTY_BLURB: Record<CapsDifficulty, string> = {
-  master: 'Many worlds still consistent — you read what others couldn\'t.',
-  competent: 'A real read.',
-  standard: 'Solid call.',
-  trivial: 'Information had already collapsed — no real test, no streak credit.',
+  late: 'Late',
+  'wrong-not-obligated': 'Too early',
+  missed: 'Missed',
 };
 
 const verdictClass = (v: CapsVerdictKind): string => {
@@ -43,93 +38,63 @@ const verdictClass = (v: CapsVerdictKind): string => {
   return 'dle-result-fail';
 };
 
-const formatWorldsValue = (n: number): string => {
-  if (n < 1000) return String(Math.round(n));
-  if (n < 1_000_000) return `${(n / 1000).toFixed(1)}k`;
-  return n.toExponential(1);
-};
-
-export const ResultScreen = (props: Props) => {
-  const [copied, setCopied] = useState(false);
-  const grid = buildShareGrid({
-    date: props.date,
-    verdict: props.verdict,
-    callRound: props.callRound,
-    difficulty: props.difficulty,
-    worldsAtCall: props.worldsAtCall,
-  });
-  const handleShare = async () => {
-    try {
-      await navigator.clipboard.writeText(grid);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      // ignore
+// One sentence. Says what happened in the game's own terms, without
+// reciting numbers the player has to reassemble into a story.
+const explain = (
+  verdict: CapsVerdictKind,
+  callRound: number | null,
+  par: number | null,
+): string => {
+  if (verdict === 'correct') {
+    return 'Every remaining round was yours, and you saw it.';
+  }
+  if (verdict === 'late') {
+    if (par !== null && callRound !== null && callRound > par) {
+      const n = callRound - par;
+      return `It was already yours at round ${par}. You played on for ${n} more round${n === 1 ? '' : 's'} before calling.`;
     }
-  };
-
-  const parDelta =
-    props.callRound !== null && props.obligatedAtRound !== null
-      ? Math.max(0, props.callRound - props.obligatedAtRound)
-      : null;
-
-  return (
-    <div className={`dle-result ${verdictClass(props.verdict)}`}>
-      <h2 className="dle-result-title">{VERDICT_LABEL[props.verdict]}</h2>
-
-      {props.difficulty && props.verdict === 'correct' && (
-        <div className={`dle-result-difficulty dle-difficulty-${props.difficulty}`}>
-          <span className="dle-difficulty-label">{DIFFICULTY_LABEL[props.difficulty]}</span>
-          <span className="dle-difficulty-blurb">{DIFFICULTY_BLURB[props.difficulty]}</span>
-        </div>
-      )}
-
-      <dl className="dle-result-stats">
-        {props.callRound !== null && (
-          <>
-            <dt>Called at</dt><dd>R{props.callRound}</dd>
-          </>
-        )}
-        {props.obligatedAtRound !== null && (
-          <>
-            <dt>Obligation arose</dt><dd>R{props.obligatedAtRound}</dd>
-          </>
-        )}
-        {parDelta !== null && parDelta > 0 && (
-          <>
-            <dt>Late by</dt><dd>{parDelta} round{parDelta === 1 ? '' : 's'}</dd>
-          </>
-        )}
-        {props.worldsAtCall !== null && (
-          <>
-            <dt>Worlds at call</dt><dd>{formatWorldsValue(props.worldsAtCall)}</dd>
-          </>
-        )}
-        <dt>Streak</dt><dd>{props.streakCurrent} (best {props.streakLongest})</dd>
-      </dl>
-
-      <pre className="dle-share-grid">{grid}</pre>
-      <div className="dle-result-actions">
-        <button type="button" className="dle-btn dle-btn-primary" onClick={handleShare}>
-          {copied ? 'Copied!' : 'Copy share grid'}
-        </button>
-        {props.onReplay && props.verdict !== 'correct' && (
-          <button
-            type="button"
-            className="dle-btn dle-btn-secondary"
-            onClick={props.onReplay}
-            title="Replay this same hand. Today's verdict and streak are already recorded — this is for scrutiny."
-          >
-            Replay this hand
-          </button>
-        )}
-      </div>
-      {props.verdict !== 'correct' && props.onReplay && (
-        <p className="dle-result-replay-note">
-          Replay won't change today's verdict — only your reading of it.
-        </p>
-      )}
-      <p className="dle-result-tomorrow">Come back tomorrow for a new puzzle.</p>
-    </div>
-  );
+    return 'It was already yours before you called — you played on past the moment.';
+  }
+  if (verdict === 'missed') {
+    return par !== null
+      ? `Caps was on the table from round ${par}. You never called it.`
+      : 'Caps was on the table. You never called it.';
+  }
+  return 'Not yet yours — the opposition could still legally take a round.';
 };
+
+export const ResultScreen = (props: Props) => (
+  <div className={`dle-result ${verdictClass(props.verdict)}`}>
+    <h2 className="dle-result-title">{VERDICT_LABEL[props.verdict]}</h2>
+    <p className="dle-result-line">
+      {explain(props.verdict, props.callRound, props.obligatedAtRound)}
+    </p>
+
+    {props.handsAtCall && (
+      <HandsReveal
+        hands={props.handsAtCall}
+        trumpSuit={props.puzzle.trump.suit}
+        trumperSeat={props.puzzle.trump.trumper}
+      />
+    )}
+
+    <div className="dle-result-actions">
+      {props.onReplay && (
+        <button
+          type="button"
+          className="dle-btn dle-btn-secondary"
+          onClick={props.onReplay}
+        >
+          Play it again
+        </button>
+      )}
+    </div>
+
+    <p className="dle-result-tomorrow">
+      {props.streakCurrent > 0 && (
+        <span className="dle-result-streak">{props.streakCurrent} day streak · </span>
+      )}
+      New hand tomorrow.
+    </p>
+  </div>
+);

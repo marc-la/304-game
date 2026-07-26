@@ -10,7 +10,6 @@ import {
   whoseTurn,
 } from '../runtime';
 import { buildVerdict } from '../scoring';
-import { buildShareGrid } from '../share';
 import { fixtureSimpleSweep } from '@engine/__tests__/fixtures';
 import { SEAT_INDEX, type Seat } from '@engine/seating';
 import type { CardId } from '@engine/card';
@@ -174,23 +173,5 @@ describe('buildVerdict', () => {
     expect(v.parDelta).toBeNull();
     expect(v.difficulty).toBeNull();
     expect(v.extendsStreak).toBe(false);
-  });
-});
-
-describe('share grid', () => {
-  it('includes verdict + difficulty + dynamic par; no /100', () => {
-    const grid = buildShareGrid({
-      date: '2026-05-01',
-      verdict: 'correct',
-      callRound: 5,
-      obligatedAtRound: 5,
-      difficulty: 'master',
-      worldsAtCall: 2000,
-    });
-    expect(grid).toContain('304dle');
-    expect(grid).toContain('Caps');
-    expect(grid).toContain('Master');
-    expect(grid).not.toContain('/100');
-    expect(grid.split('\n').length).toBeGreaterThan(2);
   });
 });
