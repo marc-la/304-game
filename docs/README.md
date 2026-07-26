@@ -10,7 +10,11 @@ docs/
   handoffs/   live, intra-session state (deleted when shipped)
   explainers/ plain-English lay-reader write-ups (post-session curated)
   specs/      durable reference: rules, formalism, invariants
+  bots/       generated bot documentation (output of `npm run bots:docs`)
 ```
+
+Group play **data** (stats spreadsheet, betting CSVs) lives in the top-level
+[`data/`](../data) directory, not here — docs are documentation.
 
 Full conventions: [.claude/docs-workflow.md](../.claude/docs-workflow.md).
 
@@ -18,11 +22,12 @@ Full conventions: [.claude/docs-workflow.md](../.claude/docs-workflow.md).
 
 The brief for "what to pick up in a future session". When the work lands, the handoff is deleted — git log is the changelog.
 
-- [handoffs/bot-hybrid-handoff.md](handoffs/bot-hybrid-handoff.md) — B6o/B7o hybrid bots, gated on a B6/B7 objective refactor (tricks → points).
-- [handoffs/info-set-completeness-v2-handoff.md](handoffs/info-set-completeness-v2-handoff.md) — `knownInHand` doesn't propagate through the CSP path (W6). Carry-forward from the 2026-05-26 v1 audit.
-- [handoffs/info-set-completeness-v3-handoff.md](handoffs/info-set-completeness-v3-handoff.md) — engine work to bring the implementation up to the 2026-05-26 spec audit (A-class spec landed; B-class engine queued).
-- [handoffs/info-set-followup-investigations.md](handoffs/info-set-followup-investigations.md) — deeper-investigation tasks queued from the 2026-05-26 spec audit (budget benchmark, Long-2011 mapping, §T-8, Claim Balance, Absolute Hand).
+- [handoffs/closure-tests-handoff.md](handoffs/closure-tests-handoff.md) — deduction-closure test suite; A8 half landed (`info-closure.test.ts`), Layer-2 + P-class regressions still open.
+- [handoffs/rules-spec-code-drift-audit.md](handoffs/rules-spec-code-drift-audit.md) — P1–P6 spec/code drift items; partially landed, status markers need a refresh.
 - [handoffs/deductions-audit.md](handoffs/deductions-audit.md) — non-bug deduction gaps deferred from the v1 audit; refreshed 2026-05-26 with Class-C deferrals.
+- [handoffs/info-set-followup-investigations.md](handoffs/info-set-followup-investigations.md) — deeper-investigation tasks queued from the 2026-05-26 spec audit (budget benchmark, Long-2011 mapping, §T-8, Claim Balance, Absolute Hand).
+- [handoffs/spec-change-workflow.md](handoffs/spec-change-workflow.md) — proposed spec→test convention; not yet adopted into CLAUDE.md.
+- [handoffs/t8-retroactive-design.md](handoffs/t8-retroactive-design.md) — §T-8 retroactive-deduction design; pre-implementation, ship/defer call open.
 
 ## Explainers (curated)
 

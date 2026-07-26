@@ -1,0 +1,81 @@
+name: Regenerate player play-style descriptions
+
+# When betting data changes, ask Claude for fresh one-line play-style
+# portraits and commit them to data/player-styles.json. The Pages deploy
+# (triggered by that commit) folds them into leaderboard.json.
+#
+# Requires the ANTHROPIC_API_KEY repository secret. If it's absent the
+# job skips gracefully rather than failing the push.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'data/bets/**'
+      - 'data/stats.xlsx'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: player-styles
+  cancel-in-progress: true
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for API key
+        id: key
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::ANTHROPIC_API_KEY secret not set — skipping play-style generation."
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.key.outputs.present == 'true'
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        if: steps.key.outputs.present == 'true'
+        working-directory: frontend
+        run: npm ci
+
+      - name: Link node_modules at repo root
+        if: steps.key.outputs.present == 'true'
+        run: ln -s frontend/node_modules node_modules
+
+      - name: Build leaderboard data
+        if: steps.key.outputs.present == 'true'
+        run: npx tsx tools/leaderboard/build-data.ts
+
+      - name: Generate play-style descriptions
+        if: steps.key.outputs.present == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node tools/leaderboard/generate-styles.mjs
+
+      - name: Commit if changed
+        if: steps.key.outputs.present == 'true'
+        run: |
+          if git diff --quiet data/player-styles.json 2>/dev/null && \
+             git ls-files --error-unmatch data/player-styles.json >/dev/null 2>&1; then
+            echo "No change to player styles."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/player-styles.json
+          git commit -m "Refresh AI play-style descriptions"
+          git push

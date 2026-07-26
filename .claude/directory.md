@@ -17,10 +17,10 @@ Read [`.claude/soul.md`](soul.md) first. This file is the **map**; the soul is t
 | **Static site** | `site/` | HTML entries, partials, classic JS/CSS, public assets. The Vite build root. | Engine + apps for the two React-mount pages. |
 | **React apps** | `apps/304dle/`, `apps/play/` | The two interactive surfaces. Peers, not siblings — different audiences, different lifecycles. | Engine. Their own components. |
 | **Engine** | `engine/` | Pure TS rules engine: cards, seating, play, bidding, caps, double-dummy, info-set, bots. **No React, no DOM, no app concerns.** | Nothing inside this repo. |
-| **Tools** | `tools/puzzles/`, `tools/curator/` | Node CLIs run during development/release: puzzle generation, curation pipeline. Not shipped. | Engine. |
-| **Multiplayer** | `multiplayer/backend/`, `multiplayer/tests/` | FastAPI server + Python tests. **Not in production deploy.** `apps/play/transport/select.ts` probes for it; absent ⇒ in-browser play via `localTransport`. Currently depends on the retired Python engine in `_archive/game304/`, so it doesn't run out of the box — see [`multiplayer/README.md`](../multiplayer/README.md). |
-| **Archive** | `_archive/` | Retired code kept for reference. **Do not extend.** | Nothing reaches into this. |
-| **Docs** | `docs/` | Three subtrees with separate lifecycles: `specs/` (rules, caps formalism, play invariants), `handoffs/` (live intra-session state, deleted when shipped), `explainers/` (plain-English lay-reader write-ups). See [`docs/README.md`](../docs/README.md) and [`.claude/docs-workflow.md`](docs-workflow.md). | Nothing. |
+| **Tools** | `tools/puzzles/`, `tools/curator/`, `tools/bots/`, `tools/leaderboard/` | Node CLIs run during development/release: puzzle generation, curation pipeline, bot tournaments/docs, leaderboard data pipeline (`build-data.ts` runs at dev/build time via vite.config; `generate-styles.mjs` runs in CI). Not shipped. | Engine (bots/puzzles); `data/` (leaderboard). |
+| **Data** | `data/` | Group play data: `stats.xlsx` (revolutions/matches, hand-maintained) and `bets/*.csv` (per-revolution betting sheets). Parsed at build time into `site/public/data/leaderboard.json` (gitignored). `player-styles.json` is written by the player-styles GitHub workflow. | Nothing. |
+| **Multiplayer** | `multiplayer/backend/`, `multiplayer/tests/` | FastAPI server + Python tests. **Not in production deploy.** `apps/play/transport/select.ts` probes for it; absent ⇒ in-browser play via `localTransport`. Depends on the retired Python engine (removed from the repo), so it doesn't run out of the box — see [`multiplayer/README.md`](../multiplayer/README.md). |
+| **Docs** | `docs/` | `specs/` (rules, caps formalism, play invariants), `handoffs/` (live intra-session state, deleted when shipped), `explainers/` (plain-English lay-reader write-ups), `bots/` (generated bot docs). See [`docs/README.md`](../docs/README.md) and [`.claude/docs-workflow.md`](docs-workflow.md). | Nothing. |
 | **Soul + standing instructions** | `.claude/` | `soul.md`, `gui-verification.md`, `auto-commit.md`, `docs-workflow.md`, this file. Hook script `auto-commit-push.sh` plus `settings.json`. | Nothing. |
 | **Node anchor** | `frontend/` | `package.json`, `node_modules/`, `vite.config.ts`, `tsconfig*.json`, `eslint.config.js`. **No source code.** | Everything Node-based. |
 
@@ -34,6 +34,8 @@ Ask: *what layer is it?*
 - **304dle-specific** (daily-puzzle UX, scoring, share grid, worlds counter, tempo, onboarding) → `apps/304dle/`.
 - **vs-bots / multiplayer UX** (lobby, action panels, control bar, transport selection) → `apps/play/`.
 - **Static page** (rules companion, new explainer, leaderboard variant) → `site/` (new HTML; register in `frontend/vite.config.ts` `buildInputs`).
+- **Leaderboard-surface work** (the three `leaderboard*.html` pages, `site/js/leaderboard/`) → read [`.claude/leaderboard-design.md`](leaderboard-design.md) first; it is binding.
+- **Play data** (new betting CSV, stats update) → `data/`. Never back into `docs/`.
 - **Shared chrome** (header, nav, footer fragment) → `site/partials/`. Reference with `<!-- @include partials/foo.html -->`.
 - **Site-wide CSS** → `site/css/styles.css` (single file by current convention; split only if a real seam appears).
 - **Classic page-script** (no React) → `site/js/`.
@@ -65,7 +67,6 @@ Use `from '@engine/card'` etc. Avoid deep relative paths like `'../../engine/car
 
 ## Hard rules
 
-- **Don't add to `_archive/`.** If something there needs revival, lift it out properly.
 - **Don't add Python to the production path.** The deploy is static; backend is exiled.
 - **Don't grow a second component library.** If two apps need the same component, lift it into a shared spot only when duplication is real — *not speculative*.
 - **Don't sprawl `tools/`.** Each tool group earns a subdir (`tools/puzzles/`, `tools/curator/`). Loose `tools/*.ts` is a smell.

@@ -41,3 +41,5 @@ See [.claude/gui-verification.md](.claude/gui-verification.md). Tests prove code
 - 304 is a Tamil South-Asian trick-taking card game. The single ship target is a static GitHub Pages site (304dle) plus a multiplayer surface.
 - The bot zoo lives at `engine/bots/`. The CSP / caps machinery lives at `engine/caps-csp.ts` and `engine/info.ts`.
 - Determinism is a hard invariant for bots: `(info-set, rng seed)` → same play, byte-for-byte.
+- Any change to the leaderboard surfaces (`site/leaderboard*.html`, `site/js/leaderboard/`) is bound by [.claude/leaderboard-design.md](.claude/leaderboard-design.md).
+- Play data (stats.xlsx, betting CSVs) lives in `data/`; the build parses it into `site/public/data/leaderboard.json`.
