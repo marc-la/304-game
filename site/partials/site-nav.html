@@ -3,9 +3,12 @@
     <a href="./" class="site-nav-brand">3<span class="brand-zero">0</span>4</a>
     <nav class="site-nav-links">
       <a href="rules.html">Rules</a>
-      <a href="practice.html">304dle</a>
       <a href="leaderboard.html">Leaderboard</a>
-      <a href="play.html" class="site-nav-cta">Play</a>
+      <!-- Play is retired from the nav while the multiplayer flow is
+           unfinished; 304dle takes the CTA slot. To restore: re-add the
+           play.html link with the site-nav-cta class and demote 304dle
+           back to a plain link (see git history of this file). -->
+      <a href="practice.html" class="site-nav-cta">304dle</a>
       <!-- Static theme-toggle slot. Default icon is "system" so the markup
            is correct for the common case; theme.js binds the click handler
            and corrects the icon if the saved state is "dark" or "light".

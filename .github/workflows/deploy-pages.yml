@@ -46,6 +46,11 @@ jobs:
 
       - name: Build static site
         working-directory: frontend
+        # Play (vs-bots / multiplayer) is retired-but-not-removed: the flow
+        # is unfinished, so play.html is dropped from the deployed site.
+        # Delete this env line to ship it again.
+        env:
+          EXCLUDE_PLAY: '1'
         run: npm run build
 
       - uses: actions/configure-pages@v5
