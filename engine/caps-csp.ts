@@ -480,17 +480,57 @@ const canBeVoidIn = (
 
 // Trump-dominance short-circuit: caller's hand is entirely trump
 // and the unknown pool contains no trump. Therefore no opp can
-// hold trump; caller will lead trump every round and win. Holds
-// regardless of in-progress mid-trick state because (a) if caller
-// has already played in this round their card is trump and pool
-// has no trump → no opp can beat it; (b) if caller hasn't played,
-// caller is sole trump holder and leads (or follows by playing
-// trump, since they only have trump) — wins.
+// hold trump; caller will lead trump every round and win.
+//
+// Mid-trick safety. The premise is that whatever the caller has
+// contributed to the round in progress cannot be beaten. That holds
+// when the caller has not played yet (they are void in any non-trump
+// led suit, so they ruff, and no one else holds trump), and it holds
+// when the card they already played is itself a trump. It does NOT
+// hold when the caller has already played a NON-trump card this
+// round — which happens exactly when they were forced to follow a
+// side suit and that emptied their hand down to trumps.
+//
+// That case was previously waved through, and it is not a corner:
+// caller holds two trumps and one low diamond, partner leads a
+// middling diamond, caller must follow with the low one, and an
+// opponent still holding a higher diamond takes the round. The search
+// would report caps obligated on a position that loses outright.
+// Measured on the shipped window, 11 of 24 puzzles carried a par
+// round produced this way. See tools/puzzles/audit-obligation.ts.
 const trumpDominanceShortCircuit = (ctx: CSPCtx): boolean => {
   for (const c of ctx.callerHand) {
     if (suitOf(c) !== ctx.trumpSuit) return false;
   }
   if (ctx.callerHand.length === 0) return false;
+  // The round in progress must not already be lost.
+  //
+  // This check runs BEFORE the round-resolution branch in
+  // adaptiveSweep, so without this guard a trick that has just been
+  // taken by the opposition is still discharged as a win. Two ways
+  // that happened, both observed on shipped puzzles:
+  //
+  //   1. The caller was forced to follow a side suit, emptying their
+  //      hand down to trumps, and an opponent still holding a higher
+  //      card of that suit takes the round.
+  //   2. An opponent played the last outstanding trump earlier in this
+  //      very round. The pool is empty of trumps by the time the
+  //      short-circuit is evaluated, so "no opp can hold trump" reads
+  //      true — while their trump sits on the table, winning.
+  //
+  // Safe conditions: the caller's side is currently ahead, and if
+  // seats are still to play, the card that is ahead is a trump. With
+  // no trump left in the pool or in any opp's forced set, a trump on
+  // the table cannot be beaten by anyone still to play.
+  if (ctx.inProgress.length > 0) {
+    const turnOrder = roundTurnOrder(ctx.leader, ctx.pccPartnerOut);
+    const ahead = roundWinner(ctx.inProgress, ctx.trumpSuit);
+    if (teamOf(ahead) !== teamOf(ctx.callerSeat)) return false;
+    if (ctx.inProgress.length < turnOrder.length) {
+      const aheadCard = ctx.inProgress.find(([s]) => s === ahead)?.[1];
+      if (aheadCard === undefined || suitOf(aheadCard) !== ctx.trumpSuit) return false;
+    }
+  }
   for (const c of ctx.pool) {
     if (suitOf(c) === ctx.trumpSuit) return false;
   }

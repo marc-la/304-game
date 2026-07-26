@@ -263,3 +263,68 @@ const solveMinPoints = (ctx: SolveCtx): number => {
   }
   return best ?? 0;
 };
+
+// Adaptive per-world sweep — the honest reading of `∃σ_W` from
+// [docs/specs/caps_formalism.md §5], as opposed to `orderSweepsWorld`'s
+// fixed-order `∃O`. Within a fully-known world the caller chooses each
+// card knowing what has been played, and every other seat — partner
+// included, per §5's "V still cannot rely on partner choice" — plays
+// adversarially.
+//
+// Used to verify the CSP's obligation predicate independently: if the
+// CSP says obligated but some consistent world fails this, the CSP is
+// unsound. See tools/puzzles/audit-obligation.ts.
+export interface WorldSweepArgs {
+  hands: ReadonlyMap<Seat, ReadonlyArray<CardId>>;
+  callerSeat: Seat;
+  leader: Seat;
+  inProgress: ReadonlyArray<readonly [Seat, CardId]>;
+  roundsRemaining: number;
+  trumpSuit: Suit;
+  pccPartnerOut?: Seat | null;
+}
+
+export const worldSweepsAdaptive = (args: WorldSweepArgs): boolean => {
+  const pccOut = args.pccPartnerOut ?? null;
+  const rec = (
+    hands: Map<Seat, CardId[]>,
+    leader: Seat,
+    inProgress: Array<readonly [Seat, CardId]>,
+    roundsRemaining: number,
+  ): boolean => {
+    if (roundsRemaining <= 0) return true;
+    const order = roundTurnOrder(leader, pccOut);
+    if (inProgress.length >= order.length) {
+      const winner = roundWinner(inProgress, args.trumpSuit);
+      if (teamOf(winner) !== teamOf(args.callerSeat)) return false;
+      if (roundsRemaining === 1) return true;
+      return rec(hands, winner, [], roundsRemaining - 1);
+    }
+    const seat = order[inProgress.length];
+    const hand = hands.get(seat) ?? [];
+    if (hand.length === 0) return false;
+    const arr: ReadonlyArray<CardId>[] = [[], [], [], []];
+    for (let i = 0; i < 4; i++) arr[i] = hands.get(SEATS_BY_INDEX[i]) ?? [];
+    const legal = legalPlays({
+      hand,
+      ledSuit: inProgress.length > 0 ? suitOf(inProgress[0][1]) : null,
+      trumpSuit: args.trumpSuit,
+      isLead: inProgress.length === 0,
+      seatsWithTrumps: seatsHoldingTrump(arr, args.trumpSuit),
+      seat,
+    });
+    if (legal.length === 0) return false;
+    const isCaller = seat === args.callerSeat;
+    for (const c of legal) {
+      const next = new Map(hands);
+      next.set(seat, hand.filter(x => x !== c));
+      const ok = rec(next, leader, [...inProgress, [seat, c] as const], roundsRemaining);
+      if (isCaller) { if (ok) return true; }
+      else if (!ok) return false;
+    }
+    return !isCaller;
+  };
+  const start = new Map<Seat, CardId[]>();
+  for (const [s, cs] of args.hands) start.set(s, [...cs]);
+  return rec(start, args.leader, [...args.inProgress], args.roundsRemaining);
+};
