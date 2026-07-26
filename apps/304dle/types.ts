@@ -45,6 +45,15 @@ export interface ScriptedPuzzle {
     //   table); reveals during play via §T9.
     mode: 'open' | 'closed';
     trumpCardInHand: boolean;
+    // Open trump, trumper WITHOUT round-1 priority (rules.md §245):
+    // they pick up the folded card and must reveal a trump-suit card
+    // to the table. That card is public knowledge — every seat saw it
+    // — so it belongs in the information set, and deductions about who
+    // holds which trump depend on it.
+    //
+    // Null when the trumper has round-1 priority (their trump lead IS
+    // the reveal, rules.md §244) or in closed trump.
+    revealedTrumpCardId?: CardId | null;
   };
   // Round-1 leader. INDEPENDENT of trumper — in real 304 priority is
   // assigned to the player to the dealer's right; the dealer rotates,

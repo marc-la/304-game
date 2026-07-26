@@ -107,6 +107,7 @@ const buildRuntimeFromPuzzle = (p: ScriptedPuzzle): Runtime =>
     priority: p.priority,
     script: p.script,
     mode: p.trump.mode,
+    revealedTrumpCardId: p.trump.revealedTrumpCardId ?? null,
   });
 
 export const useStore = create<Store>((set, get) => ({

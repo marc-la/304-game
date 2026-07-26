@@ -278,6 +278,33 @@ const findObligation = (
   return null;
 };
 
+
+// Open trump, trumper WITHOUT round-1 priority: rules.md §245 requires
+// them to pick up the folded card and reveal a trump-suit card to the
+// table before play. Every seat sees it, so it is public knowledge and
+// belongs in each player's information set — buildInfoSet already
+// folds it into knownInHand (engine/info.ts), but nothing was ever
+// emitting it, so the reveal simply did not happen in shipped puzzles.
+//
+// Which card: the trumper's LOWEST trump. Showing a cheap card is what
+// a real player does, and it is deterministic so puzzles stay
+// reproducible. When the trumper HAS priority their round-1 trump lead
+// is itself the reveal (§244), so there is nothing extra to declare.
+const REVEAL_RANKS = ['J', '9', 'A', '10', 'K', 'Q', '8', '7'];
+
+const openTrumpRevealCard = (
+  hand: ReadonlyArray<CardId>,
+  trumpSuit: Suit,
+  trumperHasPriority: boolean,
+): CardId | null => {
+  if (trumperHasPriority) return null;
+  const trumps = hand.filter(c => suitOf(c) === trumpSuit);
+  if (trumps.length === 0) return null;
+  return trumps.reduce((lowest, c) =>
+    REVEAL_RANKS.indexOf(c.slice(0, c.length - 1)) >
+    REVEAL_RANKS.indexOf(lowest.slice(0, lowest.length - 1)) ? c : lowest);
+};
+
 const SEAT_ORDER: Seat[] = ['north', 'west', 'south', 'east'];
 
 const seatRotation = (target: Seat): Record<Seat, Seat> => {
@@ -437,6 +464,13 @@ const main = () => {
           mode: game.mode,
           // For closed mode the folded card sits on the table at start.
           trumpCardInHand: game.mode === 'open',
+          revealedTrumpCardId: game.mode === 'open'
+            ? openTrumpRevealCard(
+                rotatedHands[rotatedTrumper],
+                game.trump.suit,
+                rotatedTrumper === rotatedPriority,
+              )
+            : null,
         },
         priority: rotatedPriority,
         script,
