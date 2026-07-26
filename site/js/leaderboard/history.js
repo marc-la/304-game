@@ -225,7 +225,7 @@ function applyFilters(state) {
 
 function renderFilters(data, state) {
   const el = document.getElementById('lb-filters');
-  el.innerHTML = '<span class="lb-filter-label">Winner</span>';
+  el.innerHTML = '';
   const mk = (label, val) => {
     const b = document.createElement('button');
     b.type = 'button';
@@ -240,7 +240,7 @@ function renderFilters(data, state) {
     return b;
   };
   const group = document.createElement('span');
-  group.className = 'lb-seg';
+  group.className = 'lb-seg lb-seg--sub';
   group.appendChild(mk('All', null));
   for (const p of PLAYER_ORDER) group.appendChild(mk(playerName(data, p), p));
   el.appendChild(group);

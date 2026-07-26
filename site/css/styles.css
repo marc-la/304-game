@@ -1891,7 +1891,9 @@ dd {
   color: #fff;
 }
 
-.lb-seg--seasons .lb-seg-item {
+/* Smaller secondary controls that share the context strip with the
+   page tabs: the standings season toggle and the history winner filter. */
+.lb-seg--sub .lb-seg-item {
   font-size: 0.75rem;
   padding: 4px 12px;
 }
@@ -2272,57 +2274,10 @@ dd {
 
 /* --- history --- */
 
-
-
-.lb-toolbar {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
-}
-
 .lb-filters {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.lb-filter-label {
-  font-family: var(--font-heading);
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--clr-text-muted);
-}
-
-.lb-legend summary {
-  font-family: var(--font-heading);
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--clr-accent);
-  cursor: pointer;
-  list-style: none;
-  padding: 4px 0;
-}
-
-.lb-legend summary::before { content: '▸ '; }
-.lb-legend[open] summary::before { content: '▾ '; }
-
-.lb-legend-body {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 16px;
-  padding: 8px 12px;
-  border: 1px solid var(--clr-border);
-  border-radius: 6px;
-  background: var(--clr-surface);
-  font-family: var(--font-heading);
-  font-size: 0.74rem;
-  color: var(--clr-text-muted);
-  max-width: 560px;
 }
 
 .lb-season-h {
@@ -2390,7 +2345,6 @@ details[open] > summary .lb-chevron { transform: rotate(45deg); }
 
 .lb-rev-summary::-webkit-details-marker,
 .lb-match-summary::-webkit-details-marker,
-.lb-legend summary::-webkit-details-marker { display: none; }
 
 .lb-rev-num {
   font-family: var(--font-heading);

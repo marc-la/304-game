@@ -117,6 +117,10 @@ no shadows, no hover-lift transforms.
 - **Season control**: `[Season 2 | Season 1 | All-time]` segmented toggle in
   the dashboard context strip; re-filters tiles + partnership list in place.
   Default = current season. Persist in URL hash.
+- **Winner filter** (history): `[All | names…]` toggle in the context strip
+  beside the page tabs, same smaller `lb-seg--sub` treatment as the season
+  control (one shared grammar for strip-level sub-controls, no visible
+  label — the pills self-describe).
 - **History rows**: winner-first (`★ Name` in player colour), then a slim
   ordered run of the rest (`Marc 2·26 › Matthew 2·26 › Vithu 0·19`). The
   `n·m = matches won · stone` gloss appears once per page. Collapsed rows
@@ -128,10 +132,11 @@ no shadows, no hover-lift transforms.
   grid — mono notation as cell text, faint ruled lines, columns truncated at
   the last played round, empty cells as blank paper (no borders), team
   grouping by player-swatch pairs (never accent/link-colour borders), the
-  CSV's OVERALL block rendered as the sheet footer, one collapsible
-  **legend** pinned per page (grammar: `60` won · `60−` lost · `+1` early
-  caps · `−L` late · `−W` wrong · `PCC` · `PN` · `H` honest). Tooltips
-  reinforce, never sole channel (mobile has none).
+  CSV's OVERALL block rendered as the sheet footer. **No notation legend**
+  — removed 2026-07-26 (Marc: everyone reading knows the grammar; `60` won ·
+  `60−` lost · `+1` early caps · `−L` late · `−W` wrong · `PCC` · `PN` ·
+  `H` honest stays here as the reference). Tooltips reinforce, never sole
+  channel (mobile has none).
 - **Insights profiles**: one card per player — bets/set, bid-mix as a single
   sequential-ramp stacked bar over the ladder 60→70→H→100→250→PCC (ordered
   scale ⇒ one hue light→dark, darker = more aggressive), conversion counts,

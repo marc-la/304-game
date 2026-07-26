@@ -144,7 +144,7 @@ export function seasonToggle(container, data, onChange) {
     ...[...data.seasons].sort((a, b) => b - a).map((s) => ({ label: 'Season ' + s, val: s })),
     { label: 'All-time', val: 'all' },
   ];
-  container.classList.add('lb-seg', 'lb-seg--seasons');
+  container.classList.add('lb-seg', 'lb-seg--sub');
   container.setAttribute('role', 'group');
   container.setAttribute('aria-label', 'Season scope');
 
