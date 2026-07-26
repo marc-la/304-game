@@ -14,9 +14,29 @@
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--clr-text-muted);
+      /* 24px inline padding = sidebar ul gutter (12px) + link padding (12px),
+         so tier labels align with link text, matching .sidebar-header. */
       margin: 16px 0 4px;
+      padding: 0 24px;
     }
     .sidebar nav .sidebar-tier-label:first-child { margin-top: 0; }
+    /* Phase numerals in "The game, in order" — small, mono, muted. */
+    .sidebar nav a .toc-num {
+      display: inline-block;
+      width: 1.3em;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--clr-text-muted);
+    }
+    /* Caps flowchart: wide diagram — let it scroll horizontally on
+       narrow screens instead of shrinking to illegibility. */
+    .caps-flowchart { overflow-x: auto; }
+    .caps-flowchart svg { max-width: 828px; min-width: 690px; }
+    /* The rebuilt tree uses a 990-unit-wide viewBox (vs the shared 720
+       styles); scale type up so it renders at body-comparable size. */
+    .caps-flowchart .caps-node text { font-size: 15px; }
+    .caps-flowchart .caps-stone { font-size: 13px !important; }
+    .caps-flowchart .caps-arrow-label { font-size: 13px; }
     details.example > summary.example-header { cursor: pointer; list-style: none; }
     details.example > summary.example-header::-webkit-details-marker { display: none; }
     details.example > summary .chevron { display: inline-block; transition: transform 0.15s; }
@@ -50,7 +70,7 @@
         <li><a href="#bidding-below-200">Bidding limits</a></li>
         <li><a href="#redeal">Redeal &amp; pass-on</a></li>
       </ul>
-      <h3 class="sidebar-tier-label">The full rules</h3>
+      <h3 class="sidebar-tier-label">The game, in order</h3>
       <ul>
         <li><a href="#introduction">Introduction</a></li>
         <li><a href="#objective">Objective</a>
@@ -58,14 +78,14 @@
             <li><a href="#units-of-play">Units of Play</a></li>
           </ul>
         </li>
-        <li><a href="#players-and-cards">Players &amp; Cards</a></li>
-        <li><a href="#setup">Setup</a>
+        <li><a href="#players-and-cards"><span class="toc-num">1</span>Players &amp; Cards</a></li>
+        <li><a href="#setup"><span class="toc-num">2</span>Setup</a>
           <ul>
             <li><a href="#stone-holder">Stone Holder</a></li>
           </ul>
         </li>
-        <li><a href="#dealing">Dealing</a></li>
-        <li><a href="#betting">Betting &amp; Trump</a>
+        <li><a href="#dealing"><span class="toc-num">3</span>Dealing</a></li>
+        <li><a href="#betting"><span class="toc-num">4</span>Betting &amp; Trump</a>
           <ul>
             <li><a href="#betting-4-cards">4-Card Betting</a></li>
             <li><a href="#choosing-trump">Choosing Trump</a></li>
@@ -74,7 +94,7 @@
             <li><a href="#pcc">PCC</a></li>
           </ul>
         </li>
-        <li><a href="#play">Play</a>
+        <li><a href="#play"><span class="toc-num">5</span>Play</a>
           <ul>
             <li><a href="#open-trump">Open Trump</a></li>
             <li><a href="#closed-trump">Closed Trump</a></li>
@@ -82,12 +102,15 @@
             <li><a href="#spoilt-trumps">Spoilt Trumps</a></li>
           </ul>
         </li>
-        <li><a href="#caps">Caps</a>
+        <li><a href="#caps"><span class="toc-num">6</span>Caps</a>
           <ul>
             <li><a href="caps-formalism.html">Formalism (Advanced) &rarr;</a></li>
           </ul>
         </li>
-        <li><a href="#scoring">Scoring</a></li>
+        <li><a href="#scoring"><span class="toc-num">7</span>Scoring</a></li>
+      </ul>
+      <h3 class="sidebar-tier-label">Reference</h3>
+      <ul>
         <li><a href="#penalties">Penalties</a></li>
         <li><a href="#house-rules-diff">House Rules vs Standard</a></li>
         <li><a href="#glossary">Glossary</a></li>
@@ -100,73 +123,12 @@
 
     <h1>304 — House Rules</h1>
 
-    <!-- Phase timeline: visual flow diagram of a single game. Connected
-         numbered nodes (clickable for jump-nav). The sidebar handles
-         section-level navigation; this is a diagram, not a second TOC. -->
-    <figure class="phase-timeline" aria-label="Phases of a single game">
-      <svg viewBox="0 0 700 96" role="img" class="phase-timeline-svg" preserveAspectRatio="xMidYMid meet">
-        <line x1="50" y1="30" x2="650" y2="30" class="phase-line" />
-        <g class="phase-node">
-          <a href="#dealing">
-            <circle cx="50" cy="30" r="18"/>
-            <text x="50" y="35" class="phase-num-text">1</text>
-            <text x="50" y="74" class="phase-label-text">Shuffle</text>
-          </a>
-        </g>
-        <g class="phase-node">
-          <a href="#betting-4-cards">
-            <circle cx="150" cy="30" r="18"/>
-            <text x="150" y="35" class="phase-num-text">2</text>
-            <text x="150" y="74" class="phase-label-text">Bet 4</text>
-          </a>
-        </g>
-        <g class="phase-node">
-          <a href="#choosing-trump">
-            <circle cx="250" cy="30" r="18"/>
-            <text x="250" y="35" class="phase-num-text">3</text>
-            <text x="250" y="74" class="phase-label-text">Trump</text>
-          </a>
-        </g>
-        <g class="phase-node">
-          <a href="#second-deal">
-            <circle cx="350" cy="30" r="18"/>
-            <text x="350" y="35" class="phase-num-text">4</text>
-            <text x="350" y="74" class="phase-label-text">Deal 4</text>
-          </a>
-        </g>
-        <g class="phase-node">
-          <a href="#betting-8-cards">
-            <circle cx="450" cy="30" r="18"/>
-            <text x="450" y="35" class="phase-num-text">5</text>
-            <text x="450" y="74" class="phase-label-text">Bet 8</text>
-          </a>
-        </g>
-        <g class="phase-node">
-          <a href="#play">
-            <circle cx="550" cy="30" r="18"/>
-            <text x="550" y="35" class="phase-num-text">6</text>
-            <text x="550" y="74" class="phase-label-text">Play</text>
-          </a>
-        </g>
-        <g class="phase-node">
-          <a href="#scoring">
-            <circle cx="650" cy="30" r="18"/>
-            <text x="650" y="35" class="phase-num-text">7</text>
-            <text x="650" y="74" class="phase-label-text">Score</text>
-          </a>
-        </g>
-      </svg>
-      <figcaption>How a single game flows. Each node is clickable.</figcaption>
-    </figure>
-
     <p class="cheatsheet-link"><a href="cheatsheet.html">Open the one-page cheat sheet &rarr;</a> &middot; <a href="#house-rules-diff">See house-rule differences from standard 304 &rarr;</a></p>
 
     <!-- Introduction -->
     <section id="introduction">
-      <div class="intro">
-        <p>&ldquo;304&rdquo; (pronounced &ldquo;three-nought-four&rdquo;) is a four-player partnership trick-taking card game with bidding, popular in Sri Lanka. The total point value of all cards in the pack is 304, hence the name. The game belongs to the Jass family, likely brought to Sri Lanka by Dutch traders in the 17th or 18th century. 304 is the probable ancestor of the Indian games 28 and 29.</p>
+      <p>&ldquo;304&rdquo; (pronounced &ldquo;three-nought-four&rdquo;) is a four-player partnership trick-taking card game with bidding, popular in Sri Lanka. The total point value of all cards in the pack is 304, hence the name. The game belongs to the Jass family, likely brought to Sri Lanka by Dutch traders in the 17th or 18th century. 304 is the probable ancestor of the Indian games 28 and 29.</p>
         <p>This ruleset describes the house rules as played within our group, with certain variations from the standard rules in effect. Where our rules diverge from the standard game, these are marked as <span class="house-rule">House Rule</span>. Rules have been adapted from the <a href="https://www.pagat.com/jass/304.html">Pagat website</a> and by <a href="https://www.pagat.com/docs/304rules.txt">Aings Aingaran</a>.</p>
-      </div>
     </section>
 
     <hr>
@@ -179,7 +141,7 @@
       <h3 id="units-of-play">Units of Play</h3>
       <p>A <strong>round</strong> is a single trick (all four players play one card each). A <strong>game</strong> consists of 8 rounds, at the end of which a team wins or loses stone. A <strong>match</strong> is a series of games, ending when one team has given away all 10 stone. A <strong>revolution</strong> is where all combinations of players play against each other across multiple matches to determine the overall winner.</p>
       <p>A match typically lasts 30 minutes to an hour. A revolution (3 matches covering all player combinations) runs 3–4 hours.</p>
-      <p id="phases">The phase timeline at the top of this page shows how a single game flows: shuffle and first deal, 4-card betting, choosing trump, second deal, 8-card betting, play, then <strong>scrutiny</strong> (counting points, verifying Caps calls, exchanging stone).</p>
+      <p id="phases">A single game flows through the same phases every time — shuffle and first deal, 4-card betting, choosing trump, second deal, 8-card betting, play, then <strong>scrutiny</strong> (counting points, verifying Caps calls, exchanging stone). The numbered sections in the contents sidebar follow this order.</p>
     </section>
 
     <hr>
@@ -637,96 +599,135 @@
 
       <h3 id="caps-flow">Caps Decision Flow</h3>
       <figure class="caps-flowchart" aria-label="Caps decision flowchart">
-        <svg viewBox="0 0 720 540" role="img">
+        <svg viewBox="0 0 990 610" role="img">
           <defs>
             <marker id="caps-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
               <path d="M0,0 L10,5 L0,10 Z" class="caps-arrowhead" />
             </marker>
           </defs>
 
-          <!-- Q1: Did this team win all 8 rounds? -->
-          <g class="caps-node caps-decision" transform="translate(360 40)">
-            <rect x="-130" y="-26" width="260" height="52" rx="8"/>
-            <text x="0" y="-2">Did this team win</text>
+          <!-- Root: the decision the player actually makes -->
+          <g class="caps-node caps-decision" transform="translate(490 45)">
+            <rect x="-110" y="-26" width="220" height="52" rx="8"/>
+            <text x="0" y="-2">Did the team</text>
+            <text x="0" y="16">call Caps?</text>
+          </g>
+
+          <!-- No call → did they win all 8 anyway? -->
+          <g class="caps-node caps-decision" transform="translate(200 170)">
+            <rect x="-100" y="-26" width="200" height="52" rx="8"/>
+            <text x="0" y="-2">Did they win</text>
             <text x="0" y="16">all 8 rounds?</text>
           </g>
 
-          <!-- No → Was Caps called? -->
-          <g class="caps-node caps-decision" transform="translate(170 150)">
-            <rect x="-110" y="-26" width="220" height="52" rx="8"/>
-            <text x="0" y="-2">Did the team</text>
-            <text x="0" y="16">call Caps?</text>
+          <!-- Called → did they win all 8? -->
+          <g class="caps-node caps-decision" transform="translate(720 170)">
+            <rect x="-100" y="-26" width="200" height="52" rx="8"/>
+            <text x="0" y="-2">Did they win</text>
+            <text x="0" y="16">all 8 rounds?</text>
           </g>
 
-          <!-- Yes (won all 8) → Was Caps called? -->
-          <g class="caps-node caps-decision" transform="translate(550 150)">
-            <rect x="-110" y="-26" width="220" height="52" rx="8"/>
-            <text x="0" y="-2">Did the team</text>
-            <text x="0" y="16">call Caps?</text>
-          </g>
-
-          <!-- Path: No 8 won + No call → normal scoring -->
-          <g class="caps-node caps-outcome caps-neutral" transform="translate(60 280)">
-            <rect x="-50" y="-22" width="100" height="44" rx="6"/>
+          <!-- No call + didn't win all 8 → normal scoring -->
+          <g class="caps-node caps-outcome caps-neutral" transform="translate(75 300)">
+            <rect x="-60" y="-22" width="120" height="44" rx="6"/>
             <text x="0" y="6">Score normally</text>
           </g>
 
-          <!-- Path: No 8 won + Yes call → Wrong/Early Caps -->
-          <g class="caps-node caps-outcome caps-bad" transform="translate(225 280)">
-            <rect x="-70" y="-22" width="140" height="44" rx="6"/>
-            <text x="0" y="-2">Wrong/Early Caps</text>
-            <text x="0" y="14" class="caps-stone">5 stone penalty</text>
+          <!-- No call + won all 8 → scrutiny test -->
+          <g class="caps-node caps-decision" transform="translate(330 300)">
+            <rect x="-130" y="-28" width="260" height="56" rx="8"/>
+            <text x="0" y="-4">Scrutiny: was Caps provably</text>
+            <text x="0" y="16">callable at an earlier point?</text>
           </g>
 
-          <!-- Path: Won 8 + No call → Late Caps (but check if first-opp existed) -->
-          <g class="caps-node caps-outcome caps-bad" transform="translate(450 280)">
-            <rect x="-80" y="-22" width="160" height="44" rx="6"/>
+          <!-- Scrutiny: no provable opportunity → normal win -->
+          <g class="caps-node caps-outcome caps-good" transform="translate(205 430)">
+            <rect x="-85" y="-22" width="170" height="44" rx="6"/>
+            <text x="0" y="-2">Normal win</text>
+            <text x="0" y="14" class="caps-stone">at the bid level</text>
+          </g>
+
+          <!-- Scrutiny: opportunity existed → Late Caps -->
+          <g class="caps-node caps-outcome caps-bad" transform="translate(420 430)">
+            <rect x="-75" y="-22" width="150" height="44" rx="6"/>
             <text x="0" y="-2">Late Caps</text>
             <text x="0" y="14" class="caps-stone">loss + 1 stone</text>
           </g>
 
-          <!-- Path: Won 8 + Call → was call before R7? -->
-          <g class="caps-node caps-decision" transform="translate(640 280)">
-            <rect x="-70" y="-26" width="140" height="52" rx="8"/>
-            <text x="0" y="-2">Call before</text>
-            <text x="0" y="16">start of R7?</text>
+          <!-- Called + didn't win all 8 → Wrong/Early Caps -->
+          <g class="caps-node caps-outcome caps-bad" transform="translate(545 300)">
+            <rect x="-80" y="-22" width="160" height="44" rx="6"/>
+            <text x="0" y="-2">Wrong/Early Caps</text>
+            <text x="0" y="14" class="caps-stone">5 stone penalty</text>
           </g>
 
-          <!-- Sub-outcomes from "before R7" — placed below the
-               "Call before R7?" decision, side by side with a clear gap. -->
-          <g class="caps-node caps-outcome caps-good" transform="translate(540 420)">
-            <rect x="-65" y="-22" width="130" height="44" rx="6"/>
+          <!-- Called + won all 8 → was it the first opportunity? -->
+          <g class="caps-node caps-decision" transform="translate(790 300)">
+            <rect x="-90" y="-26" width="180" height="52" rx="8"/>
+            <text x="0" y="-2">Called at the first</text>
+            <text x="0" y="16">opportunity?</text>
+          </g>
+
+          <!-- Called after first opportunity → Late Caps -->
+          <g class="caps-node caps-outcome caps-bad" transform="translate(640 430)">
+            <rect x="-75" y="-22" width="150" height="44" rx="6"/>
+            <text x="0" y="-2">Late Caps</text>
+            <text x="0" y="14" class="caps-stone">loss + 1 stone</text>
+          </g>
+
+          <!-- First opportunity → bonus depends on timing -->
+          <g class="caps-node caps-decision" transform="translate(860 430)">
+            <rect x="-85" y="-26" width="170" height="52" rx="8"/>
+            <text x="0" y="-2">Called before</text>
+            <text x="0" y="16">start of Round 7?</text>
+          </g>
+
+          <!-- In/after R7 → correct, no bonus -->
+          <g class="caps-node caps-outcome caps-good" transform="translate(700 555)">
+            <rect x="-75" y="-22" width="150" height="44" rx="6"/>
             <text x="0" y="-2">Correct Caps</text>
-            <text x="0" y="14" class="caps-stone">+ 1 stone bonus</text>
+            <text x="0" y="14" class="caps-stone">win, no bonus</text>
           </g>
-          <g class="caps-node caps-outcome caps-neutral" transform="translate(670 420)">
-            <rect x="-50" y="-22" width="100" height="44" rx="6"/>
+
+          <!-- Before R7 → correct + bonus -->
+          <g class="caps-node caps-outcome caps-good" transform="translate(895 555)">
+            <rect x="-85" y="-22" width="170" height="44" rx="6"/>
             <text x="0" y="-2">Correct Caps</text>
-            <text x="0" y="14" class="caps-stone">no bonus</text>
+            <text x="0" y="14" class="caps-stone">win + 1 stone bonus</text>
           </g>
 
-          <!-- Decision arrows -->
-          <line x1="280" y1="60" x2="190" y2="120" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
-          <text x="220" y="95" class="caps-arrow-label">No</text>
-          <line x1="440" y1="60" x2="530" y2="120" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
-          <text x="490" y="95" class="caps-arrow-label">Yes</text>
+          <!-- Arrows. Convention: No branches left, Yes branches right. -->
+          <line x1="405" y1="71" x2="245" y2="140" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
+          <text x="300" y="100" class="caps-arrow-label">No</text>
+          <line x1="575" y1="71" x2="680" y2="140" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
+          <text x="650" y="100" class="caps-arrow-label">Yes</text>
 
-          <line x1="120" y1="180" x2="65" y2="252" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
-          <text x="80" y="225" class="caps-arrow-label">No</text>
-          <line x1="220" y1="180" x2="222" y2="252" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
-          <text x="240" y="225" class="caps-arrow-label">Yes</text>
+          <line x1="140" y1="196" x2="87" y2="272" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
+          <text x="95" y="238" class="caps-arrow-label">No</text>
+          <line x1="255" y1="196" x2="315" y2="266" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
+          <text x="303" y="234" class="caps-arrow-label">Yes</text>
 
-          <line x1="500" y1="180" x2="455" y2="252" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
-          <text x="465" y="225" class="caps-arrow-label">No</text>
-          <line x1="600" y1="180" x2="635" y2="248" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
-          <text x="630" y="225" class="caps-arrow-label">Yes</text>
+          <line x1="655" y1="196" x2="565" y2="272" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
+          <text x="592" y="234" class="caps-arrow-label">No</text>
+          <line x1="762" y1="196" x2="785" y2="268" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
+          <text x="794" y="238" class="caps-arrow-label">Yes</text>
 
-          <line x1="615" y1="308" x2="555" y2="392" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
-          <text x="555" y="355" class="caps-arrow-label">Yes</text>
-          <line x1="665" y1="308" x2="665" y2="392" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
-          <text x="690" y="355" class="caps-arrow-label">No</text>
+          <line x1="275" y1="328" x2="217" y2="402" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
+          <text x="228" y="370" class="caps-arrow-label">No</text>
+          <line x1="372" y1="328" x2="413" y2="402" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
+          <text x="410" y="370" class="caps-arrow-label">Yes</text>
+
+          <line x1="728" y1="326" x2="653" y2="402" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
+          <text x="672" y="368" class="caps-arrow-label">No</text>
+          <line x1="822" y1="326" x2="853" y2="398" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
+          <text x="853" y="366" class="caps-arrow-label">Yes</text>
+
+          <line x1="795" y1="456" x2="712" y2="527" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
+          <text x="733" y="496" class="caps-arrow-label">No</text>
+          <line x1="878" y1="456" x2="891" y2="527" class="caps-arrow-line" marker-end="url(#caps-arrow)" />
+          <text x="903" y="496" class="caps-arrow-label">Yes</text>
         </svg>
-        <figcaption>Decision flow for Caps outcomes (regular Caps; PCC and External Caps follow analogous structures — see <a href="#pcc">PCC</a> and the External Caps section above). Late Caps applies only when scrutiny finds a missed first opportunity; otherwise, winning all 8 without calling is just a normal win at the bid level.</figcaption>
+        <figcaption>Decision flow for a regular Caps call, from the calling team&rsquo;s side. A call only scores as Correct Caps if it was made at the first opportunity — before the start of Round 7 for the bonus. PCC and External Caps follow analogous structures — see <a href="#pcc">PCC</a> and the External Caps section above.</figcaption>
       </figure>
 
       <h3 id="caps-summary">Summary of Caps Outcomes</h3>
