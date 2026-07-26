@@ -53,9 +53,41 @@ const userPrompt =
   '\n\nWrite one play-style sentence per player, keyed by initials: ' +
   Object.entries(players).map(([i, n]) => `${i} = ${n}`).join(', ') + '.';
 
-const res = await fetch(
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
-  {
+/* Model discovery: hardcoded names rot (retired models 404 for new users),
+   so ask the API what this key can actually use and rank the candidates —
+   "-latest" aliases first, then newest flash-family, then pro. */
+const API = 'https://generativelanguage.googleapis.com/v1beta';
+
+async function candidateModels() {
+  const res = await fetch(API + '/models?pageSize=1000', {
+    headers: { 'x-goog-api-key': apiKey },
+  });
+  if (!res.ok) {
+    console.error('ListModels failed:', res.status, await res.text());
+    process.exit(1);
+  }
+  const { models = [] } = await res.json();
+  const exclude = /embed|imagen|image|veo|tts|audio|live|aqa|vision|robotics/i;
+  const version = (n) => {
+    const m = n.match(/(\d+)\.(\d+)/) || n.match(/-(\d+)(?:-|$)/);
+    return m ? parseFloat(m[1] + '.' + (m[2] ?? 0)) : 0;
+  };
+  return models
+    .filter((m) => (m.supportedGenerationMethods ?? []).includes('generateContent'))
+    .map((m) => m.name.replace(/^models\//, ''))
+    .filter((n) => !exclude.test(n))
+    .sort((a, b) => {
+      const score = (n) =>
+        (/-latest$/.test(n) ? 1000 : 0) +
+        (/flash/.test(n) ? 100 : /pro/.test(n) ? 50 : 0) +
+        (!/preview|exp/.test(n) ? 25 : 0) +
+        version(n);
+      return score(b) - score(a);
+    });
+}
+
+async function generate(model) {
+  return fetch(API + '/models/' + model + ':generateContent', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -78,15 +110,31 @@ const res = await fetch(
         },
       },
     }),
-  },
-);
+  });
+}
 
-if (!res.ok) {
-  console.error('Gemini API error:', res.status, await res.text());
+const candidates = (await candidateModels()).slice(0, 5);
+if (!candidates.length) {
+  console.error('No generateContent-capable models available to this key.');
+  process.exit(1);
+}
+console.log('Model candidates:', candidates.join(', '));
+
+let body = null;
+for (const model of candidates) {
+  const res = await generate(model);
+  if (res.ok) {
+    console.log('Using model:', model);
+    body = await res.json();
+    break;
+  }
+  console.error('Model', model, 'failed:', res.status, (await res.text()).slice(0, 300));
+}
+if (!body) {
+  console.error('All candidate models failed.');
   process.exit(1);
 }
 
-const body = await res.json();
 const text = body.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('');
 if (!text) {
   console.error('No text in Gemini response:', JSON.stringify(body).slice(0, 500));
