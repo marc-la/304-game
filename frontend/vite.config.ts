@@ -3,6 +3,7 @@ import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { cpSync, existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { buildLeaderboardData } from '../tools/leaderboard/build-data';
 
 /**
  * Multi-page Vite setup.
@@ -24,27 +25,35 @@ const siteRoot = resolve(repoRoot, 'site');
 const excludePlay = process.env.EXCLUDE_PLAY === '1';
 
 // Copy non-Vite-managed assets that the static pages reference via
-// relative URLs. Classic (non-module) scripts and the monolithic
-// stylesheet aren't bundled by Vite — they're served as-is from the
-// site/ tree in dev and copied verbatim into dist/ on build. Files
-// outside the Vite root (docs/) get copied here too.
+// relative URLs. Only classic (non-module) scripts and runtime-fetched
+// data need this: `<script type="module">` sources and the stylesheet
+// `<link>` are bundled by Vite and rewritten in the built HTML, so
+// copying those would just ship dead duplicates.
 //
 // This list is intentionally explicit so a stray file dropped into
-// site/css/ or docs/ doesn't silently ship to the live site.
+// site/js/ or data/ doesn't silently ship to the live site.
 const ASSETS_TO_COPY: Array<{ src: string; dst: string }> = [
-  // Site stylesheet — loaded by every HTML page.
-  { src: 'site/css/styles.css', dst: 'css/styles.css' },
   // Classic (non-module) scripts loaded by individual pages.
-  // theme.js is loaded by all pages; the others are page-specific.
-  { src: 'site/js/theme.js', dst: 'js/theme.js' },
   { src: 'site/js/hero-reveal.js', dst: 'js/hero-reveal.js' },
   { src: 'site/js/site-nav.js', dst: 'js/site-nav.js' },
-  { src: 'site/js/rules.js', dst: 'js/rules.js' },
-  { src: 'site/js/stats.js', dst: 'js/stats.js' },
-  // Data fetched at runtime by stats.js.
-  { src: 'docs/stats.xlsx', dst: 'docs/stats.xlsx' },
-  { src: 'docs/bets', dst: 'docs/bets' },
+  // Raw betting CSVs — linked for download from the history page.
+  { src: 'data/bets', dst: 'data/bets' },
 ];
+
+// Regenerate site/public/data/leaderboard.json from data/stats.xlsx and
+// data/bets/*.csv on every dev-server start and build, so the leaderboard
+// pages fetch pre-parsed JSON instead of shipping SheetJS to the client.
+// Output is gitignored; the sources in data/ are the tracked truth.
+const leaderboardData = (): Plugin => ({
+  name: '304-leaderboard-data',
+  buildStart() {
+    try {
+      buildLeaderboardData();
+    } catch (err) {
+      this.error(`leaderboard data build failed: ${err}`);
+    }
+  },
+});
 
 const copyRepoAssets = (): Plugin => ({
   name: '304-copy-repo-assets',
@@ -59,14 +68,14 @@ const copyRepoAssets = (): Plugin => ({
   },
 });
 
-// Dev-only: make /apps/, /engine/, /docs/ URLs reachable even though
+// Dev-only: make /apps/, /engine/, /data/ URLs reachable even though
 // they live outside the Vite root (site/). We rewrite the request to
 // Vite's /@fs/<absolute-path> escape hatch — server.fs.allow already
 // permits the repo root, so the .tsx/.ts files go through Vite's
 // transform pipeline like any in-root source.
 //
 // In production this is a no-op: the build bundles the @engine imports
-// via Rollup, and the copyRepoAssets plugin already places docs/ at the
+// via Rollup, and the copyRepoAssets plugin already places data/ at the
 // right URL in dist/.
 const externalDirsServe = (): Plugin => ({
   name: '304-external-dirs-serve',
@@ -75,7 +84,7 @@ const externalDirsServe = (): Plugin => ({
     server.middlewares.use((req, _res, next) => {
       const url = req.url ?? '';
       const path = url.split('?')[0];
-      if (/^\/(apps|engine|docs)\//.test(path)) {
+      if (/^\/(apps|engine|data)\//.test(path)) {
         req.url = '/@fs' + repoRoot + url;
       }
       next();
@@ -121,7 +130,7 @@ if (!excludePlay) {
 }
 
 export default defineConfig({
-  plugins: [htmlPartials(), react(), copyRepoAssets(), externalDirsServe()],
+  plugins: [leaderboardData(), htmlPartials(), react(), copyRepoAssets(), externalDirsServe()],
   root: siteRoot,
   // Relative asset paths so the build can be served from any subpath
   // (e.g. ``user.github.io/304-game/``) without rewriting hrefs.

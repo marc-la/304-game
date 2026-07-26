@@ -50,3 +50,6 @@ Thumbs.db
 site/public/puzzles/pool*.jsonl
 site/public/puzzles/pool*.meta.json
 
+
+# Generated leaderboard data (rebuilt from data/ on every dev/build)
+site/public/data/
