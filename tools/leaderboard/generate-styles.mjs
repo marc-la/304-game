@@ -25,30 +25,32 @@ if (!apiKey) {
 const data = JSON.parse(readFileSync(dataPath, 'utf8'));
 const players = Object.fromEntries(data.players.map((p) => [p.initial, p.first]));
 
-// Compact per-player evidence: bet aggregates + their notable events.
+// Compact per-player evidence: aggregate bet stats only. No per-event log —
+// the sentence should describe how they play, not recount what happened;
+// the site already shows the history.
 const evidence = {};
 for (const [initial, stats] of Object.entries(data.betStats)) {
-  evidence[players[initial] ?? initial] = {
-    ...stats,
-    notableEvents: data.eventLog
-      .filter((e) => e.player === initial)
-      .map((e) => `${e.date} set ${e.setNo}: ${e.token} (${e.type})`),
-  };
+  evidence[players[initial] ?? initial] = stats;
 }
 
 const systemInstruction =
   'You are writing one-line play-style portraits for a leaderboard page of a ' +
   'four-player 304 (Tamil trick-taking card game) group. Context: bids run the ' +
   'ladder 60 < 70 < ... < H (Honest, 220) < 250 < PCC (Partner Closed Caps, the ' +
-  'rarest and boldest bid). A trailing "-" means the bid was lost; "+0"/"+1" are ' +
-  'successful Caps calls (+1 = called early, harder); "-L" late Caps, "-W" wrong ' +
-  'Caps (5-stone disaster); PN is a penalty. The culture semi-rewards hubris: ' +
-  'aggression is respected until it fails. Write with dry wit, like a friend who ' +
-  'has watched every game — specific to the evidence, never generic. One sentence ' +
-  'per player, under 25 words, no player-name prefix.';
+  'rarest and boldest bid); Caps means promising every trick; PN is a penalty. ' +
+  'The culture semi-rewards hubris: aggression is respected until it fails. ' +
+  'Work in two steps. First, privately read the aggregates and decide what they ' +
+  'reveal about each player\'s temperament at the table — appetite for risk, ' +
+  'patience, self-belief, discipline. Then write one sentence per player that ' +
+  'describes that temperament, the way a friend who has watched every game ' +
+  'would characterise how they play. The sentence is a portrait, not a report: ' +
+  'no statistics, no counts, no scores, no dates, no specific games or events — ' +
+  'the site already shows the numbers. Dry wit, specific to the personality the ' +
+  'data implies, never generic. Under 22 words, no player-name prefix.';
 
 const userPrompt =
-  'Betting-sheet evidence per player (counts cover only revolutions with a recorded sheet):\n\n' +
+  'Aggregate betting-sheet stats per player (your private evidence — derive the ' +
+  'insight, then write the portrait; do not quote these numbers back):\n\n' +
   JSON.stringify(evidence, null, 2) +
   '\n\nWrite one play-style sentence per player, keyed by initials: ' +
   Object.entries(players).map(([i, n]) => `${i} = ${n}`).join(', ') + '.';
