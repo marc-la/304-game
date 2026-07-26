@@ -81,9 +81,30 @@ export const tempoForBotPlay = (rt: Runtime, seat: Seat): BotTempo => {
   return { delayMs: jitter(base), reason: `width-${legals.length}` };
 };
 
-// Round-resolve is no longer time-gated: the just-completed round
-// stays on the table indefinitely until the player either calls
-// caps or clicks Continue (App.tsx). This matches the table's grace
-// window for calling caps on the closing card of a round before
-// play moves on. Soul §VI.2: "previous trick remains visible long
-// enough to be re-read."
+// Dead air after a card lands, before the next seat starts thinking.
+//
+// This is the beat the app was missing entirely: `tempoForBotPlay`
+// returns a *pre-placement* gap, and App.tsx used to start the next
+// seat's timer the moment state committed — while the previous card
+// was still animating in. Cards overlapped in flight and a 280ms
+// forced play gave the player no time to update a void ledger.
+//
+// It is deliberately CONSTANT. The pre-placement gap is the tell and
+// must stay expressive; this is reading time and must carry no signal
+// at all, or it becomes a second, noisier tell.
+export const SETTLE_MS = 420;
+
+// How long a completed round stays on the table before play moves on.
+//
+// Soul §VI.2 preserves "last-round lingering"; §VI.4 forbids countdown
+// bars. So the linger is a real duration, but rounds 5–8 do not
+// auto-advance at all — past the midpoint the table waits for you.
+// The game hurries you while information is cheap and waits when the
+// call is expensive, and the hesitation is self-paced, which is the
+// thing the puzzle is actually measuring.
+//
+// Returns null when the round must be advanced by the player.
+export const lingerMsForRound = (roundNumber: number): number | null => {
+  if (roundNumber >= 5) return null;
+  return [0, 900, 1000, 1150, 1300][roundNumber] ?? 1300;
+};

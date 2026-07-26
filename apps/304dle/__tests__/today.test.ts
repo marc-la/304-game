@@ -1,11 +1,12 @@
-// Smoke test: if a scripts.json file has been generated, verify one
-// puzzle parses + plays end-to-end via the script driver. The file
-// is intentionally optional — fresh checkouts won't have it.
+// Guard on the shipped puzzle content. Every per-date file under
+// site/public/puzzles/ is a day someone will actually play, so all of
+// them are replayed end-to-end here — not just a sample. The directory
+// is intentionally optional; fresh checkouts won't have it.
 
 import { describe, expect, it } from 'vitest';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { ScriptedPuzzleFile } from '../types';
+import type { ScriptedPuzzle } from '../types';
 import {
   applyScriptedPlay,
   isGameOver,
@@ -14,36 +15,65 @@ import {
   whoseTurn,
 } from '../runtime';
 
-const SCRIPTS_PATH = resolve(__dirname, '../../../site/public/puzzles/scripts.json');
+const PUZZLE_DIR = resolve(__dirname, '../../../site/public/puzzles');
 
-describe('scripted puzzle file', () => {
-  it.skipIf(!existsSync(SCRIPTS_PATH))('parses and replays end-to-end', () => {
-    const raw = readFileSync(SCRIPTS_PATH, 'utf-8');
-    const data = JSON.parse(raw) as ScriptedPuzzleFile;
-    expect(data.schemaVersion).toBe(2);
-    expect(data.puzzles.length).toBeGreaterThan(0);
+const datedFiles = (): string[] => {
+  if (!existsSync(PUZZLE_DIR)) return [];
+  return readdirSync(PUZZLE_DIR)
+    .filter(f => /^\d{4}-\d{2}-\d{2}\.json$/.test(f))
+    .sort();
+};
 
-    const puzzle = data.puzzles[0];
-    expect(puzzle.script.length).toBe(32);
+describe('shipped daily puzzles', () => {
+  const files = datedFiles();
 
-    const rt = newRuntime({
-      hands: puzzle.hands,
-      trumpSuit: puzzle.trump.suit,
-      trumpCard: puzzle.trump.card,
-      trumperSeat: puzzle.trump.trumper,
-      priority: puzzle.priority,
-      script: puzzle.script,
-      mode: puzzle.trump.mode,
-    });
-    while (!isGameOver(rt)) {
-      const t = whoseTurn(rt);
-      if (t === null) {
-        resolveRound(rt);
-        continue;
-      }
-      applyScriptedPlay(rt);
-    }
-    expect(rt.completedRounds.length).toBe(8);
-    expect(rt.pointsWon.team_a + rt.pointsWon.team_b).toBe(304);
+  it.skipIf(files.length === 0)('index.json matches the files on disk', () => {
+    const idx = JSON.parse(
+      readFileSync(resolve(PUZZLE_DIR, 'index.json'), 'utf-8'),
+    ) as { schemaVersion: number; dates: string[] };
+    expect(idx.schemaVersion).toBe(2);
+    expect(idx.dates).toEqual(files.map(f => f.replace('.json', '')));
   });
+
+  // Each replay runs the CSP obligation tracker on all 32 plays, so a
+  // full horizon of puzzles takes well past the 5s default.
+  it.skipIf(files.length === 0)('every dated puzzle replays end-to-end', () => {
+    for (const file of files) {
+      const puzzle = JSON.parse(
+        readFileSync(resolve(PUZZLE_DIR, file), 'utf-8'),
+      ) as ScriptedPuzzle;
+
+      expect(puzzle.schemaVersion, file).toBe(2);
+      expect(puzzle.date, file).toBe(file.replace('.json', ''));
+      expect(puzzle.script.length, file).toBe(32);
+      // The whole puzzle is the caps call; a puzzle whose obligation
+      // never arises, or arises on round 8, is unplayable.
+      expect(puzzle.obligation.round, file).toBeGreaterThanOrEqual(1);
+      expect(puzzle.obligation.round, file).toBeLessThanOrEqual(7);
+
+      const rt = newRuntime({
+        hands: puzzle.hands,
+        trumpSuit: puzzle.trump.suit,
+        trumpCard: puzzle.trump.card,
+        trumperSeat: puzzle.trump.trumper,
+        priority: puzzle.priority,
+        script: puzzle.script,
+        mode: puzzle.trump.mode,
+      });
+      // applyScriptedPlay validates each play against the engine's
+      // legal-play set, so this loop is also a legality audit.
+      while (!isGameOver(rt)) {
+        if (whoseTurn(rt) === null) {
+          resolveRound(rt);
+          continue;
+        }
+        applyScriptedPlay(rt);
+      }
+      expect(rt.completedRounds.length, file).toBe(8);
+      expect(rt.pointsWon.team_a + rt.pointsWon.team_b, file).toBe(304);
+      // South must actually become caps-obligated during the replay,
+      // or the day has no correct answer.
+      expect(rt.capsObligations.has('south'), file).toBe(true);
+    }
+  }, 120_000);
 });

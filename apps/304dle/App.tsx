@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from './store';
-import type { ScriptedPuzzle, ScriptedPuzzleFile } from './types';
+import type { ScriptedPuzzle } from './types';
 import { Table } from './components/Table';
 import { Hand } from './components/Hand';
 import { PublicInfo } from './components/PublicInfo';
@@ -10,10 +10,9 @@ import { ResultScreen } from './components/ResultScreen';
 import { Onboarding } from './components/Onboarding';
 import { whoseTurn, turnOrder, isGameOver } from './runtime';
 import type { Runtime } from './runtime';
-import { selectPuzzleForDate } from './daily-selector';
 import { countWorlds } from './worlds-counter';
 import { buildVerdict } from './scoring';
-import { tempoForBotPlay } from './tempo';
+import { SETTLE_MS, lingerMsForRound, tempoForBotPlay } from './tempo';
 import {
   isAlreadyPlayed,
   loadState,
@@ -30,15 +29,19 @@ const todayDateString = (): string => {
   return `${y}-${m}-${day}`;
 };
 
+// One file per date. Fetching `${date}.json` rather than the whole
+// pool means the payload is ~2KB instead of ~800KB, and view-source
+// leaks only the puzzle you are already playing — the year's answers
+// are not sitting in the browser cache. (There is no way to keep this
+// data secret on a static host; the goal is only to not hand out
+// *future* days.)
 const loadDailyPuzzle = async (date: string): Promise<ScriptedPuzzle | null> => {
   try {
-    const r = await fetch('./puzzles/scripts.json');
+    const r = await fetch(`./puzzles/${date}.json`);
     if (!r.ok) return null;
-    const file = (await r.json()) as ScriptedPuzzleFile;
-    if (file.schemaVersion !== 2) return null;
-    const sel = selectPuzzleForDate(date, file.puzzles);
-    if (sel) return { ...sel, date };
-    return null;
+    const puzzle = (await r.json()) as ScriptedPuzzle;
+    if (puzzle.schemaVersion !== 2) return null;
+    return { ...puzzle, date };
   } catch {
     return null;
   }
@@ -192,19 +195,37 @@ const PlayingShell = ({ runtime, appState }: ShellProps) => {
   const turn = whoseTurn(runtime);
   const order = turnOrder(runtime);
   const roundComplete = runtime.currentRound.length === order.length;
+  // The table is holding for the player: round full, past the
+  // auto-advance midpoint, game still live.
+  const awaitingAdvance =
+    appState.kind === 'playing' &&
+    turn === null &&
+    roundComplete &&
+    !isGameOver(runtime) &&
+    lingerMsForRound(runtime.roundNumber) === null;
 
   useEffect(() => {
     if (appState.kind !== 'playing') return;
     if (isGameOver(runtime)) return;
-    // Grace period: when the round fills, the engine does NOT
-    // auto-resolve. The just-completed round stays on the table until
-    // the player either calls caps or clicks Continue. This matches
-    // the table convention: a brief window to call caps on the
-    // closing card of a round before play moves on.
-    if (turn === null && roundComplete) return;
+
+    // Round is full. Linger so the trick can be re-read (soul §VI.2),
+    // then advance — but only for rounds 1–4. From round 5 the table
+    // waits for the player (see `lingerMsForRound`), because that is
+    // where the caps call lives and a forced advance would slam the
+    // window shut mid-thought.
+    if (turn === null && roundComplete) {
+      const linger = lingerMsForRound(runtime.roundNumber);
+      if (linger === null) return;
+      const t = setTimeout(() => resolveCurrentRound(), linger);
+      return () => clearTimeout(t);
+    }
+
     if (turn !== null && turn !== 'south') {
+      // SETTLE_MS is added to the bot's own deliberation so the
+      // previous card has landed and been read before this one starts
+      // moving. Without it, placements overlap.
       const { delayMs } = tempoForBotPlay(runtime, turn);
-      const t = setTimeout(() => playScripted(), delayMs);
+      const t = setTimeout(() => playScripted(), delayMs + SETTLE_MS);
       return () => clearTimeout(t);
     }
   }, [appState.kind, runtime.roundNumber, runtime.currentRound.length, turn, roundComplete, playScripted, resolveCurrentRound, runtime]);
@@ -236,7 +257,16 @@ const PlayingShell = ({ runtime, appState }: ShellProps) => {
         <h1>304dle</h1>
         <span className="dle-app-date">{dateLabel}</span>
       </header>
-      <Table runtime={runtime} />
+      {/* Rounds 5–8 hold until the player releases them. The whole
+          felt is the target — no button, because a labelled "Continue"
+          reads as chrome to get past, and this beat is the one where
+          the caps call actually happens. */}
+      <div
+        className={`dle-table-wrap${awaitingAdvance ? ' dle-awaiting' : ''}`}
+        onClick={awaitingAdvance ? () => resolveCurrentRound() : undefined}
+      >
+        <Table runtime={runtime} />
+      </div>
       <PublicInfo worlds={worldsCount} />
       <Hand
         hand={runtime.hands.south}
@@ -247,21 +277,12 @@ const PlayingShell = ({ runtime, appState }: ShellProps) => {
       <div className="dle-actions">
         <button
           type="button"
-          className="dle-btn dle-btn-primary"
+          className="dle-btn dle-btn-caps"
           disabled={runtime.hands.south.length === 0}
           onClick={openCapsConfirm}
         >
           Call Caps
         </button>
-        {turn === null && roundComplete && !isGameOver(runtime) && (
-          <button
-            type="button"
-            className="dle-btn"
-            onClick={() => resolveCurrentRound()}
-          >
-            Continue
-          </button>
-        )}
       </div>
 
       {appState.kind === 'caps-confirm' && (

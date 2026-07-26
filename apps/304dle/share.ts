@@ -2,11 +2,13 @@
 
 import type { CapsDifficulty, CapsVerdictKind } from './scoring';
 
+// `obligatedAtRound` is deliberately NOT a field here. Making the par
+// round unavailable to this module is what stops it leaking back into
+// the grid the next time someone edits it.
 export interface ShareInputs {
   date: string;
   verdict: CapsVerdictKind;
   callRound: number | null;
-  obligatedAtRound: number | null;
   difficulty: CapsDifficulty | null;
   worldsAtCall: number | null;
 }
@@ -46,13 +48,14 @@ const verdictGlyph = (verdict: CapsVerdictKind, difficulty: CapsDifficulty | nul
 export const buildShareGrid = (inp: ShareInputs): string => {
   const lines: string[] = [];
   const callTag = inp.callRound !== null ? ` · R${inp.callRound}` : '';
-  const parTag =
-    inp.obligatedAtRound !== null && inp.callRound !== null && inp.callRound > inp.obligatedAtRound
-      ? ` (par R${inp.obligatedAtRound})`
-      : '';
+  // NEVER emit the par round. Everyone plays the same puzzle, so
+  // `(par R5)` in a shared result hands the day's answer to anyone who
+  // hasn't played yet. Your own call round is fine — it's your score,
+  // and it is not the answer unless you were correct, in which case the
+  // verdict tag already said so.
   const diffTag = inp.difficulty ? ` · ${DIFFICULTY_TAG[inp.difficulty]}` : '';
   lines.push(
-    `304dle · ${inp.date} · ${VERDICT_TAG[inp.verdict]}${callTag}${parTag}${diffTag}`,
+    `304dle · ${inp.date} · ${VERDICT_TAG[inp.verdict]}${callTag}${diffTag}`,
   );
   lines.push('');
   lines.push(buildRoundsRow(inp.callRound));

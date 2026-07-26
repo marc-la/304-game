@@ -6,14 +6,32 @@
 //
 // CLI:
 //   npm run puzzles:generate -- \
-//     --count 365 --mode closed \
+//     --count 30 --start-date 2026-07-27 \
 //     --master-seed 1 \
-//     --out site/public/puzzles/scripts.json
+//     --out-dir site/public/puzzles
 //
-// --mode open|closed (default closed; per user's judgement closed is
-// the realistic majority in real 304)
-// --bot id (only used for open mode; closed mode uses the closed-trump
-// heuristic bot since the engine zoo is open-trump-only)
+// --mode open|closed (default OPEN — soul §VI.1.1 makes Open Trump the
+// v1 mode, and closed mode empirically yields nothing: the closed-trump
+// heuristic bot defends so weakly that every sweep it produces is an
+// over-determined caps with labour 0. See --bot below.)
+//
+// --bot id — the opponent policy, and the single most important knob in
+// this pipeline. Acceptance is gated on *deduction labour* (how many of
+// south's observations are load-bearing for the caps obligation), and
+// labour is a direct function of how hard the defence made south work.
+// Weak bots hand out monster hands whose caps is over-determined
+// (labour 0 = south would still be obligated having forgotten any one
+// card) — those are trivial puzzles and layer 3 rejects them. Measured
+// accept-per-sweep: b3-heuristic 2.3%, b4-infoset-1ply 5.1%.
+// b6-dds-mc is stronger still but too slow to generate with.
+//
+// Output modes (mutually exclusive):
+//   --out <file>      single bundle file (schema v2 ScriptedPuzzleFile)
+//   --out-dir <dir>   one file per date, `<dir>/YYYY-MM-DD.json`, plus
+//                     an index.json. Preferred: the client then fetches
+//                     ~2KB for today instead of ~800KB for the year, and
+//                     view-source leaks only the puzzle you are playing.
+//                     Requires --start-date.
 
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -40,24 +58,32 @@ interface Args {
   bot: string;
   mode: TrumpMode;
   masterSeed: number;
-  out: string;
+  out: string | null;
+  outDir: string | null;
+  startDate: string | null;
   gamesPerMatch: number;
   maxMatches: number;
   minObligationRound: number;
   maxObligationRound: number;
+  maxPerRoundFrac: number;
 }
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 const parseArgs = (): Args => {
   const args = process.argv.slice(2);
-  let count = 365;
-  let bot = 'b3-heuristic';
-  let mode: TrumpMode = 'closed';
+  let count = 30;
+  let bot = 'b4-infoset-1ply';
+  let mode: TrumpMode = 'open';
   let masterSeed = 1;
-  let out = resolve(REPO_ROOT, 'site/public/puzzles/scripts.json');
+  let out: string | null = null;
+  let outDir: string | null = null;
+  let startDate: string | null = null;
   let gamesPerMatch = 30;
   let maxMatches = 10_000;
   let minObligationRound = 3;
   let maxObligationRound = 7;
+  let maxPerRoundFrac = 0.35;
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--count') count = parseInt(args[++i], 10);
     else if (args[i] === '--bot') bot = args[++i];
@@ -70,15 +96,43 @@ const parseArgs = (): Args => {
     }
     else if (args[i] === '--master-seed') masterSeed = parseInt(args[++i], 10);
     else if (args[i] === '--out') out = resolve(args[++i]);
+    else if (args[i] === '--out-dir') outDir = resolve(args[++i]);
+    else if (args[i] === '--start-date') startDate = args[++i];
     else if (args[i] === '--games-per-match') gamesPerMatch = parseInt(args[++i], 10);
     else if (args[i] === '--max-matches') maxMatches = parseInt(args[++i], 10);
     else if (args[i] === '--min-round') minObligationRound = parseInt(args[++i], 10);
     else if (args[i] === '--max-round') maxObligationRound = parseInt(args[++i], 10);
+    else if (args[i] === '--max-per-round-frac') maxPerRoundFrac = parseFloat(args[++i]);
+  }
+  if (out !== null && outDir !== null) {
+    throw new Error('--out and --out-dir are mutually exclusive');
+  }
+  if (outDir !== null && startDate === null) {
+    throw new Error('--out-dir requires --start-date YYYY-MM-DD');
+  }
+  if (startDate !== null && !DATE_RE.test(startDate)) {
+    throw new Error(`--start-date must be YYYY-MM-DD, got ${startDate}`);
+  }
+  if (out === null && outDir === null) {
+    outDir = resolve(REPO_ROOT, 'site/public/puzzles');
+    if (startDate === null) {
+      throw new Error('--start-date YYYY-MM-DD is required (or pass --out <file>)');
+    }
   }
   return {
-    count, bot, mode, masterSeed, out, gamesPerMatch, maxMatches,
-    minObligationRound, maxObligationRound,
+    count, bot, mode, masterSeed, out, outDir, startDate, gamesPerMatch,
+    maxMatches, minObligationRound, maxObligationRound, maxPerRoundFrac,
   };
+};
+
+// Date arithmetic in UTC so a generator run is reproducible regardless
+// of the machine's timezone.
+const addDays = (iso: string, n: number): string => {
+  const [y, m, d] = iso.split('-').map(Number);
+  const t = Date.UTC(y, m - 1, d) + n * 86_400_000;
+  const dt = new Date(t);
+  const p = (v: number) => String(v).padStart(2, '0');
+  return `${dt.getUTCFullYear()}-${p(dt.getUTCMonth() + 1)}-${p(dt.getUTCDate())}`;
 };
 
 const SEATS: Seat[] = ['north', 'west', 'south', 'east'];
@@ -241,6 +295,25 @@ const seatRotation = (target: Seat): Record<Seat, Seat> => {
   return map;
 };
 
+// Write the accepted puzzles as one file per consecutive date, plus an
+// index the client can use to know the available horizon. Idempotent —
+// safe to call after every acceptance.
+const flushDated = (accepted: ScriptedPuzzle[], args: Args): string[] => {
+  mkdirSync(args.outDir!, { recursive: true });
+  const dates: string[] = [];
+  for (let i = 0; i < accepted.length; i++) {
+    const date = addDays(args.startDate!, i);
+    dates.push(date);
+    const puzzle: ScriptedPuzzle = { ...accepted[i], date };
+    writeFileSync(resolve(args.outDir!, `${date}.json`), JSON.stringify(puzzle));
+  }
+  writeFileSync(
+    resolve(args.outDir!, 'index.json'),
+    JSON.stringify({ schemaVersion: 2, dates }, null, 2),
+  );
+  return dates;
+};
+
 const main = () => {
   const args = parseArgs();
   console.log(
@@ -251,6 +324,13 @@ const main = () => {
   const accepted: ScriptedPuzzle[] = [];
   let matchIdx = 0;
   let sweepsSeen = 0;
+  // Rejection funnel, printed at the end. Without it a zero-yield run
+  // is indistinguishable from a broken one.
+  const reject: Record<string, number> = {};
+  // Accepted count per obligation round, and the ceiling any one round
+  // may occupy. See the quota check in the loop below.
+  const perRound: Record<number, number> = {};
+  const maxPerRound = Math.max(1, Math.ceil(args.count * args.maxPerRoundFrac));
   const tStart = Date.now();
 
   while (accepted.length < args.count && matchIdx < args.maxMatches) {
@@ -272,17 +352,50 @@ const main = () => {
       sweepsSeen++;
 
       const obl = findObligation(game);
-      if (obl === null) continue;
+      if (obl === null) {
+        reject['no-obligation'] = (reject['no-obligation'] ?? 0) + 1;
+        continue;
+      }
       if (
         obl.obligatedAtRound < args.minObligationRound ||
         obl.obligatedAtRound > args.maxObligationRound
-      ) continue;
+      ) {
+        const k = `round-${obl.obligatedAtRound}-out-of-band`;
+        reject[k] = (reject[k] ?? 0) + 1;
+        continue;
+      }
 
+      // Par-round quota. Left unconstrained, this pipeline produces a
+      // brutally skewed distribution — a measured run came back 12/14
+      // at R5 — because with a guaranteed sweep, obligation either
+      // crystallises immediately (R1-2, rejected above) or once south's
+      // hand goes provably dominant around R5. A player who notices
+      // that just calls R5 every day and never reads the table again,
+      // which defeats the entire puzzle. Capping any single round's
+      // share forces the generator to keep hunting for the rarer
+      // shapes.
+      if ((perRound[obl.obligatedAtRound] ?? 0) >= maxPerRound) {
+        const k = `round-${obl.obligatedAtRound}-quota-full`;
+        reject[k] = (reject[k] ?? 0) + 1;
+        continue;
+      }
+
+      // The obligated seat has NOT been rotated into south's slot yet
+      // (that happens below), so layer 3 must be told which seat it is
+      // measuring. Passing the wrong seat silently rejects ~3 in 4
+      // candidates as `no-witness`.
       const labour = computeDeductionLabour({
         state: obl.state,
         thresholds: DEFAULT_THRESHOLDS,
+        seat: obl.obligatedSeat,
       });
-      if (!labour.pass) continue;
+      if (!labour.pass) {
+        const k = labour.reason === 'low-labour'
+          ? `low-labour(=${labour.labour},span=${labour.witnessSuitSpan})`
+          : labour.reason;
+        reject[k] = (reject[k] ?? 0) + 1;
+        continue;
+      }
 
       // Rotate the obligated seat into south's slot. Hands, trumper,
       // priority, and all script entries rotate together.
@@ -340,27 +453,57 @@ const main = () => {
         },
       };
       accepted.push(puzzle);
+      perRound[obl.obligatedAtRound] = (perRound[obl.obligatedAtRound] ?? 0) + 1;
+      // Flush immediately in per-date mode. Acceptance is rare (a few
+      // percent of sweeps) so a long run represents hours of compute;
+      // losing it to a timeout or a Ctrl-C is not acceptable.
+      if (args.outDir !== null) flushDated(accepted, args);
 
-      if (accepted.length % 10 === 0) {
-        const dt = ((Date.now() - tStart) / 1000).toFixed(1);
-        console.log(
-          `  accepted=${accepted.length}/${args.count}  sweeps=${sweepsSeen}  ` +
-          `matches=${matchIdx}  ${dt}s`,
-        );
-      }
+      const dt = ((Date.now() - tStart) / 1000).toFixed(1);
+      console.log(
+        `  accepted=${accepted.length}/${args.count}  sweeps=${sweepsSeen}  ` +
+        `matches=${matchIdx}  labour=${labour.labour} span=${labour.witnessSuitSpan}  ` +
+        `R${obl.obligatedAtRound}  ${dt}s`,
+      );
       if (accepted.length >= args.count) break;
     }
   }
 
-  const file: ScriptedPuzzleFile = {
-    schemaVersion: 2,
-    generatedAt: new Date().toISOString(),
-    puzzles: accepted,
-  };
-  mkdirSync(dirname(args.out), { recursive: true });
-  writeFileSync(args.out, JSON.stringify(file, null, 2));
-  console.log(`\nWrote ${accepted.length} puzzles to ${args.out}`);
+  const generatedAt = new Date().toISOString();
+
+  if (args.outDir !== null) {
+    const dates = flushDated(accepted, args);
+    console.log(
+      `\nWrote ${accepted.length} puzzles to ${args.outDir}/` +
+      (dates.length > 0 ? ` (${dates[0]} … ${dates[dates.length - 1]})` : ''),
+    );
+  } else {
+    const file: ScriptedPuzzleFile = {
+      schemaVersion: 2,
+      generatedAt,
+      puzzles: accepted,
+    };
+    mkdirSync(dirname(args.out!), { recursive: true });
+    writeFileSync(args.out!, JSON.stringify(file, null, 2));
+    console.log(`\nWrote ${accepted.length} puzzles to ${args.out}`);
+  }
   console.log(`  ${sweepsSeen} sweeps observed across ${matchIdx} matches`);
+  // Par-round spread. If one round dominates, the puzzle is a fixed
+  // answer and the daily is dead — so this is printed on every run,
+  // not hidden behind a flag.
+  const spread = Object.keys(perRound).map(Number).sort((a, b) => a - b);
+  if (spread.length > 0) {
+    const parts = spread.map(r => {
+      const n = perRound[r];
+      return `R${r}=${n} (${Math.round((100 * n) / accepted.length)}%)`;
+    });
+    console.log(`  par spread: ${parts.join('  ')}`);
+  }
+  const funnel = Object.entries(reject).sort((a, b) => b[1] - a[1]);
+  if (funnel.length > 0) {
+    console.log('  rejected:');
+    for (const [reason, n] of funnel) console.log(`    ${reason.padEnd(28)} ${n}`);
+  }
 };
 
 main();

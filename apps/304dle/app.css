@@ -447,6 +447,64 @@
 .dle-btn-secondary {
   background: var(--clr-surface);
 }
+
+/* Call Caps is the only irreversible act in the game and the only
+   control that matters. It gets its own weight class — previously it
+   was a generic `.dle-btn-primary`, visually identical to the
+   Continue button sitting next to it. */
+.dle-btn-caps {
+  background: var(--clr-accent);
+  color: var(--clr-surface-elev);
+  border-color: var(--clr-accent);
+  min-width: 220px;
+  padding: 14px 32px;
+  font-size: 1.05rem;
+  letter-spacing: 0.03em;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
+}
+.dle-btn-caps:hover:not(:disabled) {
+  background: #b53626;
+}
+.dle-btn-caps:disabled {
+  background: var(--clr-text-muted);
+  border-color: var(--clr-text-muted);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Round complete, past the auto-advance midpoint: the table is
+   waiting on the player. Soul §VI.4 forbids countdown bars, so this
+   is an *elapsed* cue with no terminus — a slow breath, not a
+   depleting meter. Nothing here can be used to compute time
+   remaining, because there is none. */
+.dle-table-wrap.dle-awaiting {
+  cursor: pointer;
+}
+.dle-table-wrap.dle-awaiting .dle-table::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 247, 224, 0.10),
+    transparent 70%
+  );
+  animation: dle-breathe 2400ms ease-in-out infinite alternate;
+}
+@keyframes dle-breathe {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Keep the cue, drop the motion — the duration is the game, so it
+     is the animation that goes, not the waiting. */
+  .dle-table-wrap.dle-awaiting .dle-table::after {
+    animation: none;
+    opacity: 0.6;
+  }
+}
 .dle-btn-large {
   padding: 14px 32px;
   font-size: 1rem;

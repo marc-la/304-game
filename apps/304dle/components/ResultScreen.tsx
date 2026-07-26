@@ -55,7 +55,6 @@ export const ResultScreen = (props: Props) => {
     date: props.date,
     verdict: props.verdict,
     callRound: props.callRound,
-    obligatedAtRound: props.obligatedAtRound,
     difficulty: props.difficulty,
     worldsAtCall: props.worldsAtCall,
   });

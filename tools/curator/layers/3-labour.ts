@@ -41,16 +41,19 @@ interface PlayedSlot {
   ledSuit: Suit;
 }
 
-const indexPlayedCards = (state: EngineGameState): PlayedSlot[] => {
+const indexPlayedCards = (
+  state: EngineGameState,
+  viewer: Seat,
+): PlayedSlot[] => {
   const out: PlayedSlot[] = [];
   for (const round of state.play.completedRounds) {
     const led = ledSuitOf(round.cards);
     if (led === null) continue;
     for (const entry of round.cards) {
       if (entry.faceDown || entry.card === null) continue;
-      // Skip south's own plays — those are not "deduction" facts,
-      // they're own-action memory.
-      if (entry.seat === 'south') continue;
+      // Skip the viewer's own plays — those are not "deduction"
+      // facts, they're own-action memory.
+      if (entry.seat === viewer) continue;
       out.push({
         card: entry.card,
         seat: entry.seat,
@@ -160,22 +163,27 @@ void blindExhaustion;
 export interface DeductionLabourArgs {
   state: EngineGameState;       // state at S*
   thresholds: CuratorThresholds;
+  // The obligated seat whose labour we are measuring. The scripted-
+  // puzzle generator evaluates candidates *before* rotating that seat
+  // into south's slot, so this cannot be assumed to be 'south'.
+  seat?: Seat;
 }
 
 export const computeDeductionLabour = (
   args: DeductionLabourArgs,
 ): Layer3Result => {
+  const viewer: Seat = args.seat ?? 'south';
   // Sanity: original state must still be obligated.
-  if (!checkCapsObligation(args.state, 'south')) {
+  if (!checkCapsObligation(args.state, viewer)) {
     return { pass: false, reason: 'no-witness' };
   }
 
-  const facts = indexPlayedCards(args.state);
+  const facts = indexPlayedCards(args.state, viewer);
   const loadBearingCards: CardId[] = [];
 
   for (const fact of facts) {
     const relaxed = blindOnePlayed(args.state, fact);
-    const stillObligated = checkCapsObligation(relaxed, 'south');
+    const stillObligated = checkCapsObligation(relaxed, viewer);
     if (!stillObligated) {
       loadBearingCards.push(fact.card);
     }
@@ -183,11 +191,11 @@ export const computeDeductionLabour = (
 
   const labour = loadBearingCards.length;
 
-  // Witness suit-span — informational only. Computed from south's
-  // own remaining hand at S* (which is what the caller will play
-  // out). Adaptive caps doesn't have a single witness, so we use
-  // the breadth of south's hand as a proxy.
-  const ownHand = args.state.hands[SEAT_INDEX.south] ?? [];
+  // Witness suit-span — informational only. Computed from the
+  // obligated seat's own remaining hand at S* (which is what the
+  // caller will play out). Adaptive caps doesn't have a single
+  // witness, so we use the breadth of that hand as a proxy.
+  const ownHand = args.state.hands[SEAT_INDEX[viewer]] ?? [];
   const witnessSuitSpan = new Set(ownHand.map(c => suitOf(c))).size;
 
   if (labour < args.thresholds.minLabour) {

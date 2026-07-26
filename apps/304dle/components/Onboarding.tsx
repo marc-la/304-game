@@ -1,53 +1,28 @@
-import { useState } from 'react';
-
-const STEPS = [
-  {
-    title: 'You are South — the trumper.',
-    body: 'The bid was made. Trump is set. Your partner sits across; the opposition flanks you. Now you play.',
-  },
-  {
-    title: 'Every card teaches you something.',
-    body: "Watch what's led. Watch what's followed. Track who's void in what. The Worlds counter is your second pair of eyes — it ticks down as the hand reveals itself.",
-  },
-  {
-    title: 'When the worlds collapse — call Caps.',
-    body: 'When you know — really know — that you can win every remaining round, tap Call Caps and lay your order. Hesitate too long and the moment passes. Call too early and the moment never came.',
-  },
-];
+// First-run only. Soul §VI.5.2 forbids tutorials and §VI.5.4 forbids
+// retelling the rules — the player already knows 304, and the rules
+// live on site/rules.html. So this says exactly one thing: the thing
+// about *this app* that cannot be inferred from knowing 304, which is
+// that you don't choose your cards here. Everything else (what caps
+// is, when to call it, how to read the table) is the puzzle, and
+// explaining it would be explaining the answer.
 
 interface Props {
   onClose: () => void;
 }
 
-export const Onboarding = ({ onClose }: Props) => {
-  const [step, setStep] = useState(0);
-  const last = step === STEPS.length - 1;
-  return (
-    <div className="dle-modal-backdrop">
-      <div className="dle-modal dle-onboarding">
-        <h2>{STEPS[step].title}</h2>
-        <p>{STEPS[step].body}</p>
-        <div className="dle-onboarding-dots">
-          {STEPS.map((_, i) => (
-            <span
-              key={i}
-              className={`dle-dot${i === step ? ' dle-dot-active' : ''}`}
-            />
-          ))}
-        </div>
-        <div className="dle-modal-actions">
-          <button type="button" className="dle-btn dle-btn-secondary" onClick={onClose}>
-            Skip
-          </button>
-          <button
-            type="button"
-            className="dle-btn dle-btn-primary"
-            onClick={() => last ? onClose() : setStep(step + 1)}
-          >
-            {last ? "Let's play" : 'Next'}
-          </button>
-        </div>
+export const Onboarding = ({ onClose }: Props) => (
+  <div className="dle-modal-backdrop">
+    <div className="dle-modal dle-onboarding">
+      <h2>Your cards play themselves.</h2>
+      <p>
+        You are South. The line is already chosen — tap the lit card to lay it.
+        The only decision that is yours is when to call Caps.
+      </p>
+      <div className="dle-modal-actions">
+        <button type="button" className="dle-btn dle-btn-primary" onClick={onClose}>
+          Deal
+        </button>
       </div>
     </div>
-  );
-};
+  </div>
+);

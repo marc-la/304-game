@@ -1,0 +1,125 @@
+name: Refill 304dle puzzle window
+
+# 304dle ships one pre-computed puzzle file per date under
+# site/public/puzzles/. This job keeps a rolling horizon topped up so
+# the daily never runs dry, and commits the new files to main (the
+# deploy workflow then picks them up on the resulting push).
+#
+# Why a rolling window rather than generating a year up front: the data
+# is public by construction (static host — anything the browser fetches,
+# anyone can fetch), so the only meaningful control is *how far ahead*
+# the answers are readable. A short horizon also means a generator
+# improvement reaches players in weeks rather than next year.
+
+on:
+  schedule:
+    # Sundays 15:00 UTC. Generation is slow and the horizon is weeks
+    # deep, so weekly is ample.
+    - cron: '0 15 * * 0'
+  workflow_dispatch:
+    inputs:
+      count:
+        description: 'How many new puzzles to append'
+        required: false
+        default: '14'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: puzzles-refill
+  cancel-in-progress: false
+
+jobs:
+  refill:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      # See the note in deploy-pages.yml — the repo-root node_modules
+      # symlink isn't tracked by git and the tools/ CLIs need it.
+      - name: Link node_modules at repo root
+        run: ln -s frontend/node_modules node_modules
+
+      - name: Compute the next unfilled date
+        id: horizon
+        run: |
+          set -euo pipefail
+          INDEX=site/public/puzzles/index.json
+          if [ -f "$INDEX" ]; then
+            LAST=$(jq -r '.dates | last // empty' "$INDEX")
+          else
+            LAST=""
+          fi
+          if [ -z "$LAST" ]; then
+            # No horizon yet — start tomorrow.
+            START=$(date -u -d 'tomorrow' +%F)
+          else
+            START=$(date -u -d "$LAST + 1 day" +%F)
+          fi
+          echo "start=$START" >> "$GITHUB_OUTPUT"
+          echo "Next unfilled date: $START"
+
+      - name: Generate puzzles
+        working-directory: frontend
+        env:
+          COUNT: ${{ github.event.inputs.count || '14' }}
+          START: ${{ steps.horizon.outputs.start }}
+        run: |
+          set -euo pipefail
+          # A fresh master seed per run, derived from the start date, so
+          # successive runs don't re-walk the same match sequence and
+          # re-emit puzzles the window already contains.
+          SEED=$(date -u -d "$START" +%s)
+          npx tsx ../tools/puzzles/generate-scripted.ts \
+            --count "$COUNT" \
+            --start-date "$START" \
+            --master-seed "$SEED" \
+            --max-matches 20000 \
+            --games-per-match 20 \
+            --out-dir ../site/public/puzzles
+
+      # The generator's --out-dir mode rewrites index.json from the
+      # puzzles it produced *this run*, which would drop the existing
+      # horizon. Rebuild it from what is actually on disk.
+      - name: Rebuild index from files on disk
+        run: |
+          set -euo pipefail
+          cd site/public/puzzles
+          ls -1 [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9].json \
+            | sed 's/\.json$//' \
+            | sort \
+            | jq -R . \
+            | jq -s '{schemaVersion: 2, dates: .}' > index.json
+          echo "Horizon now $(jq -r '.dates | length' index.json) days."
+
+      # Validates every shipped puzzle end-to-end (apps/304dle
+      # __tests__/today.test.ts replays all of them). A puzzle that
+      # can't be replayed is a broken day for every player, so this
+      # gates the commit.
+      - name: Verify the whole window replays
+        working-directory: frontend
+        run: npx vitest run apps/304dle/__tests__/today.test.ts
+
+      - name: Commit new puzzles
+        run: |
+          set -euo pipefail
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add site/public/puzzles
+          if git diff --cached --quiet; then
+            echo 'No new puzzles — nothing to commit.'
+            exit 0
+          fi
+          git commit -m "Refill 304dle puzzle window from ${{ steps.horizon.outputs.start }}"
+          git push
