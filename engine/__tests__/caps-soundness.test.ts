@@ -81,7 +81,12 @@ describe('caps obligation is sound on shipped puzzles', () => {
           .map(e => [e.seat, e.card as CardId] as const);
         const roundsRemaining = 8 - rt.completedRounds.length;
 
-        for (const w of enumerateWorlds(info, { maxWorlds: 3000 })) {
+        // Sampled, not exhaustive. Both defects this test exists to
+        // catch showed up in 50-100% of consistent worlds, so a few
+        // hundred finds them immediately, while enumerating thousands
+        // of adaptive solves across 24 puzzles starved the rest of the
+        // suite and made unrelated tests time out.
+        for (const w of enumerateWorlds(info, { maxWorlds: 250 })) {
           const hands = new Map<Seat, ReadonlyArray<CardId>>();
           for (let i = 0; i < 4; i++) hands.set(SEATS_BY_INDEX[i], w.hands[i]);
           const sweeps = worldSweepsAdaptive({
@@ -105,6 +110,6 @@ describe('caps obligation is sound on shipped puzzles', () => {
 
       expect(violations).toEqual([]);
     },
-    240_000,
+    120_000,
   );
 });

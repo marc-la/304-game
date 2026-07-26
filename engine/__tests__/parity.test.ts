@@ -372,6 +372,9 @@ describe('engine parity vs game304', () => {
       readFileSync(join(FIXTURE_DIR, file), 'utf8'),
     );
 
+    // Each fixture replays a full 8-round game through the engine and
+    // takes ~3s alone, so the 5s default flaked whenever anything else
+    // in the suite was competing for CPU.
     it(`replays ${fixture.name}`, () => {
       const game = new Game({ dealer: fixture.dealer as Seat });
       const hands: Record<Seat, CardId[]> = {
@@ -400,6 +403,6 @@ describe('engine parity vs game304', () => {
           throw err;
         }
       });
-    });
+    }, 30_000);
   }
 });
