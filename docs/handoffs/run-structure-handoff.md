@@ -3,7 +3,7 @@ title: 304dle — The run (a day is a sequence of deals, not one deal)
 status: OPEN (2026-08-04). Design settled in outline, numbers unmeasured. Marc's sign-off required before any code.
 owns: the concept. apps/304dle/store.ts, runtime.ts, types.ts, storage.ts, tools/puzzles/
 blocks: caps-verdict-model, decoy-supply, puzzle-window-regeneration, run-tempo
-depends_on: soul-amendments-handoff.md (§VI.3 forbids this today), caps-par-authority-handoff.md (hard)
+depends_on: soul-first-principles-handoff.md (soul §VI forbids this today), caps-par-authority-handoff.md (hard)
 ---
 
 # Goal
@@ -113,8 +113,10 @@ with no caps ever — a rare, strange, entirely correct day where silence
 was right the whole way. That is more soulful than a guaranteed
 resolution and it is un-exploitable.
 
-`p` is the tuning knob. It trades session length against how often the
-run structure manifests at all. `p = 0.45` gives `E[depth] = 2.2`.
+**`p = 0.45` is locked** (Marc, 2026-08-04), giving `E[depth] = 2.2`. It
+remains the knob if the daily ever needs retuning — it trades session
+length against how often the run structure manifests at all — but treat
+it as settled, not open.
 
 # Time budget
 
@@ -133,45 +135,71 @@ rather than adding it — see `run-tempo-handoff.md`. At ~50s per deal:
 
 `E[day] ≈ 1m50`. That lands where soul §VI.4 originally claimed ("a 3–5
 minute pressurized deductive sprint") and where the single-deal build
-could not — `soul-amendments-handoff.md` was about to amend that clause
+could not — `soul-first-principles-handoff.md` was about to amend that clause
 *down* to 60–120s for being arithmetically false. **The run makes the
 original clause true.** Withdraw that amendment rather than land it.
 
 # Mechanics
 
-**Advancing.** A deal ends when its truth becomes public. For a decoy
-that is the break — the moment the opposition takes a trick, caps is
-provably off and the run advances. For the caps deal the truth never
-turns against the player, so it runs to R8; arriving there without
-having called is a loss.
+**There is exactly one player action: Call Caps.** Marc's ruling
+(2026-08-04): no decline, no "no caps" button, no second gesture. The
+player survives a decoy by staying quiet.
 
-**The decline is an accelerator, not an obligation.** The player may
-assert "no caps" early to skip to the next deal. Correct → advance.
-Wrong → the run is over. It gains no information (you would have
-advanced anyway when it broke), so it is a pure speed-for-safety trade
-and cannot be farmed. Patient players simply never press it.
+**The break ends the deal and announces itself.** When the opposition
+takes a round — typically late — caps is provably off. The deal stops
+there; the player does not play it out. A beat announces it ("Round 7 —
+no caps") and the run moves on. The caps deal never breaks, so it runs
+to R8; arriving there without having called is a loss.
 
-**Do not reward speed in v1.** A time bonus would make the accelerator
-mandatory and fight the "give the player room to memorise" goal
-directly. Record time; do not score it.
+This is the design's best property and it should not be traded away
+later: **the only way to die on a decoy is to actively call it.** The
+thrill is entirely in the temptation to call before the break — which is
+also the thrill Marc named, and the reason the decoys have to be good
+(`decoy-supply-handoff.md`).
+
+The break is a reveal, and reveals carry weight (soul §IV.5). It should
+be a beat, not a flat state change. It is not new information — the
+player watched the trick resolve — so the animation formalises what the
+felt already showed rather than telling them something they could not
+see. Keep it that way.
+
+**The callable window is R1 to the break.** After the break there is
+nothing to call, so the danger window is R1–R6 — which is exactly the
+deduction window (`run-tempo-handoff.md`). That alignment is not an
+accident and is worth preserving.
+
+**Do not reward speed.** Deal length is now structural rather than
+player-gated, so a time bonus buys nothing and would fight the "room to
+memorise" goal directly. Record time; do not score it.
 
 **Depth is visible; length is not.** Show "deal 3" — that is the
 tension. Never show how many remain.
 
-# The compounding-loss problem (name it, don't paper over it)
+# The compounding-loss problem (largely dissolved, 2026-08-04)
+
+Recorded because it shaped the design and because a future change could
+reintroduce it.
 
 Per-deal survival compounds. At 80% per deal a four-deal day is a 41%
 win; Wordle regulars sit above 95%. Worse, depth is luck, so the day's
 difficulty would be set by a die roll — which soul §IV.11 explicitly
 rejects (*"random unlucky loss... probably shouldn't exist"*).
 
-The fix is not leniency at depth (that is sanitizing, §VI.5.5). It is to
-make **surviving a decoy cheap and calling a decoy expensive**. Declining
-correctly should be the low-effort default; the only way to die on a
-decoy is to actively call it. Then per-deal survival for an attentive
-player is ~95%, a four-deal day is ~81%, and the run punishes impatience
-specifically rather than taxing depth. Design to that target and
-**measure it before shipping**.
+The original fix was a design target: make surviving a decoy cheap and
+calling one expensive. **Dropping the decline makes that structural
+rather than a number to tune.** A patient player survives every decoy
+with certainty, because inaction is survival. Compounding now applies
+only to the player's own impatience, which is a skill, not a die roll.
+
+Two consequences to hold on to:
+
+- Any future mechanic that makes a decoy killable *without* an active
+  call reopens this. Do not add one.
+- The residual failure mode is a player who calls on temptation. That is
+  precisely what should kill them (§VI.4: *guessing, drift,
+  brute-forcing*), so the remaining loss rate is a measurement of the
+  decoy quality, not a fairness problem. **Still measure it** — a
+  temptation threshold set too high produces a punishing daily.
 
 # Recommended approach
 
@@ -179,8 +207,12 @@ specifically rather than taxing depth. Design to that target and
    deal, and decoys need the mirror guarantee — see the warning in
    `decoy-supply-handoff.md` about certifying decoys with the wrong
    oracle. Nothing here is safe on a predicate that under-claims.
-2. Get Marc's sign-off on the §VI.3 amendments (`soul-amendments-handoff.md`).
-   The constitution currently forbids this design outright.
+2. Split the constitution from the design doc
+   (`soul-first-principles-handoff.md`). Soul §VI currently forbids this
+   design outright; after the split those clauses live in
+   `.claude/304dle-design.md`, where reversing them is an ordinary design
+   edit rather than a constitutional amendment. **The run is blocked on
+   the split, not on the reversal.**
 3. Build the run state machine above the existing per-deal runtime —
    `runtime.ts` stays a single-deal engine; the run orchestrates it.
    Do not entangle them.
@@ -200,15 +232,25 @@ specifically rather than taxing depth. Design to that target and
 - Answer entropy roughly doubles (~1.46 → ~3 bits). This does not close
   the gap to Wordle's 11.2 and is not meant to; the day is one decision,
   not six guesses.
-- Attentive-play survival per decoy ≥ 95%, measured, not assumed.
+- A player who never calls survives every decoy, with certainty. This is
+  structural, not statistical — assert it in a test rather than
+  measuring it.
+- Overall day-loss rate is a readout on decoy temptation, not on
+  fairness. Measure it and report it as such; a punishing daily means the
+  threshold is too high, not that the run is unfair.
 - `E[day] ≤ ~2 min`, `P99 ≤ ~5 min`, measured on a real window.
 - No strategy that ignores the cards beats chance materially at any depth.
 
 # Hard constraints
 
-- **Soul amendment required before shipping.** §VI.3 says every position
-  is constructed so the cap is callable, *"when, not if"*, and mandates
-  redeal on loss. This design reverses the first and deletes the second.
+- **Blocked on the constitution/design split**
+  (`soul-first-principles-handoff.md`). Soul §VI says every position is
+  constructed so the cap is callable, *"when, not if"*, and mandates
+  redeal on loss. This design reverses the first and deletes the second,
+  and cannot ship while the constitution says otherwise.
+- **One player action: Call Caps.** No decline, no second commit. Any
+  mechanic that lets a decoy kill a passive player reopens the
+  compounding-loss problem above.
 - Determinism unchanged: `(info-set, rng seed) → same play, byte-for-byte`.
 - Depth must never be worth points (see the crash section).
 - No countdown bars, no timers-as-pressure (§VI.4). The run's tension is

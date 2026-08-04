@@ -31,8 +31,8 @@ Two gates sit in front of the run: the predicate has to be right, and
 Marc has to sign off the constitution.
 
 ```
-   soul-amendments ─── blocks ───┐          (§VI.3 forbids the run today)
-                                 ▼
+   soul-first-principles ─ blocks ┐      (soul §VI forbids the run today)
+                                  ▼
    caps-par-authority ─ blocks ─ run-structure ─┬─ decoy-supply
    (par is wrong: the                           ├─ caps-verdict-model
     predicate under-claims)                     ├─ run-tempo
@@ -45,15 +45,15 @@ Marc has to sign off the constitution.
      caps-call-ux (arm-and-point half) · dds-transposition · closed-trump-bot
 ```
 
-- [handoffs/run-structure-handoff.md](handoffs/run-structure-handoff.md) — **the anchor.** A day is a run of deals, drawn from an exponential tail: usually 1–2, rarely 6. Caps stops being guaranteed. Kills the redeal loop; needs Marc's sign-off.
+- [handoffs/run-structure-handoff.md](handoffs/run-structure-handoff.md) — **the anchor.** A day is a run of deals, drawn from an exponential tail: usually 1–2, rarely 6. Caps stops being guaranteed. One player action (Call Caps); decoys end themselves when the opposition takes a round. Kills the redeal loop.
 - [handoffs/caps-par-authority-handoff.md](handoffs/caps-par-authority-handoff.md) — **the blocker.** The obligation CSP under-claims, so par is systematically later than the truth and correct players are told "too early". Ship an offline-verified par and grade against it.
-- [handoffs/soul-amendments-handoff.md](handoffs/soul-amendments-handoff.md) — §VI.3 ("when, not if", *and* the redeal loop), §VI.2 (the worlds counter), a new §VI.4 clause. One amendment is **withdrawn** — the run makes the "3–5 minute" claim true. Marc's sign-off; no code.
+- [handoffs/soul-first-principles-handoff.md](handoffs/soul-first-principles-handoff.md) — **the other blocker.** Strip `soul.md` to first principles; move every design prescription (all of §VI, the 12 "Design implication" blocks) into a new `.claude/304dle-design.md`. Unblocks the run without a constitutional amendment.
 - [handoffs/decoy-supply-handoff.md](handoffs/decoy-supply-handoff.md) — the deals that are *not* caps, now ~55% of everything played. Carries the oracle bug: certifying decoys with the runtime CSP would kill players for reading correctly. Supersedes `decoy-days`.
 - [handoffs/caps-verdict-model-handoff.md](handoffs/caps-verdict-model-handoff.md) — run-shaped verdicts; early ≠ late; merge `missed` into late; two streaks; depth is texture, never score. Needs par first.
 - [handoffs/run-tempo-handoff.md](handoffs/run-tempo-handoff.md) — redistribute time inside a deal toward the deduction window (R3–R6) without lengthening it, so a run still fits a few minutes.
 - [handoffs/puzzle-window-regeneration-handoff.md](handoffs/puzzle-window-regeneration-handoff.md) — regenerate the shipped window as runs. ~3x the compute; schema changes. Strictly downstream.
 - [handoffs/closed-trump-bot-handoff.md](handoffs/closed-trump-bot-handoff.md) — closed mode generates **zero** puzzles because the curator's closed-trump bot defends too weakly. ~95% of real 304 is closed, so this is the biggest single gap. Fully independent.
-- [handoffs/caps-call-ux-handoff.md](handoffs/caps-call-ux-handoff.md) — replace the caps confirmation dialog with arm-and-point on the felt, and add its opposite: the decline. Arm-and-point half is independent.
+- [handoffs/caps-call-ux-handoff.md](handoffs/caps-call-ux-handoff.md) — replace the caps confirmation dialog with arm-and-point on the felt. Call Caps is the only player action. Pure UI, independent.
 - [handoffs/dds-transposition-handoff.md](handoffs/dds-transposition-handoff.md) — a real double-dummy solver so seven-card positions can be verified at all. Promoted: the decoy temptation metric needs world *counts*, not witnesses.
 
 ## Explainers (curated)

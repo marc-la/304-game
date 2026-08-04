@@ -37,6 +37,35 @@ git log). Its findings survive intact and now matter more:
 
 Nothing is built.
 
+# The break is now player-facing — keep both run lengths
+
+Marc cut the decline (2026-08-04). A deal now ends when the opposition
+takes a round, with a beat announcing it, and the player never plays past
+that point (`run-structure-handoff.md`). The break is therefore a
+*designed moment* the player sees every day, not an internal event — and
+its **timing is learnable**.
+
+That makes the run∈{6,7} split load-bearing, not incidental:
+
+| initial run | opposition takes | player learns |
+|---|---|---|
+| 6 | round 7 | at R7 |
+| 7 | round 8 | at R8 |
+| 8 (caps deal) | never | — |
+
+Because run=7 decoys survive to R8, **"still alive at R8" does not prove
+this is the caps deal.** Narrow the pool to run=6 only and it would: a
+player who reached R8 could call for free. The ambiguity has to survive
+to the last round, and it does — but only if both lengths stay in the
+pool at a reasonable ratio. Do not let a quality filter quietly starve
+one of them; check the emitted mix, not just the total.
+
+Corollary for the caps deals: a caps deal that is *also* obligated very
+late (R7) leaves almost no window, and the player cannot distinguish it
+from an about-to-break decoy. That is the same par-spread problem
+`puzzle-window-regeneration-handoff.md` already tracks, and the run makes
+it sharper.
+
 # The oracle bug — read this before writing the filter
 
 The superseded decoy-days plan specified: *"run the decoys through
@@ -127,6 +156,9 @@ Budget for it; do not discover it mid-run.
   inspecting emitted files, not by trusting a counter.
 - A decoy is visually indistinguishable from a caps deal through the end
   of R6: the opposition pile stays empty until R7 at the earliest.
+- Both break rounds are represented in the shipped window at a ratio
+  close to natural supply. If R8-breaking decoys starve, "alive at R8"
+  becomes a free call — assert the mix, don't assume it.
 - Replay legality holds end-to-end — `applyScriptedPlay` validates every
   play against `legalPlays`, so a window-wide replay test is a real audit.
 - Sample ten decoys and write out, in one sentence each, why it was not

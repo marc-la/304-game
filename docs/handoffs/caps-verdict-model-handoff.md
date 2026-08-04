@@ -41,18 +41,17 @@ property of a **run**, and most deals in a run end with no verdict at all.
 
 | outcome | condition | effect |
 |---|---|---|
-| `advanced` | decoy; declined correctly, or let it break | next deal. **Not a score.** |
+| `advanced` | decoy; stayed quiet until it broke | next deal. **Not a score.** |
 | `busted-early` | called caps on a decoy | run over, loss |
-| `declined-wrong` | actively declined the caps deal | run over, loss |
 | `missed` | caps deal, never called, swept to R8 | run over, loss (graded as late) |
 | `won` | caps deal, called within the lenient window of `S*` | run over, **win** |
 | `won-marked` | one own-play past `S*` | win, marked |
 | `late` | two or more past `S*` | run over, graded by distance |
 
-`declined-wrong` and `missed` weigh the same but stay distinct kinds —
-one is an assertion, the other a failure to see, and the reveal should
-say which. Distinguishing them costs nothing and makes the explanation
-honest.
+`advanced` has no player action behind it — the deal breaks on its own
+and the run moves on (`run-structure-handoff.md`). There is no decline,
+so there is no wrong-decline verdict: **the only fatal act on a decoy is
+calling it.**
 
 **Per day**: the terminal deal's verdict, plus the depth reached.
 
@@ -100,8 +99,10 @@ exists to preserve. Drop and restart, and say so in the bump comment.
 
 - No strategy that ignores the cards beats a materially better rate than
   chance — **at any depth**. Measure it: replay the shipped window under
-  fixed-round, fixed-depth and always-decline policies, and report the
-  full verdict distribution.
+  fixed-round and fixed-depth policies and report the full verdict
+  distribution. Note that "never call" is now a *legal* strategy that
+  survives every decoy and then loses at the caps deal — confirm it
+  scores zero.
 - `busted-early`, `late` and `missed` produce visibly different outcomes
   and different streak consequences.
 - Surviving a decoy is visibly *not* a score anywhere in the UI.
@@ -121,11 +122,9 @@ exists to preserve. Drop and restart, and say so in the bump comment.
 - Streak state lives in `localStorage` (`apps/304dle/storage.ts`,
   schema-versioned).
 - No emoji share grid, no stat table on the result screen; both were
-  removed deliberately as unreadable. **Note:** the run produces a
-  natural share shape (a sequence of deals), and the 304 notation on the
-  UWA whiteboard is the cultural seed of the whole product (§II, §IV.12).
-  That is a genuine reopening of a closed decision — it needs Marc's
-  call, and it is not licence to reinstate the emoji grid.
+  removed deliberately as unreadable, and Marc reconfirmed this
+  2026-08-04 when the run's natural share shape reopened the question.
+  **Closed. Do not raise it again without being asked.**
 
 # Reading list
 

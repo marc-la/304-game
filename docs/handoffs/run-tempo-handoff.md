@@ -62,18 +62,20 @@ expressed entirely through bot tempo and trick-lingering — the same
 channels a real table uses. Nothing on screen counts anything.
 
 The corollary, from `run-structure-handoff.md`: **do not reward speed.**
-A time bonus would make the early-decline accelerator mandatory and
-would take back exactly the room this handoff is trying to create.
-Record time, do not score it.
+The player cannot shorten a deal anyway — there is no decline, and a
+decoy ends itself — so a time bonus would reward nothing but calling
+sooner, which is the exact behaviour the run exists to punish. It would
+also take back the room this handoff is trying to create. Record time, do
+not score it.
 
 # Interaction with the run
 
-Deal length is player-gated, so a run's wall clock is not fixed. Two
-things keep it bounded:
-
-- Decoys break at R7, so a deal is ~7 rounds, not 8.
-- The decline accelerator lets an impatient player skip ahead. Most will
-  not use it, which is fine — it is a release valve, not a plan.
+Deal length is **structural, not player-gated**: a decoy ends the moment
+the opposition takes a round and is not played out
+(`run-structure-handoff.md`), so a decoy is 7–8 rounds and the caps deal
+is at most 8. There is no accelerator and no way for the player to
+shorten a deal — which means the envelope below is the *only* lever on
+session length. Tune it accordingly.
 
 At ~50s/deal and `E[depth] = 2.2`, `E[day] ≈ 1m50`, with a 6-deal day at
 ~5m. See the table in `run-structure-handoff.md`.
