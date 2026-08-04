@@ -1,13 +1,17 @@
 ---
-title: 304dle — Arm-and-point caps call
-status: OPEN (2026-07-26). Independent of the predicate work; safe to run in parallel.
+title: 304dle — Arm-and-point caps call, and the decline
+status: OPEN (2026-07-26; decline added 2026-08-04). The arm-and-point half is independent of the predicate work and safe to run in parallel. The decline half needs the run.
 owns: apps/304dle/components/CapsConfirmModal.tsx, Table.tsx, App.tsx, app.css
+depends_on: run-structure-handoff.md (decline half only)
 ---
 
 # Goal
 
 Replace the confirmation dialog with a gesture on the table: press Call
 Caps to *arm*, then point at the card you are calling on.
+
+Then give that gesture its opposite: a way to say **no caps here** and
+move to the next deal.
 
 # State of play
 
@@ -34,7 +38,37 @@ The design, already settled:
   loss.
 - The pick *is* the commit. No third confirmation.
 
+# The decline (new, 2026-08-04)
+
+The run (`run-structure-handoff.md`) makes every deal a live *whether*
+question, so the table needs a second commit: **no caps here.** Design
+not settled; what is settled about it:
+
+- **It is an accelerator, not an obligation.** A deal resolves on its own
+  when the decoy breaks. Declining just skips ahead — correct → next
+  deal, wrong → the run is over. Patient players never press it.
+- **It gains no information**, so it cannot be farmed: you would have
+  advanced anyway when the deal broke. It is purely speed traded for
+  safety.
+- **It must not be reachable by the same reflex as Call Caps.** These are
+  opposite assertions with opposite fatal outcomes, sitting in the same
+  button row, pressed under time pressure. A misclick here loses the day
+  in the most infuriating way available. Separate them spatially, or make
+  the decline a hold rather than a tap.
+- **No confirmation dialog** — same reason the caps modal is being
+  deleted (§VI.5.2).
+
+Open question for Marc: is the decline armed-and-pointed too? There is no
+card to point *at* — the assertion is about the whole position — so the
+symmetry does not obviously carry. A hold-to-decline with the felt
+dimming is the cheapest thing that reads as deliberate.
+
 # Watch out for
+
+Once the run lands, the armed state must also be suppressed **during the
+inter-deal transition**. A player who arms in the last beat of a deal and
+picks after the next one has dealt would otherwise be calling caps on a
+board that no longer exists.
 
 The gesture space already has collisions. Clicking the felt advances a
 completed trick (`App.tsx`, `canAdvance`), and clicking your lit card
@@ -58,6 +92,10 @@ board that has stopped moving.
   while armed.
 - A wrong pick with a correct call still reads as a win.
 - The confirm modal is gone and nothing re-explains caps during play.
+- (Decline half) Call and decline cannot be confused under a fast,
+  imprecise tap on a 390px phone. Test this adversarially — try to hit
+  the wrong one — rather than confirming each works in isolation.
+- (Decline half) Arming cannot survive across a deal boundary.
 
 # Hard constraints
 

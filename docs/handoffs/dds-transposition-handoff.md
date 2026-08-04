@@ -1,9 +1,16 @@
 ---
 title: 304 — A real double-dummy solver (transposition tables)
-status: OPEN (2026-07-26). Unblocks full-depth verification; no user-visible change.
+status: OPEN (2026-07-26; promoted 2026-08-04). Unblocks full-depth verification; no user-visible change.
 owns: engine/dd.ts
-blocks: nothing (but makes caps-par-authority's validation much stronger)
+blocks: decoy-supply throughput (was: nothing). Still makes caps-par-authority's validation much stronger.
 ---
+
+> **Promoted 2026-08-04.** This was optional. Under the run design it is
+> close to load-bearing: `decoy-supply-handoff.md` needs a *count* of
+> refuting worlds per state (the `temptation` metric), not just one
+> exhibited witness, and it needs it across ~2.2x the deal volume.
+> Counting is strictly more expensive than exhibiting. If generation
+> throughput becomes the binding constraint on the run, this is the lever.
 
 # Goal
 

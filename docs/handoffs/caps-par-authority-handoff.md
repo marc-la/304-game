@@ -1,8 +1,8 @@
 ---
 title: 304dle — Make par authoritative (fix the under-claiming predicate)
-status: OPEN (2026-07-26). Blocker for puzzle regeneration and for all verdict work.
+status: OPEN (2026-07-26). Blocker for puzzle regeneration, decoy supply, the run, and all verdict work.
 owns: engine/caps-csp.ts, engine/caps.ts, apps/304dle/store.ts, apps/304dle/types.ts
-blocks: puzzle-window-regeneration, decoy-days, caps-verdict-model
+blocks: puzzle-window-regeneration, decoy-supply, run-structure, caps-verdict-model
 ---
 
 # Goal
@@ -10,6 +10,14 @@ blocks: puzzle-window-regeneration, decoy-days, caps-verdict-model
 Make the par round a player is graded against *correct*. Today it is
 systematically later than the truth, so players who reason correctly are
 told "too early".
+
+**Scope note (2026-08-04).** The run design multiplies this work's reach
+rather than changing it. Par must now be authoritative on every deal of
+every run, and the same offline authority is what certifies **decoys** —
+the mirror claim, that no obligation exists at any state. Using the
+under-claiming CSP for that would admit real caps deals into the decoy
+pool and kill players for reading them correctly; see the oracle bug in
+`decoy-supply-handoff.md`. Nothing below changes. It just matters more.
 
 # State of play
 
