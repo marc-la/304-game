@@ -2,7 +2,7 @@
 // No-scroll contract + component rules: .claude/leaderboard-design.md §1, §5.
 import {
   loadData, standings, partnerships, playerName, playerColors, onThemeChange,
-  renderMeta, showMain, showError, seasonToggle, fmtDate, esc, PLAYER_ORDER,
+  renderMeta, showMain, showError, seasonToggle, revsForScope, fmtDate, esc, PLAYER_ORDER,
 } from './core.js';
 
 function ordinal(n) {
@@ -11,11 +11,40 @@ function ordinal(n) {
 
 /* ---- standings ledger ---- */
 
+// Pip geometry must track .lb-pip / .lb-standing-form in styles.css so the
+// axis ticks land under the pip centres they're labelling.
+const PIP = 17, PIP_GAP = 3;
+
+function formAxis(dates) {
+  const n = dates.length;
+  if (!n) return '';
+  const w = n * PIP + (n - 1) * PIP_GAP;
+  let ticks = '';
+  for (let i = 0; i < n; i++) {
+    ticks += '<i class="lb-axis-tick" style="left:' + (i * (PIP + PIP_GAP) + PIP / 2) + 'px"></i>';
+  }
+  const dates_ = n > 1
+    ? '<span>' + esc(fmtDate(dates[0], true)) + '</span><span>' + esc(fmtDate(dates[n - 1], true)) + '</span>'
+    : '<span>' + esc(fmtDate(dates[0], true)) + '</span>';
+  return '<span class="lb-axis" style="width:' + w + 'px">' +
+    '<span class="lb-axis-line">' + ticks + '</span>' +
+    '<span class="lb-axis-dates">' + dates_ + '</span>' +
+  '</span>';
+}
+
+function renderStandingsHead(dates) {
+  return '<div class="lb-standing-head" aria-hidden="true">' +
+    '<span class="lb-standing-head-rate">% sets</span>' +
+    '<span class="lb-standing-head-form">' + formAxis(dates) + '</span>' +
+  '</div>';
+}
+
 function renderStandings(data, scope) {
   const el = document.getElementById('lb-standings');
   const rows = standings(data, scope);
+  const formDates = revsForScope(data, scope).slice(-5).map((r) => r.date);
   const maxRevs = Math.max(1, ...rows.map((r) => r.revsWon));
-  el.innerHTML = rows.map((r, i) => {
+  el.innerHTML = renderStandingsHead(formDates) + rows.map((r, i) => {
     const pips = r.form.map((f) => {
       if (!f) return '';
       const cls = f.win ? ' is-win' : '';
@@ -35,8 +64,7 @@ function renderStandings(data, scope) {
         '<span class="lb-standing-form" aria-label="Recent form, oldest first">' + pips + '</span>' +
       '</div>'
     );
-  }).join('') +
-  '<p class="lb-footnote">Ranked by revolutions won · pips = last 5 placements</p>';
+  }).join('');
   // Keep the max in reserve for future emphasis (leader detection).
   void maxRevs;
 }
@@ -168,7 +196,8 @@ function renderPartnerships(data, scope) {
   const el = document.getElementById('lb-partnerships');
   const pairs = partnerships(data, scope);
   if (!pairs.length) { el.innerHTML = '<p class="lb-footnote">No matches yet this season.</p>'; return; }
-  el.innerHTML = pairs.map((pr) => {
+  const head = '<div class="lb-pair-head" aria-hidden="true"><span class="lb-pair-head-pct">% sets</span></div>';
+  el.innerHTML = head + pairs.map((pr) => {
     const rate = Math.round((pr.won / pr.played) * 100);
     const [a, b] = pr.players;
     return '<div class="lb-pair">' +

@@ -1998,6 +1998,70 @@ dd {
 .lb-dash-race { grid-area: race; min-width: 0; }
 .lb-dash-pairs { grid-area: pairs; }
 
+/* Column-header row for the standings ledger: mirrors .lb-standing's grid
+   so "% sets" and the pip timeline axis land directly over their columns. */
+.lb-standing-head {
+  display: grid;
+  grid-template-columns: 18px 10px minmax(0, 1fr) auto;
+  gap: 4px 10px;
+  padding: 0 14px;
+  margin-bottom: 6px;
+}
+
+.lb-standing-head-rate {
+  grid-column: 3;
+  justify-self: end;
+}
+
+.lb-standing-head-form {
+  grid-column: 4;
+  justify-self: end;
+}
+
+.lb-standing-head-rate,
+.lb-standing-head-form {
+  font-family: var(--font-heading);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--clr-text-muted);
+}
+
+/* Fixed-position ticks (not proportional to elapsed days) so they never
+   collide when two revolutions share a date; the two endpoint dates carry
+   the actual time span. */
+.lb-axis {
+  display: inline-block;
+  vertical-align: top;
+}
+
+.lb-axis-line {
+  position: relative;
+  display: block;
+  height: 4px;
+  border-top: 1px solid var(--clr-border);
+}
+
+.lb-axis-tick {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  height: 4px;
+  background: var(--clr-border);
+  transform: translateX(-0.5px);
+}
+
+.lb-axis-dates {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: nowrap;
+}
+
 /* Two-line row: the name owns line 1 and can never be squeezed out by
    the bar/pips, which live on line 2. */
 .lb-standing {
@@ -2207,6 +2271,24 @@ dd {
 }
 
 /* --- partnerships --- */
+
+.lb-pair-head {
+  display: grid;
+  grid-template-columns: 26px minmax(120px, auto) 1fr auto auto;
+  gap: 10px;
+  padding-bottom: 2px;
+}
+
+.lb-pair-head-pct {
+  grid-column: 4;
+  justify-self: end;
+  font-family: var(--font-heading);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--clr-text-muted);
+}
 
 .lb-pair {
   display: grid;
@@ -2713,10 +2795,18 @@ details[open] > summary .lb-chevron { transform: rotate(45deg); }
 
   .lb-dash-pairs { align-self: start; }
 
-  .lb-standing {
+  .lb-standing,
+  .lb-standing-head {
     grid-template-columns: 14px 8px minmax(0, 1fr) auto;
     gap: 3px 8px;
+  }
+
+  .lb-standing {
     padding: 8px 10px;
+  }
+
+  .lb-standing-head {
+    padding: 0 10px;
   }
 
   .lb-standing-name { font-size: 1rem; }
@@ -2728,10 +2818,12 @@ details[open] > summary .lb-chevron { transform: rotate(45deg); }
 }
 
 @media (max-width: 500px) {
-  .lb-pair {
+  .lb-pair,
+  .lb-pair-head {
     grid-template-columns: 26px 1fr auto auto;
   }
   .lb-pair-bar { display: none; }
+  .lb-pair-head-pct { grid-column: 3; }
   .lb-strip { gap: 8px; }
   .lb-seg-item { padding: 5px 10px; font-size: 0.76rem; }
 }
