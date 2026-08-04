@@ -22,13 +22,18 @@ Full conventions: [.claude/docs-workflow.md](../.claude/docs-workflow.md).
 
 The brief for "what to pick up in a future session". When the work lands, the handoff is deleted — git log is the changelog.
 
-Nine briefs. **The run design (2026-08-04) reframes most of them** — a
-day becomes a sequence of deals rather than one deal. Read
-`run-structure-handoff.md` first; it is the anchor and everything
-downstream assumes it.
+Ten briefs. **Start at
+[handoffs/orchestration-handoff.md](handoffs/orchestration-handoff.md)** —
+it sequences all the others into one session's worth of work, with the
+parallelism, the file-ownership collisions, and the scope call about what
+is realistically achievable. Everything below is a track it drives.
 
-Two gates sit in front of the run: the predicate has to be right, and
-Marc has to sign off the constitution.
+**The run design (2026-08-04) reframes most of these** — a day becomes a
+sequence of deals rather than one deal. `run-structure-handoff.md` is the
+anchor and everything downstream assumes it.
+
+Two gates sit in front of the run: the predicate has to be right, and the
+constitution has to stop forbidding it.
 
 ```
    soul-first-principles ─ blocks ┐      (soul §VI forbids the run today)
@@ -45,6 +50,7 @@ Marc has to sign off the constitution.
      caps-call-ux (arm-and-point half) · dds-transposition · closed-trump-bot
 ```
 
+- [handoffs/orchestration-handoff.md](handoffs/orchestration-handoff.md) — **the entry point.** Sequences the nine tracks below into four waves. Names what can run in parallel, where file ownership collides, and what has to be parked to get a playable run in one session.
 - [handoffs/run-structure-handoff.md](handoffs/run-structure-handoff.md) — **the anchor.** A day is a run of deals, drawn from an exponential tail: usually 1–2, rarely 6. Caps stops being guaranteed. One player action (Call Caps); decoys end themselves when the opposition takes a round. Kills the redeal loop.
 - [handoffs/caps-par-authority-handoff.md](handoffs/caps-par-authority-handoff.md) — **the blocker.** The obligation CSP under-claims, so par is systematically later than the truth and correct players are told "too early". Ship an offline-verified par and grade against it.
 - [handoffs/soul-first-principles-handoff.md](handoffs/soul-first-principles-handoff.md) — **the other blocker.** Strip `soul.md` to first principles; move every design prescription (all of §VI, the 12 "Design implication" blocks) into a new `.claude/304dle-design.md`. Unblocks the run without a constitutional amendment.
