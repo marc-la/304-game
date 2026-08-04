@@ -1998,34 +1998,36 @@ dd {
 .lb-dash-race { grid-area: race; min-width: 0; }
 .lb-dash-pairs { grid-area: pairs; }
 
-/* Column-header row for the standings ledger: mirrors .lb-standing's grid
-   so "% sets" and the pip timeline axis land directly over their columns. */
-.lb-standing-head {
-  display: grid;
-  grid-template-columns: 18px 10px minmax(0, 1fr) auto;
-  gap: 4px 10px;
-  padding: 0 14px;
-  margin-bottom: 6px;
+/* Section header row: title + column context clues share one line, with the
+   rule (inherited from the global h2 border-bottom) underlining both as one
+   unified block rather than sitting between them. */
+.lb-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 2px solid var(--clr-border);
+  padding-bottom: 8px;
+  margin-bottom: 10px;
 }
 
-.lb-standing-head-rate {
-  grid-column: 3;
-  justify-self: end;
+.lb-section-head .lb-h {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin: 0;
 }
 
-.lb-standing-head-form {
-  grid-column: 4;
-  justify-self: end;
-}
-
-.lb-standing-head-rate,
-.lb-standing-head-form {
+.lb-section-head-detail {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
   font-family: var(--font-heading);
   font-size: 0.66rem;
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--clr-text-muted);
+  white-space: nowrap;
 }
 
 /* Fixed-position ticks (not proportional to elapsed days) so they never
@@ -2271,24 +2273,6 @@ dd {
 }
 
 /* --- partnerships --- */
-
-.lb-pair-head {
-  display: grid;
-  grid-template-columns: 26px minmax(120px, auto) 1fr auto auto;
-  gap: 10px;
-  padding-bottom: 2px;
-}
-
-.lb-pair-head-pct {
-  grid-column: 4;
-  justify-self: end;
-  font-family: var(--font-heading);
-  font-size: 0.66rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--clr-text-muted);
-}
 
 .lb-pair {
   display: grid;
@@ -2572,6 +2556,13 @@ details[open] > summary .lb-chevron { transform: rotate(45deg); }
   font-family: var(--font-mono);
 }
 
+/* Override the global thead (site-wide: fixed dark ink header, both themes)
+   — the whiteboard sheet has no header emphasis, just ruled paper. */
+.lb-sheet thead {
+  background: transparent;
+  color: inherit;
+}
+
 .lb-sheet th {
   font-family: var(--font-mono);
   font-weight: 400;
@@ -2795,18 +2786,10 @@ details[open] > summary .lb-chevron { transform: rotate(45deg); }
 
   .lb-dash-pairs { align-self: start; }
 
-  .lb-standing,
-  .lb-standing-head {
+  .lb-standing {
     grid-template-columns: 14px 8px minmax(0, 1fr) auto;
     gap: 3px 8px;
-  }
-
-  .lb-standing {
     padding: 8px 10px;
-  }
-
-  .lb-standing-head {
-    padding: 0 10px;
   }
 
   .lb-standing-name { font-size: 1rem; }
@@ -2818,14 +2801,14 @@ details[open] > summary .lb-chevron { transform: rotate(45deg); }
 }
 
 @media (max-width: 500px) {
-  .lb-pair,
-  .lb-pair-head {
+  .lb-pair {
     grid-template-columns: 26px 1fr auto auto;
   }
   .lb-pair-bar { display: none; }
-  .lb-pair-head-pct { grid-column: 3; }
   .lb-strip { gap: 8px; }
   .lb-seg-item { padding: 5px 10px; font-size: 0.76rem; }
+
+  .lb-section-head-detail .lb-axis-dates { display: none; }
 }
 
 /* insights: profile detail styles */

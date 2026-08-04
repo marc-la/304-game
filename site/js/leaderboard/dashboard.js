@@ -32,19 +32,14 @@ function formAxis(dates) {
   '</span>';
 }
 
-function renderStandingsHead(dates) {
-  return '<div class="lb-standing-head" aria-hidden="true">' +
-    '<span class="lb-standing-head-rate">% sets</span>' +
-    '<span class="lb-standing-head-form">' + formAxis(dates) + '</span>' +
-  '</div>';
-}
-
 function renderStandings(data, scope) {
   const el = document.getElementById('lb-standings');
+  const head = document.getElementById('lb-standings-head');
   const rows = standings(data, scope);
   const formDates = revsForScope(data, scope).slice(-5).map((r) => r.date);
+  head.innerHTML = '<span>% sets</span>' + formAxis(formDates);
   const maxRevs = Math.max(1, ...rows.map((r) => r.revsWon));
-  el.innerHTML = renderStandingsHead(formDates) + rows.map((r, i) => {
+  el.innerHTML = rows.map((r, i) => {
     const pips = r.form.map((f) => {
       if (!f) return '';
       const cls = f.win ? ' is-win' : '';
@@ -194,10 +189,15 @@ function renderRace(data) {
 
 function renderPartnerships(data, scope) {
   const el = document.getElementById('lb-partnerships');
+  const head = document.getElementById('lb-partnerships-head');
   const pairs = partnerships(data, scope);
-  if (!pairs.length) { el.innerHTML = '<p class="lb-footnote">No matches yet this season.</p>'; return; }
-  const head = '<div class="lb-pair-head" aria-hidden="true"><span class="lb-pair-head-pct">% sets</span></div>';
-  el.innerHTML = head + pairs.map((pr) => {
+  if (!pairs.length) {
+    head.innerHTML = '';
+    el.innerHTML = '<p class="lb-footnote">No matches yet this season.</p>';
+    return;
+  }
+  head.innerHTML = '<span>% sets</span>';
+  el.innerHTML = pairs.map((pr) => {
     const rate = Math.round((pr.won / pr.played) * 100);
     const [a, b] = pr.players;
     return '<div class="lb-pair">' +
