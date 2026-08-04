@@ -871,4 +871,4 @@
    appropriate to cause; correct must feel beautiful. */
 .dle-result-correct .dle-result-title { color: #2e6b3e; }
 .dle-result-late    .dle-result-title { color: #7a5a10; }
-.dle-result-fail    .dle-result-title { color: var(--clr-accent); }\n
+.dle-result-fail    .dle-result-title { color: var(--clr-accent); }
