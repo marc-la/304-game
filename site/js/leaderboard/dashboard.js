@@ -23,9 +23,12 @@ function formAxis(dates) {
   for (let i = 0; i < n; i++) {
     ticks += '<i class="lb-axis-tick" style="left:' + (i * (PIP + PIP_GAP) + PIP / 2) + 'px"></i>';
   }
-  const dates_ = n > 1
+  // The axis is only as wide as the pip row, so a start+end pair overhangs it
+  // and, below three pips, runs into the chart heading beside it. A young
+  // season gets the latest date alone; the span is obvious from two pips.
+  const dates_ = n > 2
     ? '<span>' + esc(fmtDate(dates[0], true)) + '</span><span>' + esc(fmtDate(dates[n - 1], true)) + '</span>'
-    : '<span>' + esc(fmtDate(dates[0], true)) + '</span>';
+    : '<span>' + esc(fmtDate(dates[n - 1], true)) + '</span>';
   return '<span class="lb-axis" style="width:' + w + 'px">' +
     '<span class="lb-axis-line">' + ticks + '</span>' +
     '<span class="lb-axis-dates">' + dates_ + '</span>' +

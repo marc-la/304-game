@@ -2056,6 +2056,10 @@ dd {
 
 .lb-axis-dates {
   display: flex;
+  /* The axis is only as wide as the pip row (2-5 pips), so the two date
+     labels always overhang it. The gap keeps them from touching when a
+     season has just two revolutions. */
+  gap: 0.6rem;
   justify-content: space-between;
   margin-top: 2px;
   font-weight: 500;

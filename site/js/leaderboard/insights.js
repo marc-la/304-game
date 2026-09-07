@@ -292,7 +292,7 @@ function renderCards(data, chars) {
             : '<span class="lb-footnote">none called</span>') + '</span>' +
         '<span class="lb-profile-label">Penalties</span><span class="lb-profile-val' + penClass + '">' + s.penalties + '</span>' +
         '<span class="lb-profile-divider" aria-hidden="true"></span>' +
-        '<span class="lb-profile-scope">All-time · 92 matches</span>' +
+        '<span class="lb-profile-scope">All-time · ' + data.matches.length + ' matches</span>' +
         '<span class="lb-profile-label">Clutch (8+)</span><span class="lb-profile-val">' + c.clutch.w + 'W – ' + c.clutch.l + 'L</span>' +
         '<span class="lb-profile-label">Sets 1 → 3</span><span class="lb-profile-val">' + arcPct.join('·') + '%' + arcTrend + '</span>' +
       '</div>' +
